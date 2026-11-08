@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  /* Workbench & Grid */
+  --workbench-bg: #141413;
+  --cutting-mat-grid: rgba(255, 255, 255, 0.04);
+  --cutting-mat-major: rgba(255, 255, 255, 0.09);
+
+  /* Windows 95 / System Gray & Bevels */
+  --win95-gray: #c0c0c0;
+  --win95-dark-gray: #a8a8a8;
+  --win95-text: #000000;
+  --bevel-highlight: #ffffff;
+  --bevel-shadow: #808080;
+  --bevel-dark-shadow: #000000;
+
+  /* BIOS, CRT & LED Indicators */
+  --bios-blue: #0000aa;
+  --crt-green: #33ff33;
+  --crt-green-glow: 0 0 8px rgba(51, 255, 51, 0.6);
+  --led-turbo-red: #ff2a2a;
+  --led-amber: #ffb000;
+}
+
+* {
+  border-radius: 0px !important;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--workbench-bg);
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  overflow: hidden;
+}
+
+/* Windows 95 3D Outset Panel / Button */
+.win95-outset {
+  background-color: var(--win95-gray);
+  color: var(--win95-text);
+  box-shadow:
+    inset 1px 1px 0px #ffffff,
+    inset -1px -1px 0px #808080,
+    inset 2px 2px 0px #dfdfdf,
+    inset -2px -2px 0px #000000;
+}
+
+/* Windows 95 3D Inset Well / Active Button / LCD Housing */
+.win95-inset {
+  background-color: #111111;
+  box-shadow:
+    inset 1px 1px 0px #808080,
+    inset -1px -1px 0px #ffffff,
+    inset 2px 2px 0px #000000,
+    inset -2px -2px 0px #dfdfdf;
+}
+
+/* Nút bấm cơ học Win95 khi đang nhấn hoặc đang bật (Latched) */
+.win95-btn {
+  background-color: var(--win95-gray);
+  color: #000000;
+  box-shadow:
+    inset 1px 1px 0px #ffffff,
+    inset -1px -1px 0px #808080,
+    inset 2px 2px 0px #dfdfdf,
+    inset -2px -2px 0px #000000;
+  transition: transform 40ms steps(2);
+  cursor: pointer;
+}
+
+.win95-btn:active,
+.win95-btn-active {
+  background-color: #b3b3b3;
+  box-shadow:
+    inset 1px 1px 0px #000000,
+    inset -1px -1px 0px #ffffff,
+    inset 2px 2px 0px #808080,
+    inset -2px -2px 0px #dfdfdf;
+  transform: translate(1px, 1px);
+}
+
+/* Khung bản vẽ kỹ thuật (Hardware Manual Blueprint Panel) */
+.manual-blueprint-panel {
+  background-color: rgba(20, 20, 19, 0.9);
+  border: 1px solid rgba(216, 210, 197, 0.35);
+  box-shadow:
+    0 0 0 1px #000000,
+    6px 6px 0px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+/* Chữ phát sáng CRT Phosphor Green */
+.crt-green-text {
+  color: var(--crt-green);
+  text-shadow: var(--crt-green-glow);
+}
+
+/* Đèn LED 7 đoạn phát sáng Đỏ / Amber */
+.led-7seg-red {
+  color: var(--led-turbo-red);
+  text-shadow:
+    0 0 6px rgba(255, 42, 42, 0.9),
+    0 0 14px rgba(255, 42, 42, 0.55);
+  font-family: 'VT323', 'JetBrains Mono', monospace;
+}
+
+.led-7seg-amber {
+  color: var(--led-amber);
+  text-shadow:
+    0 0 6px rgba(255, 176, 0, 0.9),
+    0 0 14px rgba(255, 176, 0, 0.55);
+  font-family: 'VT323', 'JetBrains Mono', monospace;
+}
+
