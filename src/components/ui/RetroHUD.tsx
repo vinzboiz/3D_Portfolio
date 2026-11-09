@@ -3,6 +3,7 @@ import { useBuildStore } from '../../store/useBuildStore';
 
 export function RetroHUD() {
   const currentStep = useBuildStore((s) => s.currentStep);
+  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
   const freeCam = useBuildStore((s) => s.freeCam);
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const projectAppTransition = useBuildStore((s) => s.projectAppTransition);
@@ -176,13 +177,34 @@ export function RetroHUD() {
 
   if (isInsideProjectApp || projectAppTransition !== 'IDLE') return null;
 
+  // Tính toán độ mờ của nền đen Navbar theo tiến trình scroll giữa Home (0.0) và About (1.0):
+  // - Tại Home (Step 00): bgAlpha = 1.0 (màu đen đặc #0a0a0c)
+  // - Khi scroll sang About (Step 01): Màu nền đen mờ dần từ 1.0 về 0.0 theo tiến trình scroll
+  // - Tại các chức năng khác (About, Projects, My CV): bgAlpha = 0.0 (hoàn toàn transparent)
+  // - Khi scroll ngược về Home: Màu nền đen tăng dần từ 0.0 lên 1.0
+  const portalProgress = Math.max(0, Math.min(1, homeTransitionProgress));
+  const bgAlpha =
+    currentStep === 0 || currentStep === 1
+      ? Math.max(0, Math.min(1, 1 - portalProgress))
+      : 0;
+
   return (
     <>
       {/* =======================================================================
-          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - TRANSPARENT BACKGROUND)
-          fixed top-0 left-0 right-0 h-[80px] z-[100], background hoàn toàn trong suốt
+          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - DYNAMIC SCROLL BACKGROUND)
+          - Tại Home (Step 00): Background màu đen đặc #0a0a0c
+          - Tại các chức năng khác (About, Projects, My CV): Background hoàn toàn transparent
+          - Khi scroll: Màu nền đen mờ dần hoặc hiện lên dần tùy theo tiến trình cuộn
          ======================================================================= */}
-      <header className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none bg-transparent pointer-events-none">
+      <header
+        style={{
+          backgroundColor: `rgba(10, 10, 12, ${bgAlpha})`,
+          borderBottom: bgAlpha > 0.01 ? `1px solid rgba(255, 255, 255, ${bgAlpha * 0.08})` : 'none',
+          boxShadow: bgAlpha > 0.01 ? `0 4px 24px rgba(0, 0, 0, ${bgAlpha * 0.6})` : 'none',
+          willChange: 'background-color, border-color, box-shadow',
+        }}
+        className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none pointer-events-none"
+      >
         {/* Cụm Bên Trái (Brand Identity) */}
         <div
           onClick={jumpToHome}
@@ -209,19 +231,19 @@ export function RetroHUD() {
 
           {/* Tên & Chức danh 2 dòng */}
           <div className="flex flex-col text-left">
-            <span className="font-sans font-bold text-white text-[1.05rem] tracking-[-0.02em] leading-tight group-hover:text-[#f2f0ea] transition-colors">
+            <span className="font-sans font-bold text-white text-[0.95rem] sm:text-[1.05rem] tracking-[-0.02em] leading-tight group-hover:text-[#f2f0ea] transition-colors whitespace-nowrap">
               Nguyễn Xuân Vinh
             </span>
-            <span className="font-mono text-[0.68rem] tracking-[0.16em] uppercase text-[#8a8a8e] leading-tight">
+            <span className="hidden sm:block font-mono text-[0.68rem] tracking-[0.16em] uppercase text-[#8a8a8e] leading-tight">
               FULL-STACK & 3D DEVELOPER
             </span>
           </div>
         </div>
 
         {/* Cụm Bên Phải (Menu Links & Language & Pill CTA) */}
-        <div className="pointer-events-auto flex items-center gap-5 sm:gap-7">
+        <div className="pointer-events-auto flex items-center gap-3 sm:gap-7">
           {/* Text Links dạng thuần (không đóng khung viền hộp) */}
-          <nav className="flex items-center gap-5 sm:gap-7 text-[0.92rem] font-sans">
+          <nav className="hidden sm:flex items-center gap-4 md:gap-7 text-[0.88rem] md:text-[0.92rem] font-sans">
             <button
               type="button"
               onClick={jumpToHome}
@@ -274,7 +296,7 @@ export function RetroHUD() {
           <button
             type="button"
             onClick={jumpToCv}
-            className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-[22px] py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none"
+            className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-4 sm:px-[22px] py-1.5 sm:py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none whitespace-nowrap"
           >
             Liên hệ
           </button>
