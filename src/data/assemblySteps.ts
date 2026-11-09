@@ -37,8 +37,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'VINZBOIZ STUDIO // WEBGL ARCHITECT',
     category: 'STEP 00 // PORTAL VIEWPORT & SLOGAN',
     zoneId: 'ZONE-PORTAL',
-    cameraPos: [-0.6, 5.8, 14.2],
-    cameraTarget: [0, 0.8, -0.5],
+    cameraPos: [0, 2.4, 10],
+    cameraTarget: [0, 0.2, -2],
     hardwareSpecs: [
       { label: 'ARCHITECTURE', value: '100% PROCEDURAL THREE.JS / R3F' },
       { label: 'VIEWFINDER', value: '28VW CENTER MASK · SPLIT-TEXT' },

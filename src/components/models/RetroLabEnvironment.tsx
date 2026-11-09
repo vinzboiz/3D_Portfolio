@@ -1,298 +1,458 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox, Instances, Instance } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBuildStore } from '../../store/useBuildStore';
 
 // =============================================================================
-// PROCEDURAL CANVAS TEXTURES FOR RETRO CRT SCREENS (100% CODE - NO EXTERNAL IMAGES)
+// HẰNG SỐ KÍCH THƯỚC CHUẨN ĐỌC TỪ MÀN HÌNH CRT CHÍNH TRÊN BÀN (SONY TRINITRON 100ES)
 // =============================================================================
+const MAIN_MONITOR_W = 1.88;
+const MAIN_MONITOR_H = 1.58;
+const MAIN_MONITOR_DEPTH = 1.55;
+const SCREEN_GLASS_W = 1.44;
+const SCREEN_GLASS_H = 1.08;
 
-/**
- * 1. Screen Matrix / DOS Green Phosphor Terminal Texture (#22c55e):
- */
-function createGreenMatrixTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
+// =============================================================================
+// GLSL SHADER: "MẤT TÍN HIỆU RETRO 90S" (100% PROCEDURAL - 1 DRAW CALL CHO CẢ BỨC TƯỜNG)
+// =============================================================================
+const crtWallVertexShader = /* glsl */ `
+  attribute float aSeed;
+  attribute float aMode;
+  attribute float aBrightness;
 
-  ctx.fillStyle = '#040d07';
-  ctx.fillRect(0, 0, 512, 384);
+  varying vec2 vUv;
+  varying float vSeed;
+  varying float vMode;
+  varying float vBrightness;
 
-  // Mưa mã số ma trận xanh lá & Dòng lệnh DOS / C Kernel
-  ctx.shadowColor = '#22c55e';
-  ctx.shadowBlur = 6;
-  ctx.fillStyle = '#22c55e';
-  ctx.font = 'bold 15px "JetBrains Mono", monospace';
+  void main() {
+    vUv = uv;
+    vSeed = aSeed;
+    vMode = aMode;
+    vBrightness = aBrightness;
 
-  const chars = '0123456789ABCDEF!@#$%&*+-=<>~/\\';
-  for (let col = 0; col < 28; col++) {
-    const x = 16 + col * 17;
-    const len = 4 + Math.floor(Math.sin(col * 2.3) * 6 + 7);
-    for (let row = 0; row < len; row++) {
-      const y = 30 + row * 18;
-      const char = chars[(col * 7 + row * 13) % chars.length];
-      if (row === len - 1) {
-        ctx.fillStyle = '#bbf7d0'; // Đầu tia sáng trắng xanh
-      } else {
-        ctx.fillStyle = row % 2 === 0 ? '#4ade80' : '#15803d';
-      }
-      ctx.fillText(char, x, y);
+    vec4 worldPosition = modelMatrix * instanceMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  }
+`;
+
+const crtWallFragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform float uTime;
+  uniform float uPower;
+
+  varying vec2 vUv;
+  varying float vSeed;
+  varying float vMode;
+  varying float vBrightness;
+
+  // Hàm tạo số ngẫu nhiên giả lập nhiễu hạt
+  float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  // Chữ pixel "NO SIGNAL" phong cách màn hình xanh VCR 1997
+  float drawPixelText(vec2 uv) {
+    // Tọa độ vùng chữ ở giữa màn hình
+    vec2 p = (uv - vec2(0.5, 0.5)) * vec2(20.0, 10.0);
+    if (abs(p.x) > 6.0 || abs(p.y) > 1.2) return 0.0;
+
+    // Chữ dạng các vạch pixel khối
+    float x = p.x + 5.5;
+    float y = p.y + 0.9;
+    if (x < 0.0 || x > 11.0 || y < 0.0 || y > 1.8) return 0.0;
+
+    float charIndex = floor(x);
+    vec2 cUv = vec2(fract(x), y / 1.8);
+
+    // Ký tự giả lập khối chữ số cổ điển
+    float glyph = 0.0;
+    if (charIndex == 0.0 || charIndex == 6.0) { // N
+      if (cUv.x < 0.25 || cUv.x > 0.75 || abs(cUv.x - cUv.y) < 0.2) glyph = 1.0;
+    } else if (charIndex == 1.0 || charIndex == 7.0) { // O
+      if (cUv.x < 0.25 || cUv.x > 0.75 || cUv.y < 0.25 || cUv.y > 0.75) glyph = 1.0;
+    } else if (charIndex == 3.0) { // S
+      if (cUv.y > 0.75 || cUv.y < 0.25 || abs(cUv.y - 0.5) < 0.15 || (cUv.x < 0.3 && cUv.y > 0.5) || (cUv.x > 0.7 && cUv.y < 0.5)) glyph = 1.0;
+    } else if (charIndex == 4.0) { // I
+      if (abs(cUv.x - 0.5) < 0.18 || cUv.y > 0.8 || cUv.y < 0.2) glyph = 1.0;
+    } else if (charIndex == 5.0) { // G
+      if (cUv.x < 0.25 || cUv.y > 0.75 || cUv.y < 0.25 || (cUv.x > 0.75 && cUv.y < 0.5) || (abs(cUv.y - 0.5) < 0.15 && cUv.x > 0.4)) glyph = 1.0;
+    } else if (charIndex == 8.0) { // A
+      if (cUv.x < 0.25 || cUv.x > 0.75 || cUv.y > 0.75 || abs(cUv.y - 0.5) < 0.15) glyph = 1.0;
+    } else if (charIndex == 9.0) { // L
+      if (cUv.x < 0.25 || cUv.y < 0.25) glyph = 1.0;
     }
+    return glyph;
   }
 
-  // Dòng lệnh shell ở đáy
-  ctx.fillStyle = '#4ade80';
-  ctx.font = 'bold 16px "JetBrains Mono", monospace';
-  ctx.fillText('C:\\SYS\\SRC> make -j8 ARCH=i386_pentium', 20, 360);
+  void main() {
+    // Nếu màn hình bị tắt (vBrightness = 0), chỉ hiển thị kính đen tối bóng mờ
+    if (vBrightness < 0.05) {
+      vec2 c = vUv * 2.0 - 1.0;
+      float vig = clamp(1.0 - dot(c * c, c * c) * 0.7, 0.0, 1.0);
+      gl_FragColor = vec4(vec3(0.015, 0.018, 0.02) * vig, 1.0);
+      return;
+    }
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
+    vec2 pUv = vUv * vec2(320.0, 240.0);
 
-/**
- * 2. Screen Amber BIOS / Telemetry Terminal (#f59e0b):
- */
-function createAmberTerminalTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
+    // Chuyển đổi ngẫu nhiên pattern mỗi vài giây (lệch pha giữa các màn hình)
+    float timeShift = floor(mod(uTime * 0.25 + vSeed * 13.0, 6.0));
+    float modeGlitchTrigger = step(0.92, sin(uTime * 0.4 + vSeed * 29.0));
+    float currentMode = mod(vMode + modeGlitchTrigger * timeShift, 6.0);
 
-  ctx.fillStyle = '#120a02';
-  ctx.fillRect(0, 0, 512, 384);
+    vec3 col = vec3(0.0);
 
-  ctx.shadowColor = '#f59e0b';
-  ctx.shadowBlur = 7;
-  ctx.fillStyle = '#f59e0b';
-  ctx.font = 'bold 17px "JetBrains Mono", monospace';
+    // -------------------------------------------------------------------------
+    // PATTERN 0: SMPTE COLOR BARS
+    // -------------------------------------------------------------------------
+    if (currentMode < 0.8) {
+      if (vUv.y > 0.28) {
+        float bar = floor(vUv.x * 7.0);
+        if (bar == 0.0) col = vec3(0.75, 0.75, 0.75); // Trắng
+        else if (bar == 1.0) col = vec3(0.75, 0.75, 0.0); // Vàng
+        else if (bar == 2.0) col = vec3(0.0, 0.75, 0.75); // Cyan
+        else if (bar == 3.0) col = vec3(0.0, 0.75, 0.0); // Lục
+        else if (bar == 4.0) col = vec3(0.75, 0.0, 0.75); // Magenta
+        else if (bar == 5.0) col = vec3(0.75, 0.0, 0.0); // Đỏ
+        else col = vec3(0.0, 0.0, 0.75); // Lam
+      } else if (vUv.y > 0.18) {
+        float bar = floor(vUv.x * 7.0);
+        if (bar == 0.0) col = vec3(0.0, 0.0, 0.75);
+        else if (bar == 1.0) col = vec3(0.08, 0.08, 0.08);
+        else if (bar == 2.0) col = vec3(0.75, 0.0, 0.75);
+        else if (bar == 3.0) col = vec3(0.08, 0.08, 0.08);
+        else if (bar == 4.0) col = vec3(0.0, 0.75, 0.75);
+        else if (bar == 5.0) col = vec3(0.08, 0.08, 0.08);
+        else col = vec3(0.75, 0.75, 0.75);
+      } else {
+        float x = vUv.x;
+        if (x < 0.2) col = vec3(0.08, 0.18, 0.32);
+        else if (x < 0.4) col = vec3(1.0);
+        else if (x < 0.6) col = vec3(0.12, 0.04, 0.22);
+        else if (x < 0.75) col = vec3(0.04);
+        else if (x < 0.85) col = vec3(0.08);
+        else col = vec3(0.04);
+      }
+    }
+    // -------------------------------------------------------------------------
+    // PATTERN 1: RAINBOW VERTICAL STRIPES
+    // -------------------------------------------------------------------------
+    else if (currentMode < 1.8) {
+      float phase = vUv.x * 14.0 + uTime * 0.7 + vSeed * 5.0;
+      col.r = 0.5 + 0.5 * sin(phase);
+      col.g = 0.5 + 0.5 * sin(phase + 2.094);
+      col.b = 0.5 + 0.5 * sin(phase + 4.188);
+      col *= 0.85;
+    }
+    // -------------------------------------------------------------------------
+    // PATTERN 2: STATIC NOISE (NHIỄU TUYẾT TRẮNG ĐEN)
+    // -------------------------------------------------------------------------
+    else if (currentMode < 2.8) {
+      float n = hash21(floor(pUv) + floor(uTime * 35.0) * vec2(17.3, 71.9));
+      col = vec3(n * 0.95 + 0.05);
+    }
+    // -------------------------------------------------------------------------
+    // PATTERN 3: ROLLING BAR (MẤT ĐỒNG BỘ V-HOLD)
+    // -------------------------------------------------------------------------
+    else if (currentMode < 3.8) {
+      float rollY = fract(vUv.y - uTime * 0.95 + vSeed * 2.0);
+      float bar = smoothstep(0.0, 0.18, rollY) * smoothstep(0.38, 0.18, rollY);
+      float n = hash21(floor(pUv * 0.5) + floor(uTime * 24.0));
+      col = mix(vec3(0.12, 0.14, 0.16) + n * 0.15, vec3(0.85, 0.9, 0.98), bar);
+    }
+    // -------------------------------------------------------------------------
+    // PATTERN 4: MÀN HÌNH XANH "NO SIGNAL" KIỂU VCR
+    // -------------------------------------------------------------------------
+    else if (currentMode < 4.8) {
+      col = vec3(0.0, 0.02, 0.72); // Nền xanh cobalt VCR
+      float blink = step(0.45, fract(uTime * 0.9 + vSeed * 3.0));
+      float text = drawPixelText(vUv);
+      col = mix(col, vec3(1.0, 1.0, 0.95), text * blink);
+    }
+    // -------------------------------------------------------------------------
+    // PATTERN 5: GLITCH BARS & CHROMATIC ABERRATION
+    // -------------------------------------------------------------------------
+    else {
+      float band = floor(vUv.y * 14.0);
+      float shift = (hash21(vec2(band, floor(uTime * 14.0))) - 0.5) * 0.22;
+      float rPattern = step(0.5, fract((vUv.x + shift) * 8.0));
+      float gPattern = step(0.5, fract(vUv.x * 8.0));
+      float bPattern = step(0.5, fract((vUv.x - shift) * 8.0));
+      col = vec3(rPattern, gPattern, bPattern) * 0.85;
+    }
 
-  const lines = [
-    'AWARD MODULAR BIOS v4.51PG',
-    'CHIPSET: INTEL 430TX PCISET BUS',
-    'CPU: PENTIUM MMX 233MHz (66x3.5)',
-    'CACHE: 512KB PIPELINED BURST L2',
-    'MEMORY: 64MB SDRAM 100MHz OK',
-    'HARD DISK: WDC AC22100H 2.1GB',
-    'CD-ROM: ATAPI CR-583 24X MAX',
-    'STATUS: RETRO LAB SERVERS ONLINE',
-  ];
+    // -------------------------------------------------------------------------
+    // HIỆU ỨNG CHUNG CỦA BÓNG ĐÈN HÌNH CRT: SCANLINES + SHADOW MASK + VIGNETTE
+    // -------------------------------------------------------------------------
+    // 1. Scanlines ngang
+    float scanline = sin(pUv.y * 3.14159) * 0.5 + 0.5;
+    col *= 0.82 + 0.18 * scanline;
 
-  lines.forEach((line, idx) => {
-    ctx.fillText(line, 24, 46 + idx * 36);
+    // 2. RGB Shadow-mask (Aperture grille sub-pixels)
+    float maskCol = mod(floor(pUv.x), 3.0);
+    vec3 mask = maskCol < 1.0 ? vec3(1.12, 0.88, 0.88) : (maskCol < 2.0 ? vec3(0.88, 1.12, 0.88) : vec3(0.88, 0.88, 1.12));
+    col *= mask;
+
+    // 3. Vignette viền cong vát đen góc kính CRT
+    vec2 c = vUv * 2.0 - 1.0;
+    float vig = clamp(1.0 - dot(c * c, c * c) * 0.48, 0.0, 1.0);
+    col *= vig;
+
+    // 4. Flicker nhẹ tần số lưới điện 60Hz
+    float flicker = 0.97 + 0.03 * sin(uTime * 75.0 + vSeed * 40.0);
+    col *= flicker;
+
+    // 5. Cường độ phát sáng tổng & uPower
+    col *= vBrightness * uPower;
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+// =============================================================================
+// 1. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - ĐIỂM NHẤN CHÍNH)
+// =============================================================================
+function CRTVideoWall() {
+  const currentStep = useBuildStore((s) => s.currentStep);
+  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
+  const stageTransition = useBuildStore((s) => s.stageTransition);
+
+  const bodyInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const screenInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const lastUpdateRef = useRef(0);
+
+  // Khởi tạo ShaderMaterial chuyên dụng 1 draw call duy nhất
+  const shaderMat = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      vertexShader: crtWallVertexShader,
+      fragmentShader: crtWallFragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uPower: { value: 0.85 }, // Ngưỡng sàn ban đầu tại Home
+      },
+      toneMapped: false,
+      side: THREE.FrontSide,
+    });
+  }, []);
+
+  // Bố cục ma trận màn hình phẳng tại z = -6.85:
+  // 6 Cột x 4 Hàng = 24 Màn hình lớn chuẩn tỉ lệ Sony Trinitron
+  const wallConfig = useMemo(() => {
+    const cols = 6;
+    const rows = 4;
+    const stepX = 2.04; // 1.88 + 0.16 khoảng cách
+    const stepY = 1.74; // 1.58 + 0.16 khoảng cách
+    const startX = -((cols - 1) * stepX) / 2; // Căn giữa đối xứng quanh X = 0
+    const startY = -0.72; // Hàng dưới chạm gần sàn y = -1.62
+    const totalCount = cols * rows;
+
+    const positions: [number, number, number][] = [];
+    const rotations: [number, number, number][] = [];
+    const scales: [number, number, number][] = [];
+    const seeds = new Float32Array(totalCount);
+    const modes = new Float32Array(totalCount);
+    const brightnesses = new Float32Array(totalCount);
+    const bodyColors: THREE.Color[] = [];
+
+    const beigeColor = new THREE.Color('#cfc8b8');
+    const darkColor = new THREE.Color('#2a2c30');
+
+    let idx = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        // Độ thủ công ngẫu nhiên nhẹ: lệch vài mm và xoay nhẹ quanh trục Z (±1°)
+        const seedVal = Math.sin(c * 17.1 + r * 29.3);
+        const seed2 = Math.cos(c * 23.7 + r * 37.1);
+        const jitterX = seedVal * 0.012;
+        const jitterY = seed2 * 0.012;
+        const rotZ = seedVal * 0.016; // ±1° quanh trục Z, KHÔNG xoay hướng camera, giữ phẳng
+
+        // Biến thể nhỏ ±6% kích thước
+        const sizeVar = 1.0 + seedVal * 0.06;
+
+        const posX = startX + c * stepX + jitterX;
+        const posY = startY + r * stepY + jitterY;
+        const posZ = -6.85;
+
+        positions.push([posX, posY, posZ]);
+        rotations.push([0, 0, rotZ]);
+        scales.push([sizeVar, sizeVar, sizeVar]);
+
+        seeds[idx] = (seedVal + 1.0) * 0.5;
+
+        // Phân bổ các mode: 0 (SMPTE), 1 (Rainbow), 2 (Noise), 3 (Rolling), 4 (VCR Blue), 5 (Glitch)
+        const modeChoice = Math.floor(Math.abs(seedVal * 100)) % 6;
+        modes[idx] = modeChoice;
+
+        // Khoảng 12% màn hình tắt đen hoặc vỡ tín hiệu tối
+        const isOff = Math.abs(seed2) > 0.88;
+        brightnesses[idx] = isOff ? 0.0 : 0.85 + Math.abs(seedVal) * 0.35;
+
+        // Xen kẽ màu vỏ nhựa kem và xám đen
+        bodyColors.push((c + r) % 2 === 0 ? beigeColor : darkColor);
+
+        idx++;
+      }
+    }
+
+    return {
+      totalCount,
+      positions,
+      rotations,
+      scales,
+      seeds,
+      modes,
+      brightnesses,
+      bodyColors,
+    };
+  }, []);
+
+  // Geometry mặt kính màn hình phẳng hơi vát mép
+  const screenGeometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(SCREEN_GLASS_W, SCREEN_GLASS_H, 2, 2);
+    geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(wallConfig.seeds, 1));
+    geo.setAttribute('aMode', new THREE.InstancedBufferAttribute(wallConfig.modes, 1));
+    geo.setAttribute('aBrightness', new THREE.InstancedBufferAttribute(wallConfig.brightnesses, 1));
+    return geo;
+  }, [wallConfig]);
+
+  // Geometry vỏ thân máy CRT
+  const bodyGeometry = useMemo(() => {
+    // Khối thân vỏ màn hình CRT bo viền
+    return new THREE.BoxGeometry(MAIN_MONITOR_W, MAIN_MONITOR_H, MAIN_MONITOR_DEPTH);
+  }, []);
+
+  // Thiết lập ma trận cho cả 2 InstancedMesh ngay khi mount
+  useEffect(() => {
+    if (!bodyInstancedRef.current || !screenInstancedRef.current) return;
+
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < wallConfig.totalCount; i++) {
+      dummy.position.set(...wallConfig.positions[i]);
+      dummy.rotation.set(...wallConfig.rotations[i]);
+      dummy.scale.set(...wallConfig.scales[i]);
+      dummy.updateMatrix();
+
+      // InstancedMesh #1: Thân vỏ
+      bodyInstancedRef.current.setMatrixAt(i, dummy.matrix);
+      bodyInstancedRef.current.setColorAt(i, wallConfig.bodyColors[i]);
+
+      // InstancedMesh #2: Mặt kính màn hình (dịch phía trước mặt vỏ)
+      dummy.position.z += MAIN_MONITOR_DEPTH * 0.5 * wallConfig.scales[i][2] + 0.015;
+      dummy.updateMatrix();
+      screenInstancedRef.current.setMatrixAt(i, dummy.matrix);
+    }
+
+    bodyInstancedRef.current.instanceMatrix.needsUpdate = true;
+    if (bodyInstancedRef.current.instanceColor) {
+      bodyInstancedRef.current.instanceColor.needsUpdate = true;
+    }
+    screenInstancedRef.current.instanceMatrix.needsUpdate = true;
+
+    // BẮT BUỘC: Đặt frustumCulled = false để bức tường không bao giờ bị biến mất
+    bodyInstancedRef.current.frustumCulled = false;
+    screenInstancedRef.current.frustumCulled = false;
+  }, [wallConfig]);
+
+  // Vòng lặp useFrame tối ưu:
+  // - Ở Home hoặc đang zoom (portalProgress < 0.999): cập nhật 60 FPS
+  // - Khi ngồi hẳn vào bàn (Step >= 1, portalProgress = 1): giảm xuống ~15 FPS để tiết kiệm triệt để GPU
+  useFrame((state) => {
+    const isHomeOrZooming =
+      currentStep === 0 || homeTransitionProgress < 0.999 || stageTransition !== 'IDLE';
+    const targetInterval = isHomeOrZooming ? 0 : 0.066; // 15 FPS khi ngồi bàn
+    const now = state.clock.getElapsedTime();
+
+    if (now - lastUpdateRef.current >= targetInterval) {
+      lastUpdateRef.current = now;
+      if (shaderMat) {
+        shaderMat.uniforms.uTime.value = now;
+        const p = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
+        // uPower có ngưỡng sàn: mix(0.85, 1.0, p) khi ở Home/zoom, và không bao giờ xuống dưới 0.65
+        const power = isHomeOrZooming ? THREE.MathUtils.lerp(0.85, 1.0, p) : 0.65;
+        shaderMat.uniforms.uPower.value = power;
+      }
+    }
   });
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
+  useEffect(() => {
+    return () => {
+      shaderMat.dispose();
+      screenGeometry.dispose();
+      bodyGeometry.dispose();
+    };
+  }, [shaderMat, screenGeometry, bodyGeometry]);
 
-/**
- * 3. Screen Blue Diagnostics / Windows NT Memory Manager (#2563eb / #38bdf8):
- */
-function createBlueDiagnosticsTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
+  return (
+    <group>
+      {/* 1. GIÁ ĐỠ THÉP CÔNG NGHIỆP BẮT VÀO TƯỜNG PHÍA SAU MÀN HÌNH */}
+      <group position={[0, 0, -7.05]}>
+        {/* Các cột thép hộp thẳng đứng */}
+        {[-5.1, -3.06, -1.02, 1.02, 3.06, 5.1].map((cx, idx) => (
+          <mesh key={`rack-column-${idx}`} position={[cx, 1.8, 0]}>
+            <boxGeometry args={[0.08, 6.2, 0.08]} />
+            <meshStandardMaterial color="#1a1c22" roughness={0.45} metalness={0.8} />
+          </mesh>
+        ))}
+        {/* Các thanh giằng ngang đỡ từng hàng màn hình */}
+        {[-0.72, 0.96, 2.64, 4.32].map((ry, idx) => (
+          <mesh key={`rack-beam-${idx}`} position={[0, ry - 0.79, 0]}>
+            <boxGeometry args={[12.6, 0.06, 0.45]} />
+            <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+          </mesh>
+        ))}
+        {/* Các bó cáp tín hiệu đen rủ giữa các tầng */}
+        {[-4.2, -2.1, 0, 2.1, 4.2].map((cabX, idx) => (
+          <mesh key={`wall-cable-${idx}`} position={[cabX, 1.5, 0.08]}>
+            <cylinderGeometry args={[0.018, 0.018, 5.2, 8]} />
+            <meshStandardMaterial color="#111114" roughness={0.8} />
+          </mesh>
+        ))}
+      </group>
 
-  // Nền xanh cobalt đậm cổ điển
-  ctx.fillStyle = '#081a4a';
-  ctx.fillRect(0, 0, 512, 384);
+      {/* 2. INSTANCED MESH #1: THÂN VỎ CRT (1 DRAW CALL DUY NHẤT) */}
+      <instancedMesh
+        ref={bodyInstancedRef}
+        args={[bodyGeometry, undefined, wallConfig.totalCount]}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial roughness={0.65} metalness={0.05} />
+      </instancedMesh>
 
-  // Thanh tiêu đề trắng
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(16, 16, 480, 36);
-  ctx.fillStyle = '#081a4a';
-  ctx.font = 'bold 18px "JetBrains Mono", monospace';
-  ctx.fillText('HARDWARE SUBSYSTEM MONITOR 1997', 28, 41);
+      {/* 3. INSTANCED MESH #2: MẶT KÍNH SHADER MẤT TÍN HIỆU 90S (1 DRAW CALL DUY NHẤT) */}
+      <instancedMesh
+        ref={screenInstancedRef}
+        args={[screenGeometry, shaderMat, wallConfig.totalCount]}
+        frustumCulled={false}
+      />
 
-  // Bảng lưới dữ liệu kỹ thuật
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(16, 64, 480, 240);
+      {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
+      <pointLight position={[0, 1.8, -5.2]} intensity={2.4} distance={9.5} decay={2} color="#60a5fa" />
+      <pointLight position={[-3.2, 1.2, -5.2]} intensity={1.8} distance={8.0} decay={2} color="#34d399" />
+      <pointLight position={[3.2, 1.2, -5.2]} intensity={1.8} distance={8.0} decay={2} color="#f59e0b" />
 
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = '15px "JetBrains Mono", monospace';
-  ctx.fillText('IRQ 00: SYSTEM TIMER         [OK]', 32, 98);
-  ctx.fillText('IRQ 01: KEYBOARD CONTROLLER  [OK]', 32, 126);
-  ctx.fillText('IRQ 03: COM2 SERIAL PORT     [READY]', 32, 154);
-  ctx.fillText('IRQ 09: 3DFX VOODOO 3D ACCEL [ACTIVE]', 32, 182);
-  ctx.fillText('IRQ 10: SOUND BLASTER 16     [DSP 4.13]', 32, 210);
-  ctx.fillText('DMA 01: 16-BIT AUDIO FIFO    [STREAM]', 32, 238);
-  ctx.fillText('DMA 05: BUS MASTER IDE       [LBA MODE]', 32, 266);
-
-  // Thanh tiến trình tải bộ nhớ ở đáy
-  ctx.fillStyle = '#fde047';
-  ctx.fillRect(32, 325, 340, 22);
-  ctx.strokeStyle = '#ffffff';
-  ctx.strokeRect(30, 323, 440, 26);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px "JetBrains Mono", monospace';
-  ctx.fillText('SYS LOAD: 78%', 382, 341);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
-
-/**
- * 4. Screen SMPTE Retro 7-Color Test Pattern:
- */
-function createTestPatternTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
-
-  const colors = [
-    '#c0c0c0', // 75% White
-    '#c0c000', // Yellow
-    '#00c0c0', // Cyan
-    '#00c000', // Green
-    '#c000c0', // Magenta
-    '#c00000', // Red
-    '#0000c0', // Blue
-  ];
-
-  const barW = 512 / 7;
-  colors.forEach((color, i) => {
-    ctx.fillStyle = color;
-    ctx.fillRect(i * barW, 0, barW, 260);
-  });
-
-  // Dải dưới: Black, white, gradient
-  ctx.fillStyle = '#0000c0';
-  ctx.fillRect(0, 260, barW, 60);
-  ctx.fillStyle = '#111111';
-  ctx.fillRect(barW, 260, barW, 60);
-  ctx.fillStyle = '#c000c0';
-  ctx.fillRect(barW * 2, 260, barW, 60);
-  ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(barW * 3, 260, barW * 4, 60);
-
-  // Đáy: Đồng hồ kiểm chuẩn
-  ctx.fillStyle = '#0a0a0c';
-  ctx.fillRect(0, 320, 512, 64);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 18px "JetBrains Mono", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('NTSC/PAL CALIBRATION · 1997', 256, 358);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
-
-/**
- * 5. Screen Oscilloscope Waveform (#10b981):
- */
-function createOscilloscopeTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
-
-  ctx.fillStyle = '#05140b';
-  ctx.fillRect(0, 0, 512, 384);
-
-  // Lưới graticule
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.22)';
-  ctx.lineWidth = 1;
-  for (let x = 0; x <= 512; x += 64) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, 384);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= 384; y += 48) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(512, y);
-    ctx.stroke();
-  }
-
-  // Dạng sóng sin đa tần
-  ctx.shadowColor = '#10b981';
-  ctx.shadowBlur = 12;
-  ctx.strokeStyle = '#34d399';
-  ctx.lineWidth = 3.5;
-  ctx.beginPath();
-  for (let x = 0; x < 512; x++) {
-    const rad = (x / 512) * Math.PI * 6;
-    const y = 192 + Math.sin(rad) * 78 + Math.cos(rad * 2.5) * 28;
-    if (x === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#34d399';
-  ctx.font = 'bold 16px "JetBrains Mono", monospace';
-  ctx.fillText('OSC CH1: 233.3 MHz · 2.0V P-P', 20, 36);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
-
-/**
- * 6. Screen 3D Wireframe Graphics (#38bdf8):
- */
-function createWireframe3DTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
-  const ctx = canvas.getContext('2d')!;
-
-  ctx.fillStyle = '#040b17';
-  ctx.fillRect(0, 0, 512, 384);
-
-  // Vẽ hình khối lập phương 3D Isometric wireframe
-  ctx.shadowColor = '#38bdf8';
-  ctx.shadowBlur = 8;
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 2.5;
-
-  const cx = 256;
-  const cy = 192;
-  const s = 85;
-
-  // Khối Wireframe 1
-  ctx.strokeRect(cx - s, cy - s, s * 2, s * 2);
-  ctx.strokeRect(cx - s * 0.5, cy - s * 0.5, s, s);
-  ctx.beginPath();
-  ctx.moveTo(cx - s, cy - s);
-  ctx.lineTo(cx - s * 0.5, cy - s * 0.5);
-  ctx.moveTo(cx + s, cy - s);
-  ctx.lineTo(cx + s * 0.5, cy - s * 0.5);
-  ctx.moveTo(cx - s, cy + s);
-  ctx.lineTo(cx - s * 0.5, cy + s * 0.5);
-  ctx.moveTo(cx + s, cy + s);
-  ctx.lineTo(cx + s * 0.5, cy + s * 0.5);
-  ctx.stroke();
-
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#7dd3fc';
-  ctx.font = 'bold 15px "JetBrains Mono", monospace';
-  ctx.fillText('3D PIPELINE: HARDWARE RASTERIZER', 20, 34);
-  ctx.fillText('POLYGONS: 18,420 · 60.0 FPS', 20, 362);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
+      {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
+      <mesh position={[0, 1.8, -6.65]}>
+        <planeGeometry args={[13.2, 6.4]} />
+        <meshBasicMaterial
+          color="#38bdf8"
+          transparent
+          opacity={0.065}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
 }
 
 // =============================================================================
-// 1. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (WOODEN ENGINEER CHAIR)
+// 2. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (WOODEN ENGINEER CHAIR)
 // =============================================================================
 function WoodenEngineerChair() {
   const chairRef = useRef<THREE.Group>(null);
@@ -336,8 +496,7 @@ function WoodenEngineerChair() {
     if (!chairRef.current) return;
     const p = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
 
-    // Khi người dùng tiến vào bàn làm việc (p: 0 -> 1):
-    // Ghế trượt lùi sang bên trái nhường chỗ cho góc nhìn First-Person
+    // Khi người dùng tiến vào bàn làm việc: ghế trượt lùi sang trái nhường chỗ cho góc nhìn First-Person
     const targetX = THREE.MathUtils.lerp(-0.6, -3.8, p);
     const targetY = -1.2;
     const targetZ = THREE.MathUtils.lerp(3.2, 5.0, p);
@@ -349,7 +508,7 @@ function WoodenEngineerChair() {
 
   return (
     <group ref={chairRef} position={[-0.6, -1.2, 3.2]} rotation={[0, 0.45, 0]}>
-      {/* A. Chân đế sao 5 cánh & Bánh xe */}
+      {/* A. Chân đế sao 5 cánh & Bánh xe chạm sàn */}
       <group position={[0, -0.38, 0]}>
         <mesh material={darkSteelMat} position={[0, 0.04, 0]}>
           <cylinderGeometry args={[0.11, 0.13, 0.08, 16]} />
@@ -454,422 +613,47 @@ function WoodenEngineerChair() {
 }
 
 // =============================================================================
-// 2. BỨC TƯỜNG HÀNG TRĂM MÀN HÌNH MÁY TÍNH RETRO SAN SÁT NHAU (RETRO MONITOR WALL)
-// =============================================================================
-interface MonitorPlacement {
-  pos: [number, number, number];
-  rot: [number, number, number];
-  screenType: 'green' | 'amber' | 'blue' | 'osc' | 'test' | 'wire' | 'off';
-}
-
-function RetroMonitorWall() {
-  // Tạo mảng tọa độ bố trí màn hình dày đặc (Rear Wall + Left Wing + Right Wing)
-  const monitorLayout = useMemo(() => {
-    const list: MonitorPlacement[] = [];
-
-    // --- A. BỨC TƯỜNG SAU (REAR MONITOR WALL AT Z = -6.8 TO -7.2) ---
-    // 26 Cột ngang (X từ -9.2 đến +9.2, bước 0.74m) x 4 Tầng cao (Y = 0.55, 1.38, 2.22, 3.06)
-    const rearCols = 26;
-    const rearRows = 4;
-    const rearYLevels = [0.55, 1.38, 2.22, 3.06];
-
-    for (let r = 0; r < rearRows; r++) {
-      const y = rearYLevels[r];
-      for (let c = 0; c < rearCols; c++) {
-        const x = -9.25 + c * 0.74;
-        // Độ cong vòm nhẹ của bức tường để ôm lấy bàn kỹ thuật
-        const z = -6.85 - Math.cos((c / rearCols) * Math.PI - Math.PI / 2) * 0.35;
-        const rotY = ((c - rearCols / 2) / (rearCols / 2)) * -0.12;
-        const rotX = (r - 1.5) * -0.025;
-
-        // Phân bổ ngẫu nhiên có kiểm soát loại màn hình phát sáng
-        const seed = Math.sin(c * 17.3 + r * 31.7);
-        let screenType: MonitorPlacement['screenType'] = 'green';
-        if (seed > 0.55) screenType = 'green';
-        else if (seed > 0.22) screenType = 'amber';
-        else if (seed > -0.12) screenType = 'blue';
-        else if (seed > -0.42) screenType = 'osc';
-        else if (seed > -0.68) screenType = 'wire';
-        else if (seed > -0.85) screenType = 'test';
-        else screenType = 'off';
-
-        list.push({
-          pos: [x, y, z],
-          rot: [rotX, rotY, 0],
-          screenType,
-        });
-      }
-    }
-
-    // --- B. KỆ MÀN HÌNH HÔNG TRÁI (LEFT WING AT X = -8.2) ---
-    // 8 Cột dọc theo trục Z x 3 Tầng cao (Y = 0.55, 1.38, 2.22)
-    const sideZCols = 8;
-    for (let r = 0; r < 3; r++) {
-      const y = rearYLevels[r];
-      for (let c = 0; c < sideZCols; c++) {
-        const z = -5.8 + c * 0.76;
-        const x = -8.4 - Math.sin((c / sideZCols) * 0.5) * 0.2;
-        const rotY = Math.PI / 2 - 0.22;
-
-        const seed = Math.cos(c * 23.1 + r * 19.4);
-        let screenType: MonitorPlacement['screenType'] = 'green';
-        if (seed > 0.45) screenType = 'amber';
-        else if (seed > 0.1) screenType = 'green';
-        else if (seed > -0.25) screenType = 'blue';
-        else if (seed > -0.6) screenType = 'wire';
-        else screenType = 'off';
-
-        list.push({
-          pos: [x, y, z],
-          rot: [0, rotY, 0],
-          screenType,
-        });
-      }
-    }
-
-    // --- C. KỆ MÀN HÌNH HÔNG PHẢI (RIGHT WING AT X = +8.2) ---
-    for (let r = 0; r < 3; r++) {
-      const y = rearYLevels[r];
-      for (let c = 0; c < sideZCols; c++) {
-        const z = -5.8 + c * 0.76;
-        const x = 8.4 + Math.sin((c / sideZCols) * 0.5) * 0.2;
-        const rotY = -Math.PI / 2 + 0.22;
-
-        const seed = Math.sin(c * 13.9 + r * 29.1);
-        let screenType: MonitorPlacement['screenType'] = 'blue';
-        if (seed > 0.45) screenType = 'blue';
-        else if (seed > 0.1) screenType = 'green';
-        else if (seed > -0.25) screenType = 'amber';
-        else if (seed > -0.6) screenType = 'osc';
-        else screenType = 'off';
-
-        list.push({
-          pos: [x, y, z],
-          rot: [0, rotY, 0],
-          screenType,
-        });
-      }
-    }
-
-    return list;
-  }, []);
-
-  // Các Procedural Textures cho màn hình
-  const greenTex = useMemo(() => createGreenMatrixTexture(), []);
-  const amberTex = useMemo(() => createAmberTerminalTexture(), []);
-  const blueTex = useMemo(() => createBlueDiagnosticsTexture(), []);
-  const testTex = useMemo(() => createTestPatternTexture(), []);
-  const oscTex = useMemo(() => createOscilloscopeTexture(), []);
-  const wireTex = useMemo(() => createWireframe3DTexture(), []);
-
-  useEffect(() => {
-    return () => {
-      greenTex.dispose();
-      amberTex.dispose();
-      blueTex.dispose();
-      testTex.dispose();
-      oscTex.dispose();
-      wireTex.dispose();
-    };
-  }, [greenTex, amberTex, blueTex, testTex, oscTex, wireTex]);
-
-  // Bộ vật liệu dùng chung tối ưu cho InstancedMesh
-  const { caseMat, bezelMat, standMat, offGlassMat } = useMemo(() => {
-    return {
-      caseMat: new THREE.MeshStandardMaterial({
-        color: '#d6d0c4',
-        roughness: 0.65,
-        metalness: 0.05,
-      }),
-      bezelMat: new THREE.MeshStandardMaterial({
-        color: '#282b30',
-        roughness: 0.45,
-        metalness: 0.15,
-      }),
-      standMat: new THREE.MeshStandardMaterial({
-        color: '#bfb8a8',
-        roughness: 0.7,
-        metalness: 0.05,
-      }),
-      offGlassMat: new THREE.MeshStandardMaterial({
-        color: '#0a0d10',
-        roughness: 0.2,
-        metalness: 0.2,
-      }),
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      caseMat.dispose();
-      bezelMat.dispose();
-      standMat.dispose();
-      offGlassMat.dispose();
-    };
-  }, [caseMat, bezelMat, standMat, offGlassMat]);
-
-  // Phân loại các màn hình theo từng loại texture
-  const greenScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'green'), [monitorLayout]);
-  const amberScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'amber'), [monitorLayout]);
-  const blueScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'blue'), [monitorLayout]);
-  const oscScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'osc'), [monitorLayout]);
-  const testScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'test'), [monitorLayout]);
-  const wireScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'wire'), [monitorLayout]);
-  const offScreens = useMemo(() => monitorLayout.filter((m) => m.screenType === 'off'), [monitorLayout]);
-
-  return (
-    <group>
-      {/* 1. KHUNG THÉP KỆ SẮT ĐA TẦNG PHÍA SAU NÂNG ĐỠ TOÀN BỘ MÀN HÌNH */}
-      <group position={[0, 0, -6.9]}>
-        {[-9.5, -6.5, -3.5, -0.5, 2.5, 5.5, 8.5].map((sx, idx) => (
-          <group key={`rear-rack-col-${idx}`} position={[sx, 1.8, 0]}>
-            {/* Trụ đứng thép hộp chữ nhật */}
-            <mesh position={[-0.32, 0, -0.22]}>
-              <boxGeometry args={[0.06, 4.4, 0.06]} />
-              <meshStandardMaterial color="#1a1c22" roughness={0.5} metalness={0.8} />
-            </mesh>
-            <mesh position={[0.32, 0, -0.22]}>
-              <boxGeometry args={[0.06, 4.4, 0.06]} />
-              <meshStandardMaterial color="#1a1c22" roughness={0.5} metalness={0.8} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* 4 Tầng thanh thép đệm sàn đỡ màn hình */}
-        {[0.25, 1.08, 1.92, 2.76].map((sy, sIdx) => (
-          <mesh key={`shelf-bar-${sIdx}`} position={[0, sy, -0.22]}>
-            <boxGeometry args={[19.6, 0.045, 0.65]} />
-            <meshStandardMaterial color="#181a20" roughness={0.55} metalness={0.75} />
-          </mesh>
-        ))}
-      </group>
-
-      {/* 2. INSTANCED MESH CHO TOÀN BỘ 130+ VỎ MÁY MÀN HÌNH RETRO (1 DRAW CALL) */}
-      <Instances limit={monitorLayout.length} material={caseMat}>
-        <boxGeometry args={[0.66, 0.52, 0.58]} />
-        {monitorLayout.map((m, idx) => (
-          <Instance
-            key={`mon-case-${idx}`}
-            position={m.pos}
-            rotation={m.rot}
-          />
-        ))}
-      </Instances>
-
-      {/* 3. INSTANCED MESH CHO KHUNG VIỀN MẶT TRƯỚC BEZEL (1 DRAW CALL) */}
-      <Instances limit={monitorLayout.length} material={bezelMat}>
-        <boxGeometry args={[0.62, 0.46, 0.04]} />
-        {monitorLayout.map((m, idx) => {
-          // Tính vector dịch phía trước theo góc xoay rotY
-          const fwdX = Math.sin(m.rot[1]) * 0.285;
-          const fwdZ = Math.cos(m.rot[1]) * 0.285;
-          return (
-            <Instance
-              key={`mon-bezel-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1], m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* 4. INSTANCED MESH CHO CHÂN ĐẾ XOAY TRÒN (1 DRAW CALL) */}
-      <Instances limit={monitorLayout.length} material={standMat}>
-        <cylinderGeometry args={[0.16, 0.18, 0.04, 12]} />
-        {monitorLayout.map((m, idx) => (
-          <Instance
-            key={`mon-stand-${idx}`}
-            position={[m.pos[0], m.pos[1] - 0.27, m.pos[2]]}
-          />
-        ))}
-      </Instances>
-
-      {/* 5. CÁC NHÓM MẶT KÍNH MÀN HÌNH PHÁT SÁNG THEO TỪNG LOẠI NỘI DUNG (1 DRAW CALL MỖI LOẠI) */}
-      {/* A. Màn hình Green Matrix (Phosphor Green Glow) */}
-      <Instances limit={greenScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={greenTex}
-          emissive="#22c55e"
-          emissiveIntensity={1.35}
-          roughness={0.25}
-        />
-        {greenScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-green-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* B. Màn hình Amber BIOS Terminal (Phosphor Amber Glow) */}
-      <Instances limit={amberScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={amberTex}
-          emissive="#f59e0b"
-          emissiveIntensity={1.25}
-          roughness={0.25}
-        />
-        {amberScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-amber-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* C. Màn hình Blue Diagnostics (Cobalt Blue Glow) */}
-      <Instances limit={blueScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={blueTex}
-          emissive="#2563eb"
-          emissiveIntensity={1.15}
-          roughness={0.25}
-        />
-        {blueScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-blue-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* D. Màn hình Oscilloscope (Waveform Green Glow) */}
-      <Instances limit={oscScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={oscTex}
-          emissive="#10b981"
-          emissiveIntensity={1.4}
-          roughness={0.25}
-        />
-        {oscScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-osc-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* E. Màn hình Wireframe 3D (Cyan Wireframe Glow) */}
-      <Instances limit={wireScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={wireTex}
-          emissive="#38bdf8"
-          emissiveIntensity={1.2}
-          roughness={0.25}
-        />
-        {wireScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-wire-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* F. Màn hình Test Pattern (SMPTE Colors) */}
-      <Instances limit={testScreens.length}>
-        <planeGeometry args={[0.54, 0.38]} />
-        <meshStandardMaterial
-          map={testTex}
-          emissive="#ffffff"
-          emissiveIntensity={0.65}
-          roughness={0.3}
-        />
-        {testScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-test-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* G. Màn hình Tắt / Standby */}
-      <Instances limit={offScreens.length} material={offGlassMat}>
-        <planeGeometry args={[0.54, 0.38]} />
-        {offScreens.map((m, idx) => {
-          const fwdX = Math.sin(m.rot[1]) * 0.306;
-          const fwdZ = Math.cos(m.rot[1]) * 0.306;
-          return (
-            <Instance
-              key={`screen-off-${idx}`}
-              position={[m.pos[0] + fwdX, m.pos[1] + 0.01, m.pos[2] + fwdZ]}
-              rotation={m.rot}
-            />
-          );
-        })}
-      </Instances>
-
-      {/* 6. ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH (ATMOSPHERIC PHOSPHOR GLOW LIGHTS) */}
-      <pointLight position={[-4.5, 1.8, -5.5]} intensity={3.2} distance={8.5} decay={2} color="#22c55e" />
-      <pointLight position={[0, 2.2, -5.5]} intensity={3.5} distance={9.0} decay={2} color="#f59e0b" />
-      <pointLight position={[4.5, 1.8, -5.5]} intensity={3.2} distance={8.5} decay={2} color="#38bdf8" />
-    </group>
-  );
-}
-
-// =============================================================================
-// 3. TOÀN CẢNH PHÒNG RETRO LAB 1997 (MAIN RETRO LAB ENVIRONMENT)
+// 3. TOÀN CẢNH PHÒNG RETRO LAB 1997 & KỆ SẮT HAI BÊN HÔNG (RETRO LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
   const stageTransition = useBuildStore((s) => s.stageTransition);
 
-  // YÊU CẦU #3 (TỐI ƯU HIỆU NĂNG / STATE CULLING):
-  // Căn phòng và bức tường hàng trăm màn hình retro chỉ hiển thị khi:
-  // - Đang ở Step 00 (Home)
-  // - Đang cuộn zoom mở/đóng cửa sổ (homeTransitionProgress < 0.999)
-  // - Hoặc đang trong chuỗi chuyển cảnh (stageTransition !== 'IDLE')
-  // Khi người dùng đã ngồi hẳn vào bàn lắp ráp, tự động culling để giữ 60 FPS tuyệt đối!
+  // HẠNG MỤC 5: TỐI ƯU HIỆU NĂNG (STATE CULLING - KHÔNG ĐỘNG VÀO TƯỜNG MÀN HÌNH)
+  // - Khi người dùng đã ngồi hẳn vào bàn (currentStep >= 1 và homeTransitionProgress === 1):
+  //   CHỈ kệ sắt hai bên và thiết bị phụ được ẩn (visible = false).
+  // - CRTVideoWall LUÔN LUÔN HIỂN THỊ Ở MỌI THỜI ĐIỂM!
   const isTransitioning = stageTransition !== 'IDLE';
-  const shouldShowLab =
+  const shouldShowSideProps =
     currentStep === 0 || homeTransitionProgress < 0.999 || isTransitioning;
 
-  const { floorMat, wallMat } = useMemo(() => {
+  const { floorMat, wallMat, shelfSteelMat, caseBeigeMat, darkChassisMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
-        color: '#0e1014',
-        roughness: 0.85,
+        color: '#111318',
+        roughness: 0.52,
         metalness: 0.12,
       }),
       wallMat: new THREE.MeshStandardMaterial({
         color: '#0a0c10',
-        roughness: 0.95,
+        roughness: 0.92,
         metalness: 0.05,
+      }),
+      shelfSteelMat: new THREE.MeshStandardMaterial({
+        color: '#1e2229',
+        roughness: 0.45,
+        metalness: 0.8,
+      }),
+      caseBeigeMat: new THREE.MeshStandardMaterial({
+        color: '#d6d0c4',
+        roughness: 0.65,
+        metalness: 0.06,
+      }),
+      darkChassisMat: new THREE.MeshStandardMaterial({
+        color: '#22262e',
+        roughness: 0.5,
+        metalness: 0.35,
       }),
     };
   }, []);
@@ -878,66 +662,147 @@ export function RetroLabEnvironment() {
     return () => {
       floorMat.dispose();
       wallMat.dispose();
+      shelfSteelMat.dispose();
+      caseBeigeMat.dispose();
+      darkChassisMat.dispose();
     };
-  }, [floorMat, wallMat]);
+  }, [floorMat, wallMat, shelfSteelMat, caseBeigeMat, darkChassisMat]);
 
   return (
     <group>
-      {/* A. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (Đặt trước bàn, tự động lùi sang trái khi zoom vào bàn) */}
+      {/* =======================================================================
+          A. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (Đặt trước bàn, tự động lùi sang trái khi zoom vào bàn)
+         ======================================================================= */}
       <WoodenEngineerChair />
 
-      {/* B. TOÀN BỘ PHÒNG XƯỞNG & DÀN MÀN HÌNH RETRO SAN SÁT NHAU */}
-      {shouldShowLab && (
+      {/* =======================================================================
+          B. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - BẮT BUỘC LUÔN HIỂN THỊ)
+          - Luôn mounted và luôn visible = true ở mọi currentStep và mọi portalProgress
+          - frustumCulled = false trên cả 2 InstancedMesh
+         ======================================================================= */}
+      <CRTVideoWall />
+
+      {/* =======================================================================
+          C. VỎ PHÒNG XƯỞNG & PHẢN CHIẾU ÁNH SÁNG MÀN HÌNH XUỐNG SÀN
+         ======================================================================= */}
+      {/* 1. Sàn xưởng xám than tối bóng nhẹ (Y = -1.62) */}
+      <mesh
+        position={[0, -1.62, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        material={floorMat}
+      >
+        <planeGeometry args={[26, 20]} />
+      </mesh>
+
+      {/* 2. Plane phản chiếu mờ ánh sáng sọc màu từ tường màn hình lên mặt sàn bê tông */}
+      <mesh position={[0, -1.615, -4.5]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[16, 5.5]} />
+        <meshBasicMaterial
+          color="#38bdf8"
+          transparent
+          opacity={0.08}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* 3. Tường sau (Z = -7.38) */}
+      <mesh position={[0, 4.2, -7.38]} receiveShadow material={wallMat}>
+        <planeGeometry args={[26, 12]} />
+      </mesh>
+      {/* 4. Tường trái (X = -13.0) */}
+      <mesh
+        position={[-13.0, 4.2, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        receiveShadow
+        material={wallMat}
+      >
+        <planeGeometry args={[20, 12]} />
+      </mesh>
+      {/* 5. Tường phải (X = 13.0) */}
+      <mesh
+        position={[13.0, 4.2, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        receiveShadow
+        material={wallMat}
+      >
+        <planeGeometry args={[20, 12]} />
+      </mesh>
+
+      {/* =======================================================================
+          D. HỆ THỐNG KỆ SẮT HAI BÊN HÔNG (CHỈ ĐẶT Ở X = ±7.8, KHÔNG CHE TƯỜNG & CHÂN BÀN)
+          - Tự động culling ẩn đi khi người dùng đã ngồi hẳn vào bàn để giữ 60 FPS
+         ======================================================================= */}
+      {shouldShowSideProps && (
         <group>
-          {/* 1. SÀN PHÒNG XƯỞNG TỐI MÀU (Y = -1.62) */}
-          <mesh
-            position={[0, -1.62, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            receiveShadow
-            material={floorMat}
-          >
-            <planeGeometry args={[44, 44]} />
-          </mesh>
+          {/* Kệ sắt bên trái (X = -7.8, Z = -1.0) */}
+          <group position={[-7.8, 0, -1.0]}>
+            {/* 4 Trụ thép chữ V */}
+            {[-0.65, 0.65].map((dx, ix) =>
+              [-1.6, 1.6].map((dz, iz) => (
+                <mesh key={`shelf-l-${ix}-${iz}`} position={[dx, 1.4, dz]} material={shelfSteelMat}>
+                  <boxGeometry args={[0.06, 6.0, 0.06]} />
+                </mesh>
+              ))
+            )}
+            {/* 3 Tầng kệ thép dập tấm */}
+            {[-0.8, 0.8, 2.4].map((sy, sIdx) => (
+              <mesh key={`shelf-slab-l-${sIdx}`} position={[0, sy, 0]} material={shelfSteelMat}>
+                <boxGeometry args={[1.4, 0.045, 3.3]} />
+              </mesh>
+            ))}
+            {/* Thiết bị retro phụ trên kệ trái: Thùng máy IBM AT nằm ngang */}
+            <group position={[0, 0.98, -0.6]}>
+              <RoundedBox args={[0.85, 0.32, 0.82]} radius={0.02} material={caseBeigeMat} />
+              <mesh position={[0, 0, 0.415]} material={darkChassisMat}>
+                <boxGeometry args={[0.78, 0.26, 0.015]} />
+              </mesh>
+            </group>
+            {/* Vỏ case Full-Tower kem mở nắp */}
+            <group position={[0, 2.82, 0.3]}>
+              <RoundedBox args={[0.38, 0.82, 0.78]} radius={0.02} material={caseBeigeMat} />
+            </group>
+          </group>
 
-          {/* 2. TƯỜNG SAU & TƯỜNG TRÁI / PHẢI */}
-          {/* Tường sau (Z = -9.8) */}
-          <mesh position={[0, 5.2, -9.8]} receiveShadow material={wallMat}>
-            <planeGeometry args={[44, 15]} />
-          </mesh>
-          {/* Tường trái (X = -14.2) */}
-          <mesh
-            position={[-14.2, 5.2, 0]}
-            rotation={[0, Math.PI / 2, 0]}
-            receiveShadow
-            material={wallMat}
-          >
-            <planeGeometry args={[44, 15]} />
-          </mesh>
-          {/* Tường phải (X = 14.2) */}
-          <mesh
-            position={[14.2, 5.2, 0]}
-            rotation={[0, -Math.PI / 2, 0]}
-            receiveShadow
-            material={wallMat}
-          >
-            <planeGeometry args={[44, 15]} />
-          </mesh>
+          {/* Kệ sắt bên phải (X = +7.8, Z = -1.0) */}
+          <group position={[7.8, 0, -1.0]}>
+            {/* 4 Trụ thép chữ V */}
+            {[-0.65, 0.65].map((dx, ix) =>
+              [-1.6, 1.6].map((dz, iz) => (
+                <mesh key={`shelf-r-${ix}-${iz}`} position={[dx, 1.4, dz]} material={shelfSteelMat}>
+                  <boxGeometry args={[0.06, 6.0, 0.06]} />
+                </mesh>
+              ))
+            )}
+            {/* 3 Tầng kệ thép */}
+            {[-0.8, 0.8, 2.4].map((sy, sIdx) => (
+              <mesh key={`shelf-slab-r-${sIdx}`} position={[0, sy, 0]} material={shelfSteelMat}>
+                <boxGeometry args={[1.4, 0.045, 3.3]} />
+              </mesh>
+            ))}
+            {/* Thiết bị retro phụ trên kệ phải: Máy hiện sóng mini & CRT phụ */}
+            <group position={[0, 0.98, 0.4]}>
+              <RoundedBox args={[0.72, 0.44, 0.68]} radius={0.02} material={darkChassisMat} />
+              {/* Màn hình tia sóng xanh */}
+              <mesh position={[0, 0, 0.345]}>
+                <planeGeometry args={[0.42, 0.32]} />
+                <meshBasicMaterial color="#10b981" />
+              </mesh>
+            </group>
+          </group>
 
-          {/* 3. DÀN HÀNG TRĂM MÀN HÌNH RETRO CRT SAN SÁT NHAU PHÁT SÁNG TOÀN CĂN PHÒNG */}
-          <RetroMonitorWall />
-
-          {/* 4. CUỘN DÂY CÁP LỚN DƯỚI SÀN GÓC PHÒNG */}
-          <group position={[-6.2, -1.5, 3.2]} rotation={[0, 0.45, 0]}>
-            <mesh>
-              <cylinderGeometry args={[0.36, 0.36, 0.24, 16]} />
-              <meshStandardMaterial color="#1e2229" roughness={0.6} metalness={0.7} />
+          {/* Cuộn dây cáp lớn dưới sàn góc phòng */}
+          <group position={[-6.2, -1.5, 3.4]} rotation={[0, 0.45, 0]}>
+            <mesh material={shelfSteelMat}>
+              <cylinderGeometry args={[0.34, 0.34, 0.22, 16]} />
             </mesh>
-            <mesh position={[0, 0.13, 0]}>
-              <cylinderGeometry args={[0.44, 0.44, 0.025, 16]} />
+            <mesh position={[0, 0.12, 0]}>
+              <cylinderGeometry args={[0.42, 0.42, 0.02, 16]} />
               <meshStandardMaterial color="#334155" roughness={0.6} />
             </mesh>
-            <mesh position={[0, -0.13, 0]}>
-              <cylinderGeometry args={[0.44, 0.44, 0.025, 16]} />
+            <mesh position={[0, -0.12, 0]}>
+              <cylinderGeometry args={[0.42, 0.42, 0.02, 16]} />
               <meshStandardMaterial color="#334155" roughness={0.6} />
             </mesh>
           </group>

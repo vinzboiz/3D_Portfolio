@@ -771,20 +771,57 @@ export function Workbench() {
 
   return (
     <group position={[0, 0, 0]} visible={!isInsideProjectApp}>
-      {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) */}
+      {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC */}
+      {/* Mặt bàn gỗ công nghiệp ép phenolic chống tĩnh điện màu đen mờ */}
       <RoundedBox
-        args={[16, 0.3, 16]}
-        radius={0.04}
+        args={[12.6, 0.24, 6.8]}
+        radius={0.03}
         smoothness={2}
-        position={[0, -0.17, 0]}
+        position={[0, -0.12, 0]}
         receiveShadow
       >
-        <meshStandardMaterial color="#0d0d0c" roughness={0.9} metalness={0.05} />
+        <meshStandardMaterial color="#0e0e0d" roughness={0.88} metalness={0.06} />
       </RoundedBox>
 
-      {/* 2. THẢM CẮT CHỐNG TĨNH ĐIỆN (PROCEDURAL CUTTING MAT 10x10 UNITS) */}
+      {/* 4 Chân bàn thép hộp chữ nhật chịu lực nối từ đáy mặt bàn xuống sàn xưởng y = -1.62 */}
+      {[-5.8, 5.8].map((lx) =>
+        [-3.0, 3.0].map((lz) => (
+          <group key={`table-leg-${lx}-${lz}`} position={[lx, -0.88, lz]}>
+            {/* Thân chân thép hộp */}
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[0.16, 1.48, 0.16]} />
+              <meshStandardMaterial color="#1a1c22" roughness={0.45} metalness={0.8} />
+            </mesh>
+            {/* Đệm chân ren kim loại chạm sàn */}
+            <mesh position={[0, -0.74, 0]}>
+              <cylinderGeometry args={[0.11, 0.13, 0.04, 16]} />
+              <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.85} />
+            </mesh>
+          </group>
+        ))
+      )}
+
+      {/* Các thanh giằng thép hộp liên kết 4 chân bàn tạo độ vững chắc */}
+      <mesh position={[0, -1.25, -3.0]} castShadow>
+        <boxGeometry args={[11.6, 0.08, 0.08]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+      <mesh position={[0, -1.25, 3.0]} castShadow>
+        <boxGeometry args={[11.6, 0.08, 0.08]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+      <mesh position={[-5.8, -1.25, 0]} castShadow>
+        <boxGeometry args={[0.08, 0.08, 6.0]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+      <mesh position={[5.8, -1.25, 0]} castShadow>
+        <boxGeometry args={[0.08, 0.08, 6.0]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+
+      {/* 2. THẢM CẮT CHỐNG TĨNH ĐIỆN (PROCEDURAL CUTTING MAT KHỚP MẶT BÀN) */}
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10.5, 10.5]} />
+        <planeGeometry args={[10.5, 6.2]} />
         <meshStandardMaterial
           map={activeCuttingMatTex}
           roughness={0.82}
@@ -794,7 +831,7 @@ export function Workbench() {
 
       {/* Viền cao su chống tĩnh điện bao quanh Cutting Mat */}
       <RoundedBox
-        args={[10.68, 0.02, 10.68]}
+        args={[10.68, 0.02, 6.38]}
         radius={0.008}
         smoothness={1}
         position={[0, -0.008, 0]}

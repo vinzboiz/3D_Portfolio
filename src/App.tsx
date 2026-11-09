@@ -36,7 +36,7 @@ export function App() {
           frameloop={hideWorkbenchCanvas ? 'demand' : 'always'}
           shadows
           dpr={[1, 2]}
-          camera={{ position: [0, 8.8, 10.5], fov: 40, near: 0.1, far: 100 }}
+          camera={{ position: [0, 2.4, 10], fov: 70, near: 0.1, far: 150 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
         >
           <Suspense fallback={null}>
