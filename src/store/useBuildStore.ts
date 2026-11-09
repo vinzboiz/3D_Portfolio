@@ -302,8 +302,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
   setStep: (step: number) => {
     const clamped = Math.max(0, Math.min(12, step));
-    // CHẶN: Khi đang ở Step 10 mà máy chưa khởi động xong vào DESKTOP -> Không cho cuộn sang Step 11/12
-    if (get().currentStep === 10 && clamped > 10 && get().osState !== 'DESKTOP') {
+    // CHẶN: Chỉ khi cuộn vượt quá Step 10 sang Step 11/12 mà máy chưa vào DESKTOP
+    if (clamped > 10 && get().currentStep >= 10 && get().osState !== 'DESKTOP') {
       get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
       return;
     }
@@ -371,7 +371,9 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     // 3. KHI CUỘN NGƯỢC TỪ STEP 10 VỀ STEP 09 TRỞ XUỐNG (ABOUT STEP 10 -> STEP 09 THÁO MÁY):
     // BẮT BUỘC TẮT MÁY AN TOÀN TRƯỚC KHI THÁO LINH KIỆN
-    const targetTimeline = clamped;
+    // Step 10 & 11 cần scroll đến cuối phân đoạn (10.99 và 11.99) để hoàn thành lắp ráp và nạp đĩa
+    const targetTimeline =
+      clamped === 10 ? 10.99 : clamped === 11 ? 11.99 : clamped;
 
     if (get().currentStep === 10 && clamped <= 9) {
       if (shutdownDisassemblyTimer) {
@@ -458,7 +460,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   nextStep: () => {
-    if (get().currentStep === 10 && get().osState !== 'DESKTOP') {
+    if (get().currentStep === 10 && get().scrollTarget >= 10.9 && get().osState !== 'DESKTOP') {
       get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
       return;
     }
@@ -470,12 +472,13 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   addScrollDelta: (delta: number) => {
-    if (get().currentStep === 10 && delta > 0 && get().osState !== 'DESKTOP') {
+    let next = get().scrollTarget + delta;
+    if (next > 11.0 && get().osState !== 'DESKTOP') {
+      next = 10.99;
       get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-      return;
     }
-    const next = Math.max(0.0, Math.min(12, get().scrollTarget + delta));
-    set({ scrollTarget: next, benchScrubbing: true });
+    const clampedNext = Math.max(0.0, Math.min(12, next));
+    set({ scrollTarget: clampedNext, benchScrubbing: true });
   },
 
   syncScrollCurrent: (val: number) => {

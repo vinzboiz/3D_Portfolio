@@ -70,9 +70,15 @@ export function RetroHUD() {
       lastScrollTime = now;
       lastDir = dir;
 
-      if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
-        state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-        return;
+      if (state.currentStep === 10) {
+        if (state.scrollTarget < 10.5) {
+          state.setStep(10);
+          return;
+        }
+        if (state.osState !== 'DESKTOP') {
+          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+          return;
+        }
       }
       const targetStep = Math.min(12, state.currentStep + 1);
       if (targetStep !== state.currentStep) {
@@ -131,9 +137,15 @@ export function RetroHUD() {
       lastDir = dir;
       touchStartYRef.current = currentY;
 
-      if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
-        state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-        return;
+      if (state.currentStep === 10) {
+        if (state.scrollTarget < 10.5) {
+          state.setStep(10);
+          return;
+        }
+        if (state.osState !== 'DESKTOP') {
+          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+          return;
+        }
       }
       const targetStep = Math.min(12, state.currentStep + 1);
       if (targetStep !== state.currentStep) {
@@ -151,9 +163,15 @@ export function RetroHUD() {
         return;
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-        if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
-          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-          return;
+        if (state.currentStep === 10) {
+          if (state.scrollTarget < 10.5) {
+            state.setStep(10);
+            return;
+          }
+          if (state.osState !== 'DESKTOP') {
+            state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+            return;
+          }
         }
         state.setStep(Math.min(12, state.currentStep + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
