@@ -4,6 +4,7 @@ import { useControls } from 'leva';
 import * as THREE from 'three';
 import { CameraRig } from './CameraRig';
 import { Workbench } from './Workbench';
+import { RetroLabEnvironment } from '../models/RetroLabEnvironment';
 import { useBuildStore } from '../../store/useBuildStore';
 
 export function Experience() {
@@ -91,6 +92,9 @@ export function Experience() {
 
       {/* Mặt bàn Cutting Mat, Khay linh kiện & Đèn bàn Crôm */}
       <Workbench />
+
+      {/* Căn phòng Retro Lab 1997 & Chiếc ghế gỗ kỹ sư cổ điển */}
+      <RetroLabEnvironment />
     </>
   );
 }

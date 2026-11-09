@@ -37,7 +37,10 @@ export type StageTransition =
   | 'TO_PROJECT'
   | 'TO_MY_CV'
   | 'TO_HOME'
-  | 'TO_HOME_STEP1';
+  | 'TO_HOME_STEP1'
+  | 'HOME_TO_ABOUT'
+  | 'HOME_TO_PROJECT'
+  | 'HOME_TO_MY_CV';
 
 export type CdLocation = 'DESK' | 'TRAY' | 'INSIDE';
 export type CardLocation = 'DESK' | 'INSERTED';
@@ -450,7 +453,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({
       scrollTarget: targetTimeline,
       benchScrubbing: true,
-      homeTransitionProgress: 1,
+      homeTransitionProgress: targetTimeline === 0 ? 0 : (get().currentStep === 0 ? get().homeTransitionProgress : 1),
     });
   },
 
@@ -1410,9 +1413,9 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     retroSound.playButtonClick(soundEnabled);
 
-    // Khi đang ở Step 00 (HOME): Vào thẳng Step 01 (ABOUT)
+    // Khi đang ở Step 00 (HOME): Vào Step 01 (ABOUT) bằng hiệu ứng bung khung cửa sổ trong 0.85s
     if (currentStep === 0) {
-      get().setStep(1);
+      set({ stageTransition: 'HOME_TO_ABOUT' });
       get().showHudWarning(
         'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
         3000
@@ -1500,8 +1503,20 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     retroSound.playButtonClick(soundEnabled);
 
-    if (currentStep < 10) {
-      // YÊU CẦU #4: Đang ở các bước lắp dở (< 10): Đẩy cụm lắp dở sang phải (x = +18), đưa bộ máy hoàn chỉnh từ trái vào (x = -18 -> 0), rồi nạp CD
+    if (currentStep === 0) {
+      // Khi đang ở HOME bấm PROJECTS:
+      // Đặt trước trạng thái máy tính hoàn chỉnh và màn hình DESKTOP,
+      // sau đó kích hoạt hiệu ứng bung khung portal + trượt máy từ bên trái x = -18 vào giữa bàn
+      get().applyStep11State();
+      set({
+        currentStep: 0,
+        scrollTarget: 10.99,
+        scrollCurrent: 0.0,
+        homeTransitionProgress: 0.0,
+        stageTransition: 'HOME_TO_PROJECT',
+      });
+    } else if (currentStep < 10) {
+      // Đang ở các bước lắp dở (1 -> 9): Đẩy cụm lắp dở sang phải (x = +18), đưa bộ máy hoàn chỉnh từ trái vào (x = -18 -> 0), rồi nạp CD
       set({ stageTransition: 'TO_PROJECT' });
     } else if (currentStep === 10) {
       // Đã ở Step 10 hoàn chỉnh: Chuyển sang Step 11 và nạp đĩa CD ngay tại chỗ
@@ -1563,8 +1578,20 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     retroSound.playButtonClick(soundEnabled);
 
-    if (currentStep < 10) {
-      // YÊU CẦU #4: Đang ở các bước lắp dở (< 10): Đẩy cụm lắp dở sang phải, đưa bộ máy hoàn chỉnh từ trái vào, rồi cắm Thẻ nhớ
+    if (currentStep === 0) {
+      // Khi đang ở HOME bấm MY CV:
+      // Đặt trước trạng thái máy tính hoàn chỉnh và màn hình DESKTOP,
+      // sau đó kích hoạt hiệu ứng bung khung portal + trượt máy từ bên trái x = -18 vào giữa bàn
+      get().applyStep12State();
+      set({
+        currentStep: 0,
+        scrollTarget: 11.99,
+        scrollCurrent: 0.0,
+        homeTransitionProgress: 0.0,
+        stageTransition: 'HOME_TO_MY_CV',
+      });
+    } else if (currentStep < 10) {
+      // Đang ở các bước lắp dở (1 -> 9): Đẩy cụm lắp dở sang phải, đưa bộ máy hoàn chỉnh từ trái vào, rồi cắm Thẻ nhớ
       set({ stageTransition: 'TO_MY_CV' });
     } else {
       if (get().osState !== 'DESKTOP') {

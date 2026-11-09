@@ -556,6 +556,66 @@ export function Workbench() {
         return;
       }
 
+      // XỬ LÝ HOME_TO_ABOUT (Khi click About từ Step 00 - Home):
+      // Pha A (0.0s -> 0.85s): Zoom bung ô cửa sổ bo góc ra toàn màn hình và camera lao vào bàn Step 01
+      if (stageTransition === 'HOME_TO_ABOUT') {
+        const duration = 0.85;
+        const p = Math.min(1, t / duration);
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
+        const curScroll = THREE.MathUtils.lerp(0.0, 1.0, ease);
+        useBuildStore.getState().syncScrollCurrent(curScroll);
+
+        if (componentsStageGroupRef.current) {
+          componentsStageGroupRef.current.position.x = 0;
+        }
+
+        if (p >= 1) {
+          useBuildStore.getState().syncScrollCurrent(1.0);
+          useBuildStore.getState().setStep(1);
+          useBuildStore.getState().setStageTransition('IDLE');
+          transitionTimeRef.current = 0;
+          retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+        }
+        return;
+      }
+
+      // XỬ LÝ HOME_TO_PROJECT & HOME_TO_MY_CV (Khi click Projects hoặc My CV từ Step 00 - Home):
+      // Pha A (0.0s -> 0.85s): Bung ô cửa sổ ra toàn màn hình, đồng thời bộ máy hoàn chỉnh trượt từ x = -18 vào giữa bàn x = 0
+      if (stageTransition === 'HOME_TO_PROJECT' || stageTransition === 'HOME_TO_MY_CV') {
+        const duration = 0.85;
+        const p = Math.min(1, t / duration);
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
+
+        // 1. Bung ô cửa sổ bo góc mở rộng ra kín màn hình
+        useBuildStore.getState().setHomeTransitionProgress(ease);
+
+        // 2. Bộ máy PC hoàn chỉnh trượt từ bên trái (-18 -> 0) vào giữa bàn
+        const offsetX = THREE.MathUtils.lerp(-18, 0, ease);
+        if (componentsStageGroupRef.current) {
+          componentsStageGroupRef.current.position.x = offsetX;
+        }
+
+        if (p >= 1) {
+          if (componentsStageGroupRef.current) {
+            componentsStageGroupRef.current.position.x = 0;
+          }
+          const finishedTransition = stageTransition;
+          useBuildStore.getState().setHomeTransitionProgress(1.0);
+          transitionTimeRef.current = 0;
+          useBuildStore.getState().setStageTransition('IDLE');
+          retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+
+          if (finishedTransition === 'HOME_TO_PROJECT') {
+            useBuildStore.getState().applyStep11State();
+            useBuildStore.getState().triggerInsertCdSequence();
+          } else {
+            useBuildStore.getState().applyStep12State();
+            useBuildStore.getState().handleCardClick();
+          }
+        }
+        return;
+      }
+
       // XỬ LÝ TO_HOME (Khi click Home từ Step >= 2):
       // Pha 1 (0.0s -> 0.6s): Đẩy mượt cụm máy sang phải x = +18 với power2.in
       // Pha 2 (0.6s -> 1.5s, duration 0.9s): Reset bàn x = 0, tween smoothScrollProgress từ 1.0 về 0.0 với power3.out

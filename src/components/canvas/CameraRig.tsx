@@ -54,6 +54,24 @@ export function CameraRig() {
 
     const scrollVal = state.scrollCurrent;
 
+    // YÊU CẦU #1: KHI CHUYỂN TỪ HOME SANG PROJECTS HOẶC MY CV (HOME_TO_PROJECT / HOME_TO_MY_CV):
+    // Lao mượt camera từ góc nhìn Home overview [-4.2, 4.6, 6.2] vào góc nhìn trực diện bộ máy [0.15, 3.25, 9.45]
+    if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
+      const t = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
+      const homePos = new THREE.Vector3(-4.2, 4.6, 6.2);
+      const homeTarget = new THREE.Vector3(0, 0.4, 0);
+      const destPos = new THREE.Vector3(0.15, 3.25, 9.45);
+      const destTarget = new THREE.Vector3(0.05, 1.65, 0.25);
+
+      desiredPos.current.lerpVectors(homePos, destPos, t);
+      desiredTarget.current.lerpVectors(homeTarget, destTarget, t);
+
+      camera.position.lerp(desiredPos.current, safeDelta * 4.8);
+      smoothedTarget.current.lerp(desiredTarget.current, safeDelta * 5.2);
+      camera.lookAt(smoothedTarget.current);
+      return;
+    }
+
     // YÊU CẦU #2: KHI TRONG ĐOẠN HOME (0.0) <-> ABOUT STEP 1 (1.0):
     // Tự động nội suy mượt từ góc nhìn bàn lắp ráp Step 01 về lại góc nhìn trên cao của Step 00
     if (
@@ -73,7 +91,9 @@ export function CameraRig() {
 
       // Hiệu ứng chuột nhìn quanh tại Home (giảm dần về 0 khi t -> 1)
       const isTransitioning =
-        state.stageTransition === 'TO_HOME' || state.stageTransition === 'TO_HOME_STEP1';
+        state.stageTransition === 'TO_HOME' ||
+        state.stageTransition === 'TO_HOME_STEP1' ||
+        state.stageTransition === 'HOME_TO_ABOUT';
       const mouseWeight = isTransitioning ? 0 : Math.max(0, 1 - t * 1.5);
       const lookOffsetX = mouseWeight * r3fState.pointer.x * 2.8;
       const lookOffsetY = mouseWeight * r3fState.pointer.y * 1.6;
