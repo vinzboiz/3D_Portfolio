@@ -179,14 +179,14 @@ export function RetroHUD() {
   return (
     <>
       {/* =======================================================================
-          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - 80PX TOP SAFE ZONE)
-          fixed top-0 left-0 right-0 h-[80px] z-[100], nền đen đặc #0a0a0c
+          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - TRANSPARENT BACKGROUND)
+          fixed top-0 left-0 right-0 h-[80px] z-[100], background hoàn toàn trong suốt
          ======================================================================= */}
-      <header className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none bg-[#0a0a0c] border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
+      <header className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none bg-transparent pointer-events-none">
         {/* Cụm Bên Trái (Brand Identity) */}
         <div
           onClick={jumpToHome}
-          className="flex items-center gap-3 cursor-pointer group"
+          className="pointer-events-auto flex items-center gap-3 cursor-pointer group"
           title="Về trang chủ (Step 00)"
         >
           {/* Icon khối 3D Wireframe (SVG) 28x28px */}
@@ -219,7 +219,7 @@ export function RetroHUD() {
         </div>
 
         {/* Cụm Bên Phải (Menu Links & Language & Pill CTA) */}
-        <div className="flex items-center gap-5 sm:gap-7">
+        <div className="pointer-events-auto flex items-center gap-5 sm:gap-7">
           {/* Text Links dạng thuần (không đóng khung viền hộp) */}
           <nav className="flex items-center gap-5 sm:gap-7 text-[0.92rem] font-sans">
             <button
@@ -262,18 +262,7 @@ export function RetroHUD() {
 
           {/* Cụm chọn ngôn ngữ (VI / EN) */}
           <div className="flex items-center gap-2">
-            <div
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(255,255,255,0.35)',
-              }}
-              className="text-xs font-semibold text-white shrink-0 select-none"
-            >
+            <div className="w-[34px] h-[34px] nav-circle border border-white/35 flex items-center justify-center text-xs font-semibold text-white shrink-0 select-none">
               VI
             </div>
             <span className="text-xs font-medium text-[#8e8e93] hover:text-white cursor-pointer transition-colors">
@@ -285,11 +274,7 @@ export function RetroHUD() {
           <button
             type="button"
             onClick={jumpToCv}
-            style={{
-              borderRadius: '9999px',
-              padding: '9px 22px',
-            }}
-            className="bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none"
+            className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-[22px] py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none"
           >
             Liên hệ
           </button>
@@ -320,13 +305,8 @@ export function RetroHUD() {
           <button
             type="button"
             onClick={toggleFreeCam}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-            }}
             title={freeCam ? 'Free Zoom & Inspect (Phím tắt: F)' : 'Scroll Mode (Phím tắt: F)'}
-            className={`flex items-center justify-center transition-all duration-300 shadow-xl cursor-pointer active:scale-90 ${
+            className={`w-[44px] h-[44px] nav-circle flex items-center justify-center transition-all duration-300 shadow-xl cursor-pointer active:scale-90 ${
               freeCam
                 ? 'bg-[#f2f0ea] text-[#111111] hover:bg-white ring-2 ring-white/50'
                 : 'bg-white/[0.08] text-white hover:bg-white/[0.16] border border-white/[0.22] backdrop-blur-md'

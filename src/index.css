@@ -23,8 +23,15 @@
 }
 
 * {
-  border-radius: 0 !important;
   box-sizing: border-box;
+}
+
+.nav-circle {
+  border-radius: 50% !important;
+}
+
+.nav-pill {
+  border-radius: 9999px !important;
 }
 
 body {
