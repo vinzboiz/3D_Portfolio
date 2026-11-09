@@ -58,8 +58,8 @@ export function CameraRig() {
     // Lao mượt camera từ góc nhìn Home overview [-4.2, 4.6, 6.2] vào góc nhìn trực diện bộ máy [0.15, 3.25, 9.45]
     if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
       const t = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
-      const homePos = new THREE.Vector3(-4.2, 4.6, 6.2);
-      const homeTarget = new THREE.Vector3(0, 0.4, 0);
+      const homePos = new THREE.Vector3(-0.6, 5.8, 14.2);
+      const homeTarget = new THREE.Vector3(0, 0.8, -0.5);
       const destPos = new THREE.Vector3(0.15, 3.25, 9.45);
       const destTarget = new THREE.Vector3(0.05, 1.65, 0.25);
 
@@ -80,8 +80,8 @@ export function CameraRig() {
       state.stageTransition !== 'TO_MY_CV'
     ) {
       const t = THREE.MathUtils.clamp(scrollVal, 0, 1);
-      const homePos = new THREE.Vector3(-4.2, 4.6, 6.2);
-      const homeTarget = new THREE.Vector3(0, 0.4, 0);
+      const homePos = new THREE.Vector3(-0.6, 5.8, 14.2);
+      const homeTarget = new THREE.Vector3(0, 0.8, -0.5);
       const step1Pos = new THREE.Vector3(-1.55, 3.65, 4.35);
       const step1Target = new THREE.Vector3(-0.35, 0.22, -0.1);
 

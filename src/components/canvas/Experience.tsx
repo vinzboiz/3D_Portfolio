@@ -33,8 +33,8 @@ export function Experience() {
 
   return (
     <>
-      <color attach="background" args={['#141413']} />
-      <fog attach="fog" args={['#141413', 16, 32]} />
+      <color attach="background" args={['#0e1014']} />
+      <fog attach="fog" args={['#0e1014', 22, 54]} />
 
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
