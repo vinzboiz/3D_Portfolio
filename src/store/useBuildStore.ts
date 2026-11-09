@@ -1360,7 +1360,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     // 1. Nếu đang ở trong màn hình xem project (isInsideProjectApp === true), thoát ra ngoài ngay lập tức
     if (isInsideProjectApp) {
-      get().exitProjectApp();
+      set({
+        isInsideProjectApp: false,
+        projectAppTransition: 'IDLE',
+        crtExpandProgress: 0,
+      });
     }
 
     retroSound.playButtonClick(soundEnabled);
@@ -1412,7 +1416,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     }
 
     if (isInsideProjectApp) {
-      get().exitProjectApp();
+      set({
+        isInsideProjectApp: false,
+        projectAppTransition: 'IDLE',
+        crtExpandProgress: 0,
+      });
     }
 
     retroSound.playButtonClick(soundEnabled);
@@ -1427,45 +1435,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       return;
     }
 
-    // KHI ĐANG Ở BỘ MÁY ĐÃ HOÀN CHỈNH (STEP 10, 11, 12):
-    // Chuyển mượt về Step 10 (Góc nhìn toàn cảnh bộ máy hoàn chỉnh của ABOUT)
-    // Tuyệt đối KHÔNG kích hoạt stageTransition đẩy văng cả bộ máy ra ngoài màn hình!
-    if (currentStep >= 11) {
-      // Đang ở Step 11 (PROJECT) hoặc Step 12 (MY CV) chuyển về ABOUT (Step 10):
-      // Nhả đĩa CD / rút thẻ về bàn, đóng cửa sổ Autorun, giữ nguyên máy tính hoàn chỉnh ở Step 10
-      get().setStep(10);
-      if (get().cdLocation === 'INSIDE' || get().cdLocation === 'TRAY') {
-        get().triggerEjectCdToDeskSequence(true);
-      }
-      if (get().cardLocation === 'INSERTED') {
-        set({ cardLocation: 'DESK', floppyInserted: false });
-      }
-      const currentWins = get().openWindows;
-      const nextWins = currentWins.filter((w) => w !== 'AUTORUN' && w !== 'WORDPAD_CV');
-      set({
-        openWindows: nextWins,
-        activeWindow: nextWins.length > 0 ? nextWins[nextWins.length - 1] : null,
-      });
-      get().showHudWarning(
-        'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE COMPLETE (STEP 10/12)',
-        3000
-      );
-      return;
-    }
+    // Nếu đã ở Step 01 và scrollTarget = 1.0 thì không cần chuyển cảnh
+    if (currentStep === 1 && Math.abs(scrollTarget - 1.0) < 0.05) return;
 
-    if (currentStep === 10) {
-      // Đã ở Step 10 hoàn chỉnh: Giữ nguyên vị trí
-      get().showHudWarning(
-        'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE COMPLETE (STEP 10/12)',
-        2500
-      );
-      return;
-    }
-
-    // Nếu đã ở Step 01 và scrollTarget = 0 thì không cần chuyển cảnh
-    if (currentStep === 1 && scrollTarget === 0) return;
-
-    // Chỉ khi đang ở các bước lắp dở (< 10) mới kích hoạt hiệu ứng đẩy sân khấu về Step 01
+    // Khi đang ở bất kỳ bước nào khác (Step 2..12, bao gồm Step 10, 11, 12):
+    // Đẩy cụm sân khấu cũ trượt sang phải, đưa linh kiện Step 01 từ trái vào giữa bàn
     set({ stageTransition: 'TO_ABOUT' });
     get().showHudWarning(
       'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
@@ -1501,7 +1475,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     }
 
     if (isInsideProjectApp) {
-      get().exitProjectApp();
+      set({
+        isInsideProjectApp: false,
+        projectAppTransition: 'IDLE',
+        crtExpandProgress: 0,
+      });
     }
     if (currentStep === 11) return;
 
@@ -1576,7 +1554,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     }
 
     if (isInsideProjectApp) {
-      get().exitProjectApp();
+      set({
+        isInsideProjectApp: false,
+        projectAppTransition: 'IDLE',
+        crtExpandProgress: 0,
+      });
     }
     if (currentStep === 12) return;
 
@@ -1611,10 +1593,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
   applyStep10State: () => {
     set({
-      // 1. Nhảy thẳng tới Step 10 hoàn thiện lắp ráp (scroll 9.99 -> benchProgress 1.0)
+      // 1. Nhảy thẳng tới Step 10 hoàn thiện lắp ráp (scroll 10.99 -> benchProgress 1.0)
       currentStep: 10,
-      scrollTarget: 9.99,
-      scrollCurrent: 9.99,
+      scrollTarget: 10.99,
+      scrollCurrent: 10.99,
+      homeTransitionProgress: 1.0,
       benchProgress: 1.0,
       benchAutoTarget: 1.0,
       benchScrubbing: false,
@@ -1727,8 +1710,9 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   applyStep1State: () => {
     set({
       currentStep: 1,
-      scrollTarget: 0,
-      scrollCurrent: 0,
+      scrollTarget: 1.0,
+      scrollCurrent: 1.0,
+      homeTransitionProgress: 1.0,
       benchProgress: 0,
       benchAutoTarget: 0,
       benchScrubbing: false,

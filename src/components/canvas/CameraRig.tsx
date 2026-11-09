@@ -147,12 +147,12 @@ export function CameraRig() {
         persCam.updateProjectionMatrix();
       }
 
-      // Hiệu ứng chuột nhìn quanh tại Home (giảm dần về 0 khi t -> 1)
-      const isTransitioning =
-        state.stageTransition === 'TO_HOME' ||
-        state.stageTransition === 'TO_HOME_STEP1' ||
-        state.stageTransition === 'HOME_TO_ABOUT';
-      const mouseWeight = isTransitioning ? 0 : Math.max(0, 1 - t * 1.5);
+      // Hiệu ứng chuột nhìn quanh: CHỈ áp dụng cho riêng HOME (Step 00), tuyệt đối KHÔNG áp dụng cho các trang khác
+      const isPureHome =
+        state.currentStep === 0 &&
+        scrollVal <= 0.05 &&
+        state.stageTransition === 'IDLE';
+      const mouseWeight = isPureHome ? 1.0 : 0.0;
       const lookOffsetX = mouseWeight * r3fState.pointer.x * 0.35;
       const lookOffsetY = mouseWeight * r3fState.pointer.y * 0.20;
       const lookOffsetZ = mouseWeight * (-r3fState.pointer.x * 0.15);
@@ -160,6 +160,8 @@ export function CameraRig() {
       desiredTarget.current.x += lookOffsetX;
       desiredTarget.current.y += lookOffsetY;
       desiredTarget.current.z += lookOffsetZ;
+
+      const isTransitioning = state.stageTransition !== 'IDLE';
 
       const posSpeed = isTransitioning ? safeDelta * 3.8 : safeDelta * 3.2;
       const targetSpeed = isTransitioning ? safeDelta * 4.2 : safeDelta * 4.5;
