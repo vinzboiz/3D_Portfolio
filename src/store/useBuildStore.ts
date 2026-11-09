@@ -562,14 +562,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         });
       }
     } else if (nextStepNum === 10) {
-      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn
-      const isAssemblyComplete = clamped >= 9.9 || nextBenchP >= 0.9;
-      const justCompletedStep10 =
-        (prevStep < 10 && clamped >= 9.9) ||
-        (prevScroll < 9.9 && clamped >= 9.9) ||
-        (prevStep < 10 && nextStepNum === 10 && isAssemblyComplete);
+      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn khi benchProgress >= 0.95
+      const isAssemblyComplete = clamped >= 10.95 || nextBenchP >= 0.95;
 
-      if (!get().isPoweredOn && justCompletedStep10) {
+      if (!get().isPoweredOn && isAssemblyComplete) {
         retroSound.playPostBeep(get().soundEnabled);
         set({
           isPoweredOn: true,
@@ -586,6 +582,14 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
           openWindows: [],
           projectAppTransition: 'IDLE',
           crtExpandProgress: 0,
+        });
+      } else if (get().isPoweredOn && !isAssemblyComplete && prevStep <= 10) {
+        // Nếu cuộn ngược lại trước khi hoàn thành cắm dây (benchProgress < 0.95): tắt nguồn an toàn
+        set({
+          isPoweredOn: false,
+          isCrtPowered: false,
+          osState: 'OFF',
+          bootElapsedTime: 0,
         });
       } else if (prevStep >= 11) {
         // Cuộn ngược từ Step 11 về Step 10:
@@ -821,7 +825,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       set({ cdLocation: 'DESK' });
       // Khi đĩa CD đã trả về mặt bàn, nếu đang ở Step 11 thì nảy về nút ABOUT (Step 10)
       if (get().currentStep === 11) {
-        set({ currentStep: 10, scrollTarget: 9.99 });
+        set({ currentStep: 10, scrollTarget: 10.99 });
       }
 
       cdSequenceTimer = setTimeout(() => {

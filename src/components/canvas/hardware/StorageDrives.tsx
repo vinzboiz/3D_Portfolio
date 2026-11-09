@@ -653,34 +653,36 @@ export function StorageDrives({
             />
           </mesh>
 
-          {/* CHIẾC THẺ NHỚ / ĐĨA MỀM 3.5" 1.44MB "RESUME_CV.PDF" (Diễn hoạt bay giữa Bàn và Khe đọc) */}
-          <group ref={floppyDiskGroupRef}>
-            <PressableControl
-              label={`[CLICK] MEMORY CARD: VINZBOIZ_CV.DOC (${cardLocation === 'INSERTED' ? 'EJECT TO DESK' : 'INSERT INTO SLOT'})`}
-              onPress={handleCardClick}
-              travel={0.01}
-            >
-              {/* Vỏ nhựa xanh đậm 3.5" */}
-              <RoundedBox
-                args={[0.36, 0.34, 0.018]}
-                radius={0.003}
-                smoothness={1}
-                castShadow
-                receiveShadow
+          {/* CHIẾC THẺ NHỚ / ĐĨA MỀM 3.5" 1.44MB "RESUME_CV.PDF" (Chỉ hiện khi hoàn tất máy từ Step 10 trở đi) */}
+          {currentStep >= 10 && (
+            <group ref={floppyDiskGroupRef}>
+              <PressableControl
+                label={`[CLICK] MEMORY CARD: VINZBOIZ_CV.DOC (${cardLocation === 'INSERTED' ? 'EJECT TO DESK' : 'INSERT INTO SLOT'})`}
+                onPress={handleCardClick}
+                travel={0.01}
               >
-                <meshStandardMaterial color="#1b3b72" roughness={0.55} metalness={0.08} />
-              </RoundedBox>
-              {/* Cửa trập kim loại trượt (Sliding Metal Shutter) ở đầu đút vào ổ */}
-              <mesh position={[-0.125, 0.02, 0]} material={retroMaterials.galvanizedSteel}>
-                <boxGeometry args={[0.105, 0.2, 0.02]} />
-              </mesh>
-              {/* Nhãn giấy "RESUME_CV.PDF" dán mặt trên (-Z_case = +Y_world) */}
-              <mesh position={[0.045, 0, -0.01]} rotation={[Math.PI, 0, Math.PI / 2]}>
-                <planeGeometry args={[0.22, 0.18]} />
-                <meshStandardMaterial map={floppyLabelTex} roughness={0.65} side={THREE.DoubleSide} />
-              </mesh>
-            </PressableControl>
-          </group>
+                {/* Vỏ nhựa xanh đậm 3.5" */}
+                <RoundedBox
+                  args={[0.36, 0.34, 0.018]}
+                  radius={0.003}
+                  smoothness={1}
+                  castShadow
+                  receiveShadow
+                >
+                  <meshStandardMaterial color="#1b3b72" roughness={0.55} metalness={0.08} />
+                </RoundedBox>
+                {/* Cửa trập kim loại trượt (Sliding Metal Shutter) ở đầu đút vào ổ */}
+                <mesh position={[-0.125, 0.02, 0]} material={retroMaterials.galvanizedSteel}>
+                  <boxGeometry args={[0.105, 0.2, 0.02]} />
+                </mesh>
+                {/* Nhãn giấy "RESUME_CV.PDF" dán mặt trên (-Z_case = +Y_world) */}
+                <mesh position={[0.045, 0, -0.01]} rotation={[Math.PI, 0, Math.PI / 2]}>
+                  <planeGeometry args={[0.22, 0.18]} />
+                  <meshStandardMaterial map={floppyLabelTex} roughness={0.65} side={THREE.DoubleSide} />
+                </mesh>
+              </PressableControl>
+            </group>
+          )}
         </group>
 
         {/* Mặt sau ổ mềm: Cổng cáp Floppy 34-pin & Nguồn Berg 4-pin */}
@@ -773,8 +775,9 @@ export function StorageDrives({
 
       {/* =====================================================================
           E. ĐĨA CD-ROM DIỄN HOẠT BAY 2 GIAI ĐOẠN (MẶT BÀN <-> KHAY ĐĨA <-> TRONG Ổ)
+          Chỉ hiển thị từ Step 10 trở đi khi thùng máy đã đóng nắp và dịch sang phải
          ===================================================================== */}
-      {currentStep >= 5 && (
+      {currentStep >= 10 && (
         <group ref={cdDiscGroupRef}>
           <PressableControl
             label={

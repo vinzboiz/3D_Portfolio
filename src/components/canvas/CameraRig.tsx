@@ -210,8 +210,8 @@ export function CameraRig() {
       );
     } else if (
       !state.isPoweredOn &&
-      state.scrollCurrent < 9.9 &&
-      ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.52))
+      state.scrollCurrent < 10.95 &&
+      ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.40))
     ) {
       desiredPos.current.set(
         -6.15 * S.DESK_ITEMS_SCALE,

@@ -546,12 +546,16 @@ export function Workbench() {
     // vuông góc với mặt bàn (y = 0) và xoay mặt trước hướng thẳng về phía Camera chính (+Z_world).
     // Ở Step 10, thùng máy dịch sang bên phải (X_world = +1.85) nhường trung tâm cho Màn hình CRT Sony Trinitron!
     if (caseWrapperRef.current) {
+      const step10ShiftProgress =
+        state.currentStep > 10 || (state.currentStep === 10 && state.isPoweredOn)
+          ? 1.0
+          : state.currentStep === 10
+            ? remap(curP, 0.40, 0.70)
+            : 0.0;
       const step10ShiftX =
-        state.currentStep === 10
-          ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, remap(curP, 0.55, 0.82))
-          : state.currentStep > 10
-            ? TOWER_STEP10_X
-            : TOWER_BUILD_X;
+        state.currentStep >= 10
+          ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, step10ShiftProgress)
+          : TOWER_BUILD_X;
       const targetX = state.currentStep >= 2 ? step10ShiftX : 4.2;
       const alpha = Math.min(1, delta * 8);
 
@@ -788,18 +792,22 @@ export function Workbench() {
         : 1;
 
   const uCoverCloseProgress =
-    currentStep < 10 ? 0 : currentStep === 10 ? remap(benchProgress, 0.22, 0.52) : 1;
+    currentStep < 10
+      ? 0
+      : currentStep === 10
+        ? (isPoweredOn ? 1 : remap(benchProgress, 0.05, 0.38))
+        : 1;
   const peripheralsProgress =
     currentStep < 10
       ? 0
       : currentStep === 10
-        ? (isPoweredOn ? 1 : benchProgress)
+        ? (isPoweredOn ? 1 : remap(benchProgress, 0.50, 1.0))
         : 1;
 
-  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 khi benchProgress >= 0.52 hoặc đã bật nguồn, hoặc Step 11 & 12):
+  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 khi benchProgress >= 0.38 hoặc đã bật nguồn, hoặc Step 11 & 12):
   // Ẩn toàn bộ linh kiện bên trong lòng thùng máy để chống PCB clipping 100% và tối ưu GPU
   const isCaseCoverClosed =
-    currentStep > 10 || (currentStep === 10 && (isPoweredOn || benchProgress >= 0.52));
+    currentStep > 10 || (currentStep === 10 && (isPoweredOn || benchProgress >= 0.38));
 
   // Tính toán tọa độ kết cấu bàn vẽ kỹ thuật chuẩn theo S.TABLE (1 Three.js unit = 1 mét)
   const tableLegX = S.TABLE.W / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.905m
