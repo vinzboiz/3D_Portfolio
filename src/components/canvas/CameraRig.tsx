@@ -21,9 +21,9 @@ export function CameraRig() {
   const { camera } = useThree();
 
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  const desiredPos = useRef(new THREE.Vector3(0, 0.95, 3.2));
-  const desiredTarget = useRef(new THREE.Vector3(0, 0.05, -0.6));
-  const smoothedTarget = useRef(new THREE.Vector3(0, 0.05, -0.6));
+  const desiredPos = useRef(new THREE.Vector3(0, 0.55, 2.15));
+  const desiredTarget = useRef(new THREE.Vector3(0, 0.05, -0.4));
+  const smoothedTarget = useRef(new THREE.Vector3(0, 0.05, -0.4));
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
@@ -66,10 +66,10 @@ export function CameraRig() {
     const aspectMultiplier = aspect < 1.0 ? Math.max(1.0, 1.18 / aspect) : 1.0;
     const homePos = new THREE.Vector3(
       0,
-      0.95 * Math.min(1.25, aspectMultiplier),
-      3.2 * aspectMultiplier
+      0.55 * Math.min(1.25, aspectMultiplier),
+      2.15 * aspectMultiplier
     );
-    const homeTarget = new THREE.Vector3(0, 0.05, -0.6);
+    const homeTarget = new THREE.Vector3(0, 0.05, -0.4);
 
     const persCam = camera as THREE.PerspectiveCamera;
 

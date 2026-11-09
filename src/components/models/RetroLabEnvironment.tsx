@@ -391,7 +391,7 @@ function CRTVideoWall() {
 
   return (
     <group>
-      {/* 1. GIÁ ĐỠ THÉP CÔNG NGHIỆP BẮT VÀO TƯỜNG PHÍA SAU MÀN HÌNH (CHUẨN S.ROOM.WALL_Z) */}
+      {/* 1. GIÁ ĐỠ THÉP CÔNG NGHIỆP BẮT VÀO TƯỜNG PHÍA SAU MÀN HÌNH (SÁT TƯỜNG SAU S.ROOM.BACK_WALL_Z) */}
       <group position={[0, 0, S.ROOM.WALL_Z - 0.15]}>
         {/* Các cột thép hộp thẳng đứng */}
         {[-1.1, -0.66, -0.22, 0.22, 0.66, 1.1].map((cx, idx) => (
@@ -403,7 +403,7 @@ function CRTVideoWall() {
         {/* Các thanh giằng ngang đỡ từng hàng màn hình */}
         {[-0.33, 0.07, 0.47, 0.87].map((ry, idx) => (
           <mesh key={`rack-beam-${idx}`} position={[0, ry, 0]}>
-            <boxGeometry args={[2.7, 0.025, 0.2]} />
+            <boxGeometry args={[2.7, 0.025, 0.15]} />
             <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
           </mesh>
         ))}
@@ -433,9 +433,9 @@ function CRTVideoWall() {
       />
 
       {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
-      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.6]} intensity={1.5} distance={3.8} decay={2} color="#60a5fa" />
-      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.6]} intensity={1.1} distance={3.0} decay={2} color="#34d399" />
-      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.6]} intensity={1.1} distance={3.0} decay={2} color="#f59e0b" />
+      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.5} distance={3.2} decay={2} color="#60a5fa" />
+      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={2.5} decay={2} color="#34d399" />
+      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={2.5} decay={2} color="#f59e0b" />
 
       {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
       <mesh position={[0, 0.45, S.ROOM.WALL_Z + 0.2]}>
@@ -453,183 +453,10 @@ function CRTVideoWall() {
 }
 
 // =============================================================================
-// 2. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (WOODEN ENGINEER CHAIR)
-// =============================================================================
-function WoodenEngineerChair() {
-  const chairRef = useRef<THREE.Group>(null);
-  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
-
-  const { oakMat, darkSteelMat, chromeMat, casterMat } = useMemo(() => {
-    return {
-      oakMat: new THREE.MeshStandardMaterial({
-        color: '#6e472b',
-        roughness: 0.65,
-        metalness: 0.05,
-      }),
-      darkSteelMat: new THREE.MeshStandardMaterial({
-        color: '#222225',
-        roughness: 0.35,
-        metalness: 0.85,
-      }),
-      chromeMat: new THREE.MeshStandardMaterial({
-        color: '#c8d0d8',
-        roughness: 0.15,
-        metalness: 0.95,
-      }),
-      casterMat: new THREE.MeshStandardMaterial({
-        color: '#141414',
-        roughness: 0.8,
-        metalness: 0.1,
-      }),
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      oakMat.dispose();
-      darkSteelMat.dispose();
-      chromeMat.dispose();
-      casterMat.dispose();
-    };
-  }, [oakMat, darkSteelMat, chromeMat, casterMat]);
-
-  useFrame(() => {
-    if (!chairRef.current) return;
-    const p = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
-
-    // Khi người dùng tiến vào bàn: ghế trượt lùi từ HOME_POS sang RETRACT_POS theo chuẩn S.CHAIR
-    const targetX = THREE.MathUtils.lerp(S.CHAIR.HOME_POS[0], S.CHAIR.RETRACT_POS[0], p);
-    const targetY = S.FLOOR_Y;
-    const targetZ = THREE.MathUtils.lerp(S.CHAIR.HOME_POS[2], S.CHAIR.RETRACT_POS[2], p);
-    const targetRotY = THREE.MathUtils.lerp(S.CHAIR.HOME_ROT_Y, S.CHAIR.RETRACT_ROT_Y, p);
-
-    chairRef.current.position.set(targetX, targetY, targetZ);
-    chairRef.current.rotation.y = targetRotY;
-  });
-
-  return (
-    <group ref={chairRef} position={S.CHAIR.HOME_POS} rotation={[0, S.CHAIR.HOME_ROT_Y, 0]}>
-      {/* A. Chân đế sao 5 nhánh & Bánh xe chạm sàn (y = 0 local = S.FLOOR_Y world) */}
-      <group position={[0, 0, 0]}>
-        <mesh material={darkSteelMat} position={[0, 0.05, 0]}>
-          <cylinderGeometry args={[0.045, 0.055, 0.04, 16]} />
-        </mesh>
-
-        {[0, 1, 2, 3, 4].map((i) => {
-          const angle = (i * 2 * Math.PI) / 5;
-          const legLen = S.CHAIR.BASE_R; // 0.28m
-          const lx = Math.sin(angle) * (legLen / 2);
-          const lz = Math.cos(angle) * (legLen / 2);
-          const wx = Math.sin(angle) * legLen;
-          const wz = Math.cos(angle) * legLen;
-
-          return (
-            <group key={`chair-leg-${i}`}>
-              <mesh
-                position={[lx, 0.045, lz]}
-                rotation={[0, angle, 0.04]}
-                material={darkSteelMat}
-                castShadow
-              >
-                <boxGeometry args={[0.028, 0.02, legLen]} />
-              </mesh>
-
-              <group position={[wx, S.CHAIR.CASTER_R, wz]} rotation={[0, angle, 0]}>
-                <mesh material={casterMat} rotation={[0, 0, Math.PI / 2]} position={[0.012, 0, 0]}>
-                  <cylinderGeometry args={[S.CHAIR.CASTER_R, S.CHAIR.CASTER_R, 0.014, 12]} />
-                </mesh>
-                <mesh material={casterMat} rotation={[0, 0, Math.PI / 2]} position={[-0.012, 0, 0]}>
-                  <cylinderGeometry args={[S.CHAIR.CASTER_R, S.CHAIR.CASTER_R, 0.014, 12]} />
-                </mesh>
-                <mesh material={chromeMat} position={[0, 0.015, 0]}>
-                  <cylinderGeometry args={[0.006, 0.006, 0.025, 8]} />
-                </mesh>
-              </group>
-            </group>
-          );
-        })}
-      </group>
-
-      {/* B. Trụ nâng hạ thủy lực */}
-      <mesh material={darkSteelMat} position={[0, 0.18, 0]}>
-        <cylinderGeometry args={[S.CHAIR.COLUMN_R, S.CHAIR.COLUMN_R + 0.005, 0.24, 16]} />
-      </mesh>
-      <mesh material={chromeMat} position={[0, 0.35, 0]}>
-        <cylinderGeometry args={[S.CHAIR.COLUMN_R - 0.004, S.CHAIR.COLUMN_R - 0.004, 0.16, 16]} />
-      </mesh>
-
-      {/* C. Mặt đệm ngồi bằng Gỗ sồi (SEAT_H = 0.45m so với sàn, y = -0.30m world) */}
-      <group position={[0, S.CHAIR.SEAT_H - 0.02, 0]}>
-        <mesh material={darkSteelMat} position={[0, -0.02, 0]}>
-          <boxGeometry args={[S.CHAIR.SEAT_W * 0.7, 0.015, S.CHAIR.SEAT_D * 0.7]} />
-        </mesh>
-        <RoundedBox
-          args={[S.CHAIR.SEAT_W, 0.035, S.CHAIR.SEAT_D]}
-          radius={0.012}
-          smoothness={3}
-          castShadow
-          receiveShadow
-          material={oakMat}
-        />
-      </group>
-
-      {/* D. Tựa lưng Gỗ sồi (BACK_H = 0.40m, đỉnh tựa lưng chạm y = 0.85m local = +0.10m trên mặt bàn) */}
-      <group position={[0, S.CHAIR.SEAT_H + S.CHAIR.BACK_H - 0.12, -S.CHAIR.SEAT_D / 2 + 0.02]} rotation={[0.06, 0, 0]}>
-        <mesh material={darkSteelMat} position={[-0.12, -0.14, 0.03]} rotation={[-0.1, 0, 0]}>
-          <boxGeometry args={[0.018, 0.28, 0.012]} />
-        </mesh>
-        <mesh material={darkSteelMat} position={[0.12, -0.14, 0.03]} rotation={[-0.1, 0, 0]}>
-          <boxGeometry args={[0.018, 0.28, 0.012]} />
-        </mesh>
-        <mesh material={chromeMat} position={[0, -0.01, 0.03]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.012, 0.012, 0.26, 12]} />
-        </mesh>
-        <RoundedBox
-          args={[S.CHAIR.BACK_W, 0.22, 0.03]}
-          radius={0.012}
-          smoothness={3}
-          castShadow
-          material={oakMat}
-        />
-      </group>
-
-      {/* E. Hai bên tay vịn */}
-      {[-S.CHAIR.SEAT_W / 2 - 0.03, S.CHAIR.SEAT_W / 2 + 0.03].map((sideX, idx) => (
-        <group key={`chair-arm-${idx}`} position={[sideX, S.CHAIR.SEAT_H + 0.10, 0]}>
-          <mesh material={darkSteelMat} position={[0, -0.06, 0]}>
-            <cylinderGeometry args={[0.01, 0.01, 0.18, 12]} />
-          </mesh>
-          <RoundedBox
-            args={[0.045, 0.016, 0.24]}
-            radius={0.006}
-            smoothness={2}
-            position={[0, 0.04, 0.01]}
-            castShadow
-            material={oakMat}
-          />
-        </group>
-      ))}
-    </group>
-  );
-}
-
-// =============================================================================
-// 3. TOÀN CẢNH PHÒNG RETRO LAB 1997 & KỆ SẮT HAI BÊN HÔNG (RETRO LAB ENVIRONMENT)
+// 2. TOÀN CẢNH PHÒNG RETRO LAB VUÔNG 1997 (SQUARE LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
-  const currentStep = useBuildStore((s) => s.currentStep);
-  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
-  const stageTransition = useBuildStore((s) => s.stageTransition);
-
-  // HẠNG MỤC 5: TỐI ƯU HIỆU NĂNG (STATE CULLING - KHÔNG ĐỘNG VÀO TƯỜNG MÀN HÌNH)
-  // - Khi người dùng đã ngồi hẳn vào bàn (currentStep >= 1 và homeTransitionProgress === 1):
-  //   CHỈ kệ sắt hai bên và thiết bị phụ được ẩn (visible = false).
-  // - CRTVideoWall LUÔN LUÔN HIỂN THỊ Ở MỌI THỜI ĐIỂM!
-  const isTransitioning = stageTransition !== 'IDLE';
-  const shouldShowSideProps =
-    currentStep === 0 || homeTransitionProgress < 0.999 || isTransitioning;
-
-  const { floorMat, wallMat, shelfSteelMat, caseBeigeMat, darkChassisMat } = useMemo(() => {
+  const { floorMat, wallMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
         color: '#111318',
@@ -641,21 +468,6 @@ export function RetroLabEnvironment() {
         roughness: 0.92,
         metalness: 0.05,
       }),
-      shelfSteelMat: new THREE.MeshStandardMaterial({
-        color: '#1e2229',
-        roughness: 0.45,
-        metalness: 0.8,
-      }),
-      caseBeigeMat: new THREE.MeshStandardMaterial({
-        color: '#d6d0c4',
-        roughness: 0.65,
-        metalness: 0.06,
-      }),
-      darkChassisMat: new THREE.MeshStandardMaterial({
-        color: '#22262e',
-        roughness: 0.5,
-        metalness: 0.35,
-      }),
     };
   }, []);
 
@@ -663,42 +475,39 @@ export function RetroLabEnvironment() {
     return () => {
       floorMat.dispose();
       wallMat.dispose();
-      shelfSteelMat.dispose();
-      caseBeigeMat.dispose();
-      darkChassisMat.dispose();
     };
-  }, [floorMat, wallMat, shelfSteelMat, caseBeigeMat, darkChassisMat]);
+  }, [floorMat, wallMat]);
+
+  // Tâm Z của phòng hình vuông: giữa tường sau (BACK_WALL_Z = -0.95m) và rìa trước (FRONT_Z = 1.90m)
+  const roomCenterZ = (S.ROOM.BACK_WALL_Z + S.ROOM.FRONT_Z) / 2; // 0.475m
+  const halfWall = S.ROOM.SIZE / 2; // 1.425m
+  const wallCenterY = S.FLOOR_Y + S.ROOM.HEIGHT / 2; // -0.75 + 1.4 = 0.65m
 
   return (
     <group>
       {/* =======================================================================
-          A. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (Đặt trước bàn, tự động lùi sang trái khi zoom vào bàn)
-         ======================================================================= */}
-      <WoodenEngineerChair />
-
-      {/* =======================================================================
-          B. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - BẮT BUỘC LUÔN HIỂN THỊ)
-          - Luôn mounted và luôn visible = true ở mọi currentStep và mọi portalProgress
+          A. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - KÊ SÁT TƯỜNG SAU & BÀN GẦN HƠN)
+          - Luôn mounted và luôn visible = true ở mọi thời điểm
           - frustumCulled = false trên cả 2 InstancedMesh
          ======================================================================= */}
       <CRTVideoWall />
 
       {/* =======================================================================
-          C. VỎ PHÒNG XƯỞNG & PHẢN CHIẾU ÁNH SÁNG MÀN HÌNH XUỐNG SÀN (CHUẨN S.FLOOR_Y)
+          B. PHÒNG RETRO LAB HÌNH VUÔNG (RỘNG 2.85m x SÂU 2.85m VỪA KHÍT DÃY MÀN HÌNH 2.64m)
          ======================================================================= */}
-      {/* 1. Sàn xưởng xám than tối bóng nhẹ (Y = S.FLOOR_Y = -0.75m) */}
+      {/* 1. Sàn xưởng hình vuông (Y = S.FLOOR_Y = -0.75m) */}
       <mesh
-        position={[0, S.FLOOR_Y, 0]}
+        position={[0, S.FLOOR_Y, roomCenterZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         material={floorMat}
       >
-        <planeGeometry args={S.ROOM.FLOOR_SIZE} />
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
       </mesh>
 
-      {/* 2. Plane phản chiếu mờ ánh sáng sọc màu từ tường màn hình lên mặt sàn bê tông */}
-      <mesh position={[0, S.FLOOR_Y + 0.002, -1.2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.6, 1.8]} />
+      {/* 2. Plane phản chiếu ánh sáng màn hình CRT lên mặt sàn bê tông */}
+      <mesh position={[0, S.FLOOR_Y + 0.002, -0.45]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.7, 0.8]} />
         <meshBasicMaterial
           color="#38bdf8"
           transparent
@@ -708,103 +517,30 @@ export function RetroLabEnvironment() {
         />
       </mesh>
 
-      {/* 3. Tường sau (Z = -2.65m) */}
-      <mesh position={[0, 0.85, -2.65]} receiveShadow material={wallMat}>
-        <planeGeometry args={[S.ROOM.FLOOR_SIZE[0], 3.2]} />
+      {/* 3. Tường sau (Z = S.ROOM.BACK_WALL_Z = -0.95m, ngay sát sau dãy màn hình) */}
+      <mesh position={[0, wallCenterY, S.ROOM.BACK_WALL_Z]} receiveShadow material={wallMat}>
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
-      {/* 4. Tường trái (X = -S.ROOM.FLOOR_SIZE[0] / 2) */}
+
+      {/* 4. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
-        position={[-S.ROOM.FLOOR_SIZE[0] / 2, 0.85, 0]}
+        position={[-halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, Math.PI / 2, 0]}
         receiveShadow
         material={wallMat}
       >
-        <planeGeometry args={[S.ROOM.FLOOR_SIZE[1], 3.2]} />
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
-      {/* 5. Tường phải (X = S.ROOM.FLOOR_SIZE[0] / 2) */}
+
+      {/* 5. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
-        position={[S.ROOM.FLOOR_SIZE[0] / 2, 0.85, 0]}
+        position={[halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, -Math.PI / 2, 0]}
         receiveShadow
         material={wallMat}
       >
-        <planeGeometry args={[S.ROOM.FLOOR_SIZE[1], 3.2]} />
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
-
-      {/* =======================================================================
-          D. HỆ THỐNG KỆ SẮT HAI BÊN HÔNG (CHỈ ĐẶT Ở X = ±2.2m, KHÔNG CHE TƯỜNG & CHÂN BÀN)
-          - Tự động culling ẩn đi khi người dùng đã ngồi hẳn vào bàn để giữ 60 FPS
-         ======================================================================= */}
-      {shouldShowSideProps && (
-        <group>
-          {/* Kệ sắt bên trái (X = -S.ROOM.SIDE_RACK_X = -2.2m, Z = -0.4m) */}
-          <group position={[-S.ROOM.SIDE_RACK_X, S.FLOOR_Y, -0.4]}>
-            {/* 4 Trụ thép chữ V */}
-            {[-0.22, 0.22].map((dx, ix) =>
-              [-0.45, 0.45].map((dz, iz) => (
-                <mesh key={`shelf-l-${ix}-${iz}`} position={[dx, 1.0, dz]} material={shelfSteelMat}>
-                  <boxGeometry args={[0.03, 2.0, 0.03]} />
-                </mesh>
-              ))
-            )}
-            {/* 3 Tầng kệ thép dập tấm */}
-            {[0.25, 0.85, 1.5].map((sy, sIdx) => (
-              <mesh key={`shelf-slab-l-${sIdx}`} position={[0, sy, 0]} material={shelfSteelMat}>
-                <boxGeometry args={[0.48, 0.02, 0.95]} />
-              </mesh>
-            ))}
-            {/* Thiết bị retro phụ trên kệ trái: Thùng máy IBM AT nằm ngang */}
-            <group position={[0, 0.95, -0.2]}>
-              <RoundedBox args={[0.32, 0.14, 0.35]} radius={0.01} material={caseBeigeMat} />
-              <mesh position={[0, 0, 0.178]} material={darkChassisMat}>
-                <boxGeometry args={[0.3, 0.11, 0.006]} />
-              </mesh>
-            </group>
-          </group>
-
-          {/* Kệ sắt bên phải (X = +S.ROOM.SIDE_RACK_X = +2.2m, Z = -0.4m) */}
-          <group position={[S.ROOM.SIDE_RACK_X, S.FLOOR_Y, -0.4]}>
-            {/* 4 Trụ thép chữ V */}
-            {[-0.22, 0.22].map((dx, ix) =>
-              [-0.45, 0.45].map((dz, iz) => (
-                <mesh key={`shelf-r-${ix}-${iz}`} position={[dx, 1.0, dz]} material={shelfSteelMat}>
-                  <boxGeometry args={[0.03, 2.0, 0.03]} />
-                </mesh>
-              ))
-            )}
-            {/* 3 Tầng kệ thép */}
-            {[0.25, 0.85, 1.5].map((sy, sIdx) => (
-              <mesh key={`shelf-slab-r-${sIdx}`} position={[0, sy, 0]} material={shelfSteelMat}>
-                <boxGeometry args={[0.48, 0.02, 0.95]} />
-              </mesh>
-            ))}
-            {/* Thiết bị retro phụ trên kệ phải: Máy hiện sóng mini & CRT phụ */}
-            <group position={[0, 0.95, 0.15]}>
-              <RoundedBox args={[0.28, 0.16, 0.28]} radius={0.01} material={darkChassisMat} />
-              {/* Màn hình tia sóng xanh */}
-              <mesh position={[0, 0, 0.142]}>
-                <planeGeometry args={[0.16, 0.11]} />
-                <meshBasicMaterial color="#10b981" />
-              </mesh>
-            </group>
-          </group>
-
-          {/* Cuộn dây cáp lớn dưới sàn góc phòng */}
-          <group position={[-2.6, S.FLOOR_Y + 0.08, 1.8]} rotation={[0, 0.45, 0]}>
-            <mesh material={shelfSteelMat}>
-              <cylinderGeometry args={[0.14, 0.14, 0.12, 16]} />
-            </mesh>
-            <mesh position={[0, 0.07, 0]}>
-              <cylinderGeometry args={[0.18, 0.18, 0.015, 16]} />
-              <meshStandardMaterial color="#334155" roughness={0.6} />
-            </mesh>
-            <mesh position={[0, -0.07, 0]}>
-              <cylinderGeometry args={[0.18, 0.18, 0.015, 16]} />
-              <meshStandardMaterial color="#334155" roughness={0.6} />
-            </mesh>
-          </group>
-        </group>
-      )}
     </group>
   );
 }

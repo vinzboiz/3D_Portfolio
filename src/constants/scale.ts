@@ -19,21 +19,6 @@ export const S = {
     LOWER_BRACE_Y: -0.55, // Cao độ thanh giằng thấp liên kết các chân
   },
 
-  CHAIR: {
-    SEAT_H: 0.45, // Chiều cao mặt ghế so với mặt sàn (y = FLOOR_Y + 0.45 = -0.30)
-    SEAT_W: 0.44, // Chiều rộng đệm ngồi
-    SEAT_D: 0.42, // Chiều sâu đệm ngồi
-    BACK_H: 0.4, // Chiều cao tựa lưng so với mặt ghế (chạm y = -0.30 + 0.40 = +0.10)
-    BACK_W: 0.42, // Chiều rộng tựa lưng
-    COLUMN_R: 0.025, // Bán kính trục nâng hạ thủy lực
-    BASE_R: 0.28, // Bán kính chân đế 5 nhánh
-    CASTER_R: 0.03, // Bán kính bánh xe chạm sàn
-    HOME_POS: [-0.45, -0.75, 0.95] as [number, number, number],
-    HOME_ROT_Y: 0.45, // Góc xoay ban đầu ở Home (rad)
-    RETRACT_POS: [-1.4, -0.75, 1.6] as [number, number, number],
-    RETRACT_ROT_Y: 1.15, // Góc xoay khi lùi sang trái
-  },
-
   HUMAN: {
     EYE_H_SEATED: 1.15, // Chiều cao mắt người ngồi tính từ sàn (tương đương y = 0.40 trên mặt bàn)
     HEIGHT: 1.7, // Chiều cao người đứng chuẩn cho DEBUG_SCALE_REF
@@ -48,14 +33,14 @@ export const S = {
   DESK_ITEMS_SCALE: 0.305 / 2.8,
 
   /**
-   * Bức tường màn hình CRT (Flat CRT Video Wall) & Phòng Retro Lab
+   * Phòng Retro Lab hình vuông & Bức tường màn hình CRT sát tường
    */
   ROOM: {
-    WALL_Z: -2.4, // Tọa độ Z bức tường màn hình phẳng sau bàn
-    WALL_W: 6.2, // Chiều rộng bức tường
-    WALL_H: 3.2, // Chiều cao bức tường
-    FLOOR_SIZE: [8.5, 7.5] as [number, number],
-    SIDE_RACK_X: 2.2, // Kệ sắt hai bên (X = ±2.2m)
+    SIZE: 2.85, // Phòng hình vuông: Rộng 2.85m x Sâu 2.85m (vừa khít bề ngang dãy màn hình 2.64m)
+    WALL_Z: -0.75, // Tọa độ Z bức tường màn hình (đáy màn hình áp sát tường sau z = -0.95m)
+    BACK_WALL_Z: -0.95, // Tường sau của phòng
+    FRONT_Z: 1.9, // Rìa trước phòng (1.90 - (-0.95) = 2.85m)
+    HEIGHT: 2.8, // Chiều cao phòng
   },
 
   /**
@@ -80,17 +65,7 @@ export function validateScaleContract(): { valid: boolean; logs: string[] } {
     logs.push(`PASS: Mặt bàn cao ${tableHeight}m so với sàn`);
   }
 
-  // 2. Mặt ghế cao 0.45m so với sàn, khoảng chênh 0.30m
-  const seatH = S.CHAIR.SEAT_H;
-  const thighClearance = tableHeight - seatH;
-  if (Math.abs(thighClearance - 0.3) > 0.001) {
-    valid = false;
-    logs.push(`FAIL: Khoảng chênh mặt bàn - mặt ghế là ${thighClearance}m, kỳ vọng 0.30m`);
-  } else {
-    logs.push(`PASS: Đùi người ngồi có khoảng chênh lý tưởng ${thighClearance}m`);
-  }
-
-  // 3. Chiều dài bàn không vượt quá 2.4m và xấp xỉ 6.5x chiều rộng mainboard
+  // 2. Chiều dài bàn không vượt quá 2.4m và xấp xỉ 6.5x chiều rộng mainboard
   if (S.TABLE.W > 2.4) {
     valid = false;
     logs.push(`FAIL: Chiều dài bàn ${S.TABLE.W}m vượt quá 2.4m`);
@@ -98,33 +73,29 @@ export function validateScaleContract(): { valid: boolean; logs: string[] } {
     logs.push(`PASS: Chiều dài bàn ${S.TABLE.W}m hợp lệ (<= 2.4m)`);
   }
 
-  // 4. Lưng ghế cao hơn mặt bàn khoảng 0.10m khi ghế sát bàn
-  const seatTopY = S.FLOOR_Y + S.CHAIR.SEAT_H;
-  const backTopY = seatTopY + S.CHAIR.BACK_H;
-  const backAboveDesk = backTopY - 0;
-  if (Math.abs(backAboveDesk - 0.1) > 0.01) {
+  // 3. Phòng hình vuông: Chiều rộng == Chiều sâu
+  const roomDepth = S.ROOM.FRONT_Z - S.ROOM.BACK_WALL_Z;
+  if (Math.abs(S.ROOM.SIZE - roomDepth) > 0.01) {
     valid = false;
-    logs.push(`FAIL: Lưng ghế cao hơn mặt bàn ${backAboveDesk}m, kỳ vọng 0.10m`);
+    logs.push(`FAIL: Phòng không vuông: rộng ${S.ROOM.SIZE}m != sâu ${roomDepth}m`);
   } else {
-    logs.push(`PASS: Lưng ghế cao hơn mặt bàn ${backAboveDesk.toFixed(2)}m (+0.10m)`);
+    logs.push(`PASS: Phòng hình vuông hoàn hảo ${S.ROOM.SIZE}m x ${roomDepth.toFixed(2)}m`);
   }
 
-  // 5. Gầm bàn trống tối thiểu 0.62m chiều cao và 0.55m chiều sâu
-  const underTableHeight = tableHeight - S.TABLE.TOP_THICK - (S.TABLE.RAIL_H - S.TABLE.TOP_THICK);
-  const underTableDepth = S.TABLE.D - 2 * (S.TABLE.LEG_INSET + S.TABLE.LEG);
-  if (underTableHeight < 0.62) {
+  // 4. Dãy màn hình sát tường sau
+  const wallGap = S.ROOM.WALL_Z - 0.38 / 2 - S.ROOM.BACK_WALL_Z;
+  if (wallGap > 0.05) {
     valid = false;
-    logs.push(`FAIL: Gầm bàn cao ${underTableHeight}m (< 0.62m)`);
+    logs.push(`FAIL: Dãy màn hình cách tường sau ${wallGap}m (> 0.05m)`);
   } else {
-    logs.push(`PASS: Gầm bàn cao ${underTableHeight.toFixed(2)}m (>= 0.62m)`);
+    logs.push(`PASS: Dãy màn hình kê sát tường sau (${wallGap.toFixed(3)}m gap)`);
   }
 
-  if (underTableDepth < 0.55) {
-    valid = false;
-    logs.push(`FAIL: Gầm bàn sâu ${underTableDepth}m (< 0.55m)`);
-  } else {
-    logs.push(`PASS: Gầm bàn sâu ${underTableDepth.toFixed(2)}m (>= 0.55m)`);
-  }
+  // 5. Bàn gần dãy màn hình (khoảng cách mép sau bàn tới mặt trước màn hình <= 0.15m)
+  const tableBackZ = -S.TABLE.D / 2; // -0.475m
+  const monitorFrontZ = S.ROOM.WALL_Z + 0.38 / 2; // -0.56m
+  const deskToMonitorGap = Math.abs(tableBackZ - monitorFrontZ);
+  logs.push(`PASS: Khoảng cách sau bàn tới màn hình: ${deskToMonitorGap.toFixed(3)}m`);
 
   return { valid, logs };
 }

@@ -4,7 +4,6 @@ import { RoundedBox, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
 import { S, validateScaleContract } from '../../constants/scale';
 import {
-  createCuttingMatTexture,
   retroMaterials,
   RETRO_PBR_PARAMS,
 } from './materials/retroMaterials';
@@ -472,12 +471,6 @@ export function Workbench() {
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const stageTransition = useBuildStore((s) => s.stageTransition);
 
-  // YÊU CẦU #5: Tạo 2 phiên bản Cutting Mat Texture:
-  // - Khi ở Step 01 -> 04: Hiển thị các khung chữ vàng chú thích Staging Zones
-  // - Khi từ Step 05 -> 10: Ẩn hoàn toàn các khung chữ vàng chú thích để mặt bàn sạch sẽ cho bộ PC hoàn chỉnh!
-  const matWithZonesTex = useMemo(() => createCuttingMatTexture(true), []);
-  const matCleanTex = useMemo(() => createCuttingMatTexture(false), []);
-
   const targetRingRef = useRef<THREE.Group | null>(null);
   const caseWrapperRef = useRef<THREE.Group | null>(null);
   const componentsStageGroupRef = useRef<THREE.Group | null>(null);
@@ -491,13 +484,6 @@ export function Workbench() {
       transitionPhaseRef.current = 'EXIT';
     }
   }, [stageTransition]);
-
-  useEffect(() => {
-    return () => {
-      matWithZonesTex.dispose();
-      matCleanTex.dispose();
-    };
-  }, [matWithZonesTex, matCleanTex]);
 
   const activeStepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
 
@@ -808,8 +794,6 @@ export function Workbench() {
   const isCaseCoverClosed =
     currentStep > 10 || (currentStep === 10 && (isPoweredOn || benchProgress >= 0.52));
 
-  const activeCuttingMatTex = currentStep >= 5 ? matCleanTex : matWithZonesTex;
-
   // Tính toán tọa độ kết cấu bàn vẽ kỹ thuật chuẩn theo S.TABLE (1 Three.js unit = 1 mét)
   const tableLegX = S.TABLE.W / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.905m
   const tableLegZ = S.TABLE.D / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.380m
@@ -868,7 +852,7 @@ export function Workbench() {
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
 
-      {/* Thanh giằng thấp nối các chân (LOWER_BRACE_Y = -0.55m): thanh sau và 2 thanh bên hông (chừa gầm trước cho ghế luồn) */}
+      {/* Thanh giằng thấp nối các chân (LOWER_BRACE_Y = -0.55m): thanh sau và 2 thanh bên hông (chừa gầm trước) */}
       <mesh position={[0, S.TABLE.LOWER_BRACE_Y, -tableLegZ]} castShadow>
         <boxGeometry args={[tableSpanX, 0.035, 0.035]} />
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
@@ -882,36 +866,7 @@ export function Workbench() {
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
 
-      {/* 2. THẢM CẮT CHỐNG TĨNH ĐIỆN (CUTTING MAT CHUẨN A1 TRÊN MẶT BÀN 2.0m x 0.95m) */}
-      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1.14, 0.66]} />
-        <meshStandardMaterial
-          map={activeCuttingMatTex}
-          roughness={0.82}
-          metalness={0.04}
-        />
-      </mesh>
-      <RoundedBox
-        args={[1.16, 0.004, 0.68]}
-        radius={0.004}
-        smoothness={1}
-        position={[0, 0.001, 0]}
-        receiveShadow
-      >
-        <meshStandardMaterial {...RETRO_PBR_PARAMS.blackAnodized} />
-      </RoundedBox>
-
-      {/* 3. NÚT BẤM TIẾP ĐỊA CHỐNG TĨNH ĐIỆN (ESD GROUNDING SNAP GÓC THẢM) */}
-      <group position={[-0.52, 0.004, 0.28]}>
-        <mesh castShadow receiveShadow material={retroMaterials.goldPin}>
-          <cylinderGeometry args={[0.015, 0.018, 0.006, 20]} />
-        </mesh>
-        <mesh position={[0, 0.004, 0]} material={retroMaterials.blackAnodized}>
-          <cylinderGeometry args={[0.007, 0.007, 0.004, 16]} />
-        </mesh>
-      </group>
-
-      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (QUY ĐỔI THEO S.DESK_ITEMS_SCALE) */}
+      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (ĐẶT TRỰC TIẾP TRÊN MẶT BÀN GỖ ĐEN, KHÔNG DÙNG THẢM CẮT ĐỂ TRÁNH CHE LINH KIỆN) */}
       <group
         ref={componentsStageGroupRef}
         scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
