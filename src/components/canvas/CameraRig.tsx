@@ -21,9 +21,9 @@ export function CameraRig() {
   const { camera } = useThree();
 
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  const desiredPos = useRef(new THREE.Vector3(0, 0.55, 2.15));
-  const desiredTarget = useRef(new THREE.Vector3(0, 0.05, -0.4));
-  const smoothedTarget = useRef(new THREE.Vector3(0, 0.05, -0.4));
+  const desiredPos = useRef(new THREE.Vector3(-0.75, 0.88, 1.48));
+  const desiredTarget = useRef(new THREE.Vector3(0.05, 0.05, -0.25));
+  const smoothedTarget = useRef(new THREE.Vector3(0.05, 0.05, -0.25));
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
@@ -61,17 +61,29 @@ export function CameraRig() {
 
     const scrollVal = state.scrollCurrent;
 
-    // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG Ở HOME THEO HỆ TỈ LỆ S (1 UNIT = 1 MÉT)
+    // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG XÉO TỪ GÓC TRÊN BÊN TRÁI PHÒNG Ở HOME
     const aspect = r3fState.size.width / Math.max(1, r3fState.size.height);
-    const aspectMultiplier = aspect < 1.0 ? Math.max(1.0, 1.18 / aspect) : 1.0;
-    const homePos = new THREE.Vector3(
-      0,
-      0.55 * Math.min(1.25, aspectMultiplier),
-      2.15 * aspectMultiplier
-    );
-    const homeTarget = new THREE.Vector3(0, 0.05, -0.4);
+    const homeX = -0.75 * (aspect < 1.0 ? 0.85 : 1.0);
+    const homeY = 0.88 * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
+    const homeZ = Math.min(1.70, 1.48 * (aspect < 1.0 ? 1.08 : 1.0));
+    const homePos = new THREE.Vector3(homeX, homeY, homeZ);
+    const homeTarget = new THREE.Vector3(0.05, 0.05, -0.25);
 
     const persCam = camera as THREE.PerspectiveCamera;
+
+    // Helper giới hạn camera trong khuôn khổ phòng vuông 6 mặt
+    const clampCameraInRoom = () => {
+      const minX = -S.ROOM.SIZE / 2 + 0.15; // -1.275m
+      const maxX = S.ROOM.SIZE / 2 - 0.15;  // +1.275m
+      const minY = S.FLOOR_Y + 0.12;        // -0.63m (trên sàn 12cm)
+      const maxY = S.FLOOR_Y + S.ROOM.HEIGHT - 0.15; // +1.90m (dưới trần 15cm)
+      const minZ = S.ROOM.WALL_Z + 0.18;    // -0.57m (ở phía trước bức tường CRT)
+      const maxZ = S.ROOM.FRONT_Z - 0.15;   // +1.75m (ở phía trong bức tường trước)
+
+      camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z, minZ, maxZ);
+    };
 
     // YÊU CẦU #1: KHI CHUYỂN TỪ HOME SANG PROJECTS HOẶC MY CV (HOME_TO_PROJECT / HOME_TO_MY_CV):
     if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
@@ -101,6 +113,7 @@ export function CameraRig() {
       camera.position.lerp(desiredPos.current, safeDelta * 4.8);
       smoothedTarget.current.lerp(desiredTarget.current, safeDelta * 5.2);
       camera.lookAt(smoothedTarget.current);
+      clampCameraInRoom();
       return;
     }
 
@@ -154,6 +167,7 @@ export function CameraRig() {
       camera.position.lerp(desiredPos.current, posSpeed);
       smoothedTarget.current.lerp(desiredTarget.current, targetSpeed);
       camera.lookAt(smoothedTarget.current);
+      clampCameraInRoom();
       return;
     }
 
@@ -171,18 +185,42 @@ export function CameraRig() {
       state.stageTransition === 'TO_PROJECT' ||
       state.stageTransition === 'TO_MY_CV'
     ) {
-      desiredPos.current.set(0.15, 3.25, 9.45);
-      desiredTarget.current.set(0.05, 1.65, 0.25);
+      desiredPos.current.set(
+        0.15 * S.DESK_ITEMS_SCALE,
+        3.25 * S.DESK_ITEMS_SCALE,
+        9.45 * S.DESK_ITEMS_SCALE
+      );
+      desiredTarget.current.set(
+        0.05 * S.DESK_ITEMS_SCALE,
+        1.65 * S.DESK_ITEMS_SCALE,
+        0.25 * S.DESK_ITEMS_SCALE
+      );
     } else if (state.stageTransition === 'TO_ABOUT') {
-      desiredPos.current.set(-1.55, 3.65, 4.35);
-      desiredTarget.current.set(-0.35, 0.22, -0.1);
+      desiredPos.current.set(
+        -1.55 * S.DESK_ITEMS_SCALE,
+        3.65 * S.DESK_ITEMS_SCALE,
+        4.35 * S.DESK_ITEMS_SCALE
+      );
+      desiredTarget.current.set(
+        -0.35 * S.DESK_ITEMS_SCALE,
+        0.22 * S.DESK_ITEMS_SCALE,
+        -0.1 * S.DESK_ITEMS_SCALE
+      );
     } else if (
       !state.isPoweredOn &&
       state.scrollCurrent < 9.9 &&
       ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.52))
     ) {
-      desiredPos.current.set(-6.15, 2.25, 0.05);
-      desiredTarget.current.set(0.1, 1.85, -0.15);
+      desiredPos.current.set(
+        -6.15 * S.DESK_ITEMS_SCALE,
+        2.25 * S.DESK_ITEMS_SCALE,
+        0.05 * S.DESK_ITEMS_SCALE
+      );
+      desiredTarget.current.set(
+        0.1 * S.DESK_ITEMS_SCALE,
+        1.85 * S.DESK_ITEMS_SCALE,
+        -0.15 * S.DESK_ITEMS_SCALE
+      );
     } else {
       desiredPos.current.set(...stepData.cameraPos);
       desiredTarget.current.set(...stepData.cameraTarget);
@@ -198,23 +236,25 @@ export function CameraRig() {
     if (transition === 'EXPANDING_ON_CRT') {
       smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       desiredTarget.current.copy(CRT_SCREEN_CENTER_POS);
-      desiredPos.current.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 2.5);
+      desiredPos.current.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.65);
       const alpha = 1 - Math.exp(-6.0 * dt);
       camera.position.lerp(desiredPos.current, alpha);
       camera.lookAt(CRT_SCREEN_CENTER_POS);
+      clampCameraInRoom();
       prevTransitionRef.current = transition;
       return;
     }
 
     // Pha 2: Camera lao thẳng một đường trục Z trực diện xuyên qua tâm mặt kính CRT (DIVING_CAMERA)
-    // Khóa chặt cameraTarget tại CRT_SCREEN_CENTER_POS, tiến thẳng z+2.5 -> z+0.15
+    // Khóa chặt cameraTarget tại CRT_SCREEN_CENTER_POS, tiến thẳng z+0.65 -> z+0.05
     if (transition === 'DIVING_CAMERA') {
       smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       desiredTarget.current.copy(CRT_SCREEN_CENTER_POS);
-      desiredPos.current.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.15);
+      desiredPos.current.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.05);
       const alpha = 1 - Math.exp(-7.8 * dt);
       camera.position.lerp(desiredPos.current, alpha);
       camera.lookAt(CRT_SCREEN_CENTER_POS);
+      clampCameraInRoom();
       prevTransitionRef.current = transition;
       return;
     }
@@ -223,16 +263,25 @@ export function CameraRig() {
     if (transition === 'EXITING_CAMERA') {
       // Khi vừa chuyển từ INSIDE_APP sang EXITING_CAMERA, đặt vị trí camera ngay sát mặt kính CRT
       if (prevTransitionRef.current !== 'EXITING_CAMERA') {
-        camera.position.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.15);
+        camera.position.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.05);
         smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       }
       // Rút lui camera từ từ về góc nhìn toàn cảnh toàn bộ máy tính Step 10
-      desiredPos.current.set(0.15, 3.25, 9.45);
-      desiredTarget.current.set(0.05, 1.65, 0.25);
+      desiredPos.current.set(
+        0.15 * S.DESK_ITEMS_SCALE,
+        3.25 * S.DESK_ITEMS_SCALE,
+        9.45 * S.DESK_ITEMS_SCALE
+      );
+      desiredTarget.current.set(
+        0.05 * S.DESK_ITEMS_SCALE,
+        1.65 * S.DESK_ITEMS_SCALE,
+        0.25 * S.DESK_ITEMS_SCALE
+      );
       const alpha = 1 - Math.exp(-4.2 * dt);
       camera.position.lerp(desiredPos.current, alpha);
       smoothedTarget.current.lerp(desiredTarget.current, alpha);
       camera.lookAt(smoothedTarget.current);
+      clampCameraInRoom();
       prevTransitionRef.current = transition;
       return;
     }
@@ -249,6 +298,7 @@ export function CameraRig() {
       }
       wasInspectRef.current = true;
       controlsRef.current?.update();
+      clampCameraInRoom();
       return;
     }
 
@@ -260,6 +310,7 @@ export function CameraRig() {
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
     camera.lookAt(smoothedTarget.current);
+    clampCameraInRoom();
   });
 
   return (
@@ -268,9 +319,10 @@ export function CameraRig() {
       enabled={freeCam}
       enableDamping
       dampingFactor={0.07}
-      maxPolarAngle={Math.PI / 2 - 0.04}
-      minDistance={1.2}
-      maxDistance={12}
+      maxPolarAngle={Math.PI / 2 + 0.04}
+      minPolarAngle={Math.PI * 0.12}
+      minDistance={0.35}
+      maxDistance={2.1}
       zoomToCursor={true}
     />
   );

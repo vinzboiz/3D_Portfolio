@@ -6,6 +6,7 @@ import { CameraRig } from './CameraRig';
 import { Workbench } from './Workbench';
 import { RetroLabEnvironment } from '../models/RetroLabEnvironment';
 import { useBuildStore } from '../../store/useBuildStore';
+import { S } from '../../constants/scale';
 
 export function Experience() {
   const isLampOn = useBuildStore((s) => s.isLampOn);
@@ -17,8 +18,8 @@ export function Experience() {
   const { spotIntensity, ambientIntensity, lampWarmth } = useControls(
     'Workbench Lighting',
     {
-      spotIntensity: { value: 145, min: 10, max: 300, step: 5 },
-      ambientIntensity: { value: 0.65, min: 0.1, max: 2.0, step: 0.05 },
+      spotIntensity: { value: 2.8, min: 0.5, max: 15, step: 0.2 },
+      ambientIntensity: { value: 0.35, min: 0.05, max: 1.5, step: 0.05 },
       lampWarmth: { value: '#ffdfa8' },
     },
     { collapsed: true }
@@ -34,60 +35,65 @@ export function Experience() {
   return (
     <>
       <color attach="background" args={['#0e1014']} />
-      <fog attach="fog" args={['#0e1014', 22, 54]} />
+      <fog attach="fog" args={['#0e1014', 12, 28]} />
 
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
 
-      {/* Ánh sáng môi trường cân bằng: khi tắt đèn bàn, chỉ giữ lại ánh sáng phòng tối nhẹ để tôn vinh CRT & LED */}
-      <ambientLight intensity={isLampOn ? ambientIntensity : 0.08} color="#ded8ca" />
-      <hemisphereLight
-        args={['#f5efe2', '#1c1b18', isLampOn ? 0.55 : 0.05]}
+      {/* Ánh sáng môi trường tối thiểu (Chỉ giữ bóng mờ nền cực nhẹ, ánh sáng chính 100% từ Đèn bàn & Dàn CRT) */}
+      <ambientLight intensity={0.1} color="#b8c8d8" />
+
+      {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm mặt bàn và bo mạch chủ) */}
+      <object3D
+        ref={spotTargetRef}
+        position={[
+          0.25 * S.DESK_ITEMS_SCALE,
+          1.15 * S.DESK_ITEMS_SCALE,
+          0.55 * S.DESK_ITEMS_SCALE,
+        ]}
       />
 
-      {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm cụm Màn hình CRT, Bàn phím & Thùng máy PC) */}
-      <object3D ref={spotTargetRef} position={[0.25, 1.15, 0.55]} />
-
-      {/* NGUỒN SÁNG CHÍNH ĐẶT TRỰC TIẾP TẠI BẦU CHỤP ĐÈN BÀN CRÔM BÊN TRÁI MÁY TÍNH (ĐỘC LẬP HOÀN TOÀN VỚI NGUỒN PC) */}
+      {/* NGUỒN SÁNG CHÍNH 1: ĐÈN BÀN LÒ XO CRÔM (SPOTLIGHT + FILL GLOW TẠI CHAO ĐÈN) */}
       <spotLight
         ref={spotLightRef}
-        position={[-3.15, 4.58, 0.6]}
-        angle={0.95}
-        penumbra={0.68}
-        distance={26}
-        decay={1.2}
+        position={[
+          -5.51 * S.DESK_ITEMS_SCALE,
+          4.66 * S.DESK_ITEMS_SCALE,
+          0.85 * S.DESK_ITEMS_SCALE,
+        ]}
+        angle={0.92}
+        penumbra={0.65}
+        distance={2.8}
+        decay={1.6}
         intensity={isLampOn ? spotIntensity : 0}
         color={lampWarmth}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.00025}
       />
 
       {/* Quầng sáng tỏa dịu (Fill Glow) ngay tại bóng đèn bên trong chao đèn crôm */}
       <pointLight
-        position={[-3.09, 4.52, 0.62]}
-        intensity={isLampOn ? 18 : 0}
-        distance={9}
-        decay={1.6}
+        position={[
+          -5.48 * S.DESK_ITEMS_SCALE,
+          4.60 * S.DESK_ITEMS_SCALE,
+          0.86 * S.DESK_ITEMS_SCALE,
+        ]}
+        intensity={isLampOn ? 0.85 : 0}
+        distance={1.2}
+        decay={1.8}
         color="#ffe6b5"
-      />
-
-      {/* Ánh sáng phụ (Rim / Blueprint Fill Light) từ phía trước-phải giúp mặt trước Case & CRT rõ nét */}
-      <directionalLight
-        position={[5.5, 6.5, 7.5]}
-        intensity={isLampOn ? 0.95 : 0.05}
-        color={isTurbo ? '#fff2d6' : '#dce6ff'}
       />
 
       {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy */}
       <ContactShadows
-        position={[0, 0.02, 0]}
+        position={[0, 0.002, 0]}
         opacity={0.65}
-        scale={18}
-        blur={1.8}
-        far={5}
+        scale={2.2}
+        blur={1.6}
+        far={1.5}
         resolution={512}
-        color="#050505"
+        color="#040608"
       />
 
       {/* Mặt bàn Cutting Mat, Khay linh kiện & Đèn bàn Crôm */}

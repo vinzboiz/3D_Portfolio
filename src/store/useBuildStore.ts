@@ -491,20 +491,24 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       nextStepNum = 0;
       nextBenchP = 0.0;
       nextHomeP = 0.0;
-    } else if (clamped < 1.0) {
-      // Phân đoạn chuyển tiếp liên tục giữa HOME (0.0) và ABOUT STEP 01 (1.0)
-      nextStepNum = clamped < 0.5 ? 0 : 1;
-      nextBenchP = clamped;
+    } else if (clamped <= 1.0) {
+      // Phân đoạn chuyển tiếp từ HOME (0.0) vào bàn làm việc ABOUT STEP 01 (1.0)
+      // Linh kiện nằm sẵn trên bàn, CHƯA LẮP NGAY (benchProgress = 0.0), chờ thêm 1 lần scroll nữa!
+      nextStepNum = clamped < 0.75 ? 0 : 1;
+      nextBenchP = 0.0;
       nextHomeP = clamped;
     } else if (clamped >= 12.0) {
       nextStepNum = 12;
       nextBenchP = 1.0;
       nextHomeP = 1.0;
     } else {
-      const k = Math.ceil(clamped);
-      nextStepNum = k;
-      const frac = clamped - (k - 1);
-      nextBenchP = frac < 0.005 ? 1.0 : frac;
+      // Khi người dùng cuộn tiếp (clamped > 1.0):
+      // - Khoảng [1.0, 2.0]: Lắp ráp Step 01 (CPU + Heatsink + RAM) với benchProgress = clamped - 1.0
+      // - Khoảng [s, s + 1]: Lắp ráp Step s với benchProgress = clamped - s
+      const s = Math.floor(clamped);
+      const frac = clamped - s;
+      nextStepNum = Math.min(12, s);
+      nextBenchP = frac;
       nextHomeP = 1.0;
     }
 

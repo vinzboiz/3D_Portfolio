@@ -83,7 +83,7 @@ export function BenchAssemblyGroup() {
       }
     }
 
-    const p = currentStep === 1 ? stepP : 1.0;
+    const p = (currentStep === 0 || currentStep === 1) ? (currentStep === 0 ? 0.0 : stepP) : 1.0;
     const prevP = prevProgressRef.current;
 
     if (currentStep === 1) {
@@ -107,8 +107,8 @@ export function BenchAssemblyGroup() {
       const seatedMoboX = TOWER_BUILD_X - 0.07 * TOWER_SCALE[1]; // 0.723
       const step10MoboX = TOWER_STEP10_X - 0.07 * TOWER_SCALE[1]; // 2.573
 
-      if (currentStep === 1) {
-        // Step 01: Đặt phẳng ở chính giữa bàn cắt ESD
+      if (currentStep === 0 || currentStep === 1) {
+        // Step 00 & Step 01: Đặt phẳng ở chính giữa bàn bản vẽ kỹ thuật (không dựng đứng trong thùng máy)
         const alpha = Math.min(1, delta * 8);
         rootGroupRef.current.position.lerp(new THREE.Vector3(0, 0, 0), alpha);
         rootGroupRef.current.rotation.set(0, 0, 0);

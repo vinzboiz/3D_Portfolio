@@ -6,6 +6,7 @@ import { S, validateScaleContract } from '../../constants/scale';
 import {
   retroMaterials,
   RETRO_PBR_PARAMS,
+  createTechnicalBlackboardTexture,
 } from './materials/retroMaterials';
 import {
   BenchAssemblyGroup,
@@ -107,7 +108,7 @@ function ChromeArchitectDeskLamp() {
     const innerShade = new THREE.MeshStandardMaterial({
       color: '#fff8e8',
       emissive: '#ffdf9a',
-      emissiveIntensity: 0.85,
+      emissiveIntensity: 0.35,
       roughness: 0.35,
       metalness: 0.1,
       side: THREE.BackSide,
@@ -165,25 +166,23 @@ function ChromeArchitectDeskLamp() {
     ]);
     const tCordGeo = new THREE.TubeGeometry(topCurve, 24, 0.016, 8, false);
 
-    // 4. DÂY NGUỒN ĐÈN BÀN THỰC TẾ (YÊU CẦU #3):
+    // 4. DÂY NGUỒN ĐÈN BÀN THỰC TẾ:
     // - Đoạn 1: Xuất phát từ cổ chân đế đèn (y ~ 0.035), uốn lượn tự nhiên nằm sát trên mặt bàn
-    // - Đoạn 2: Vắt 90 độ qua mép bàn rồi buông thòng thẳng xuống gầm bàn (y từ 0 xuống -3.50)
+    // - Đoạn 2: Vắt 90 độ qua mép trái bàn (x = -2.53 local) rồi buông thòng thẳng xuống gầm bàn
     const cordCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-0.66, 0.035, -0.15),
-      new THREE.Vector3(-0.85, 0.024, -0.25),
-      new THREE.Vector3(-1.35, 0.022, -0.42),
-      new THREE.Vector3(-1.95, 0.022, -0.55),
-      new THREE.Vector3(-2.65, 0.022, -0.62),
-      new THREE.Vector3(-3.35, 0.022, -0.65),
-      new THREE.Vector3(-3.72, 0.016, -0.65),
-      // Uốn cong 90 độ vắt qua mép bàn
-      new THREE.Vector3(-3.78, -0.06, -0.65),
-      new THREE.Vector3(-3.80, -0.25, -0.65),
+      new THREE.Vector3(-0.95, 0.024, -0.25),
+      new THREE.Vector3(-1.45, 0.022, -0.38),
+      new THREE.Vector3(-1.95, 0.022, -0.45),
+      new THREE.Vector3(-2.45, 0.016, -0.48),
+      // Uốn cong 90 độ vắt qua mép bàn bên trái
+      new THREE.Vector3(-2.52, -0.06, -0.48),
+      new THREE.Vector3(-2.54, -0.25, -0.48),
       // Buông thòng thẳng xuống phía dưới gầm bàn
-      new THREE.Vector3(-3.80, -0.85, -0.65),
-      new THREE.Vector3(-3.79, -1.85, -0.65),
-      new THREE.Vector3(-3.78, -2.75, -0.65),
-      new THREE.Vector3(-3.77, -3.50, -0.65),
+      new THREE.Vector3(-2.54, -0.85, -0.48),
+      new THREE.Vector3(-2.53, -1.85, -0.48),
+      new THREE.Vector3(-2.52, -2.75, -0.48),
+      new THREE.Vector3(-2.51, -3.5, -0.48),
     ]);
     const dCordGeo = new THREE.TubeGeometry(cordCurve, 64, 0.025, 10, false);
 
@@ -225,8 +224,8 @@ function ChromeArchitectDeskLamp() {
   ]);
 
   return (
-    /* Đặt đèn bàn dịch sang cạnh trái bàn [-4.25, 0, 0.85] để tạo khoảng cách thoáng với màn hình CRT mà vẫn soi rõ toàn bộ bàn máy */
-    <group position={[-4.25, 0, 0.85]} rotation={[0, -0.22, 0]}>
+    /* Đặt đèn bàn sang gần cạnh trái bàn hơn 1 nửa [-6.65, 0, 0.85] (cách mép trái bàn ~27cm chuẩn công thái học) */
+    <group position={[-6.65, 0, 0.85]} rotation={[0, -0.22, 0]}>
       {/* 1. CHÂN ĐẾ TRÒN MẠ CRÔM BÓNG GƯƠNG (DOMED CIRCULAR BASE) */}
       <mesh geometry={baseLatheGeo} castShadow receiveShadow material={chromeMat} />
       {/* Đệm cao su đen chống trượt dưới đáy đế */}
@@ -486,6 +485,14 @@ export function Workbench() {
   }, [stageTransition]);
 
   const activeStepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
+
+  const technicalBlackboardTex = useMemo(() => createTechnicalBlackboardTexture(), []);
+
+  useEffect(() => {
+    return () => {
+      technicalBlackboardTex.dispose();
+    };
+  }, [technicalBlackboardTex]);
 
   useFrame((_, delta) => {
     const state = useBuildStore.getState();
@@ -813,8 +820,22 @@ export function Workbench() {
         position={[0, -S.TABLE.TOP_THICK / 2, 0]}
         receiveShadow
       >
-        <meshStandardMaterial color="#0e0e0d" roughness={0.88} metalness={0.06} />
+        <meshStandardMaterial color="#0c0e12" roughness={0.88} metalness={0.06} />
       </RoundedBox>
+
+      {/* MẶT BẢNG ĐEN BẢN VẼ KỸ THUẬT (TECHNICAL BLUEPRINT BLACKBOARD DESK SURFACE) */}
+      <mesh
+        position={[0, 0.0005, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[S.TABLE.W - 0.015, S.TABLE.D - 0.015]} />
+        <meshStandardMaterial
+          map={technicalBlackboardTex}
+          roughness={0.78}
+          metalness={0.08}
+        />
+      </mesh>
 
       {/* 4 Chân bàn thép hộp vuông chịu lực (0.07m x 0.07m) nối từ đáy mặt bàn (y = -0.05) xuống sàn (y = -0.75) */}
       {[-tableLegX, tableLegX].map((lx) =>
@@ -866,70 +887,11 @@ export function Workbench() {
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
 
-      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (ĐẶT TRỰC TIẾP TRÊN MẶT BÀN GỖ ĐEN, KHÔNG DÙNG THẢM CẮT ĐỂ TRÁNH CHE LINH KIỆN) */}
+      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (ĐẶT TRỰC TIẾP TRÊN BẢNG ĐEN BẢN VẼ KỸ THUẬT) */}
       <group
         ref={componentsStageGroupRef}
         scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
       >
-        {/* 4. YÊU CẦU #5: 3 Ô ĐEN ĐẶT CHỜ LINH KIỆN TRÊN BÀN CẮT (STAGING PADS)
-               Chỉ hiển thị ở Step 01 khi CPU, Tản nhiệt và RAM còn nằm trên bàn;
-               ẩn hoàn toàn (visible={currentStep === 1}) ngay sau khi lắp xong Step 01! */}
-        <group visible={currentStep === 1}>
-        <group position={[-1.72, 0.015, -0.92]}>
-          <RoundedBox
-            args={[0.68, 0.02, 0.68]}
-            radius={0.006}
-            smoothness={1}
-            receiveShadow
-            material={retroMaterials.darkBeige}
-          />
-          <RoundedBox
-            args={[0.58, 0.015, 0.58]}
-            radius={0.004}
-            smoothness={1}
-            position={[0, 0.008, 0]}
-            receiveShadow
-            material={retroMaterials.blackAnodized}
-          />
-        </group>
-
-        <group position={[-1.72, 0.015, -0.12]}>
-          <RoundedBox
-            args={[0.68, 0.02, 0.68]}
-            radius={0.006}
-            smoothness={1}
-            receiveShadow
-            material={retroMaterials.darkBeige}
-          />
-          <RoundedBox
-            args={[0.58, 0.015, 0.58]}
-            radius={0.004}
-            smoothness={1}
-            position={[0, 0.008, 0]}
-            receiveShadow
-            material={retroMaterials.blackAnodized}
-          />
-        </group>
-
-        <group position={[-1.72, 0.015, 0.78]}>
-          <RoundedBox
-            args={[0.48, 0.02, 1.06]}
-            radius={0.006}
-            smoothness={1}
-            receiveShadow
-            material={retroMaterials.darkBeige}
-          />
-          <RoundedBox
-            args={[0.38, 0.015, 0.96]}
-            radius={0.004}
-            smoothness={1}
-            position={[0, 0.008, 0]}
-            receiveShadow
-            material={retroMaterials.blackAnodized}
-          />
-        </group>
-      </group>
-
       {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
              Xoay hướng thẳng mặt trước về phía Camera chính (+Z_world) */}
       <group

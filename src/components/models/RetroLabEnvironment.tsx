@@ -433,9 +433,9 @@ function CRTVideoWall() {
       />
 
       {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
-      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.5} distance={3.2} decay={2} color="#60a5fa" />
-      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={2.5} decay={2} color="#34d399" />
-      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={2.5} decay={2} color="#f59e0b" />
+      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={0.7} distance={2.8} decay={2} color="#60a5fa" />
+      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.2} decay={2} color="#34d399" />
+      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.2} decay={2} color="#f59e0b" />
 
       {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
       <mesh position={[0, 0.45, S.ROOM.WALL_Z + 0.2]}>
@@ -456,17 +456,25 @@ function CRTVideoWall() {
 // 2. TOÀN CẢNH PHÒNG RETRO LAB VUÔNG 1997 (SQUARE LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
-  const { floorMat, wallMat } = useMemo(() => {
+  const { floorMat, wallMat, ceilingMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
         color: '#111318',
         roughness: 0.52,
         metalness: 0.12,
+        side: THREE.DoubleSide,
       }),
       wallMat: new THREE.MeshStandardMaterial({
         color: '#0a0c10',
         roughness: 0.92,
         metalness: 0.05,
+        side: THREE.DoubleSide,
+      }),
+      ceilingMat: new THREE.MeshStandardMaterial({
+        color: '#080a0e',
+        roughness: 0.96,
+        metalness: 0.02,
+        side: THREE.DoubleSide,
       }),
     };
   }, []);
@@ -475,13 +483,15 @@ export function RetroLabEnvironment() {
     return () => {
       floorMat.dispose();
       wallMat.dispose();
+      ceilingMat.dispose();
     };
-  }, [floorMat, wallMat]);
+  }, [floorMat, wallMat, ceilingMat]);
 
   // Tâm Z của phòng hình vuông: giữa tường sau (BACK_WALL_Z = -0.95m) và rìa trước (FRONT_Z = 1.90m)
   const roomCenterZ = (S.ROOM.BACK_WALL_Z + S.ROOM.FRONT_Z) / 2; // 0.475m
   const halfWall = S.ROOM.SIZE / 2; // 1.425m
   const wallCenterY = S.FLOOR_Y + S.ROOM.HEIGHT / 2; // -0.75 + 1.4 = 0.65m
+  const ceilingY = S.FLOOR_Y + S.ROOM.HEIGHT; // 2.05m
 
   return (
     <group>
@@ -493,8 +503,18 @@ export function RetroLabEnvironment() {
       <CRTVideoWall />
 
       {/* =======================================================================
-          B. PHÒNG RETRO LAB HÌNH VUÔNG (RỘNG 2.85m x SÂU 2.85m VỪA KHÍT DÃY MÀN HÌNH 2.64m)
+          B. PHÒNG RETRO LAB HÌNH VUÔNG KÍN 6 MẶT (CHỐNG BUNG VIEW / CHỐNG LỌT CAMERA)
+          - Rộng 2.85m x Cao 2.80m x Sâu 2.85m
+          - Gồm đầy đủ 6 mặt: Sàn, Trần, Tường Sau, Tường Trước, Tường Trái, Tường Phải
+          - Kèm hộp bao bảo vệ (Enclosing Shell) BackSide chống hở góc
          ======================================================================= */}
+
+      {/* 0. HỘP BAO BẢO VỆ TOÀN PHÒNG (INVERTED ENCLOSING SHELL - CHỐNG LỘ VOID TỪ MỌI GÓC) */}
+      <mesh position={[0, wallCenterY, roomCenterZ]}>
+        <boxGeometry args={[S.ROOM.SIZE + 0.04, S.ROOM.HEIGHT + 0.04, S.ROOM.SIZE + 0.04]} />
+        <meshBasicMaterial color="#040608" side={THREE.BackSide} />
+      </mesh>
+
       {/* 1. Sàn xưởng hình vuông (Y = S.FLOOR_Y = -0.75m) */}
       <mesh
         position={[0, S.FLOOR_Y, roomCenterZ]}
@@ -522,7 +542,17 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 4. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 4. Tường trước (Z = S.ROOM.FRONT_Z = 1.90m, khép kín hoàn toàn phòng phía trước) */}
+      <mesh
+        position={[0, wallCenterY, S.ROOM.FRONT_Z]}
+        rotation={[0, Math.PI, 0]}
+        receiveShadow
+        material={wallMat}
+      >
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
+      </mesh>
+
+      {/* 5. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
         position={[-halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, Math.PI / 2, 0]}
@@ -532,7 +562,7 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 5. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 6. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
         position={[halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, -Math.PI / 2, 0]}
@@ -541,6 +571,37 @@ export function RetroLabEnvironment() {
       >
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
+
+      {/* 7. Trần xưởng kín (Y = 2.05m) */}
+      <mesh
+        position={[0, ceilingY, roomCenterZ]}
+        rotation={[Math.PI / 2, 0, 0]}
+        receiveShadow
+        material={ceilingMat}
+      >
+        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
+      </mesh>
+
+      {/* 8. ĐÈN TUÝP HUỲNH QUANG TRẦN PHÒNG LAB (OVERHEAD RETRO FLUORESCENT FIXTURE) */}
+      <group position={[0, ceilingY - 0.03, roomCenterZ]}>
+        {/* Máng đèn kim loại trắng ngà */}
+        <mesh position={[0, 0.015, 0]}>
+          <boxGeometry args={[1.4, 0.035, 0.22]} />
+          <meshStandardMaterial color="#c8c2b5" roughness={0.6} metalness={0.4} />
+        </mesh>
+        {/* 2 Bóng tuýp huỳnh quang T8 (Tắt đèn để chỉ duy trì ánh sáng từ màn CRT & đèn bàn) */}
+        {[-0.055, 0.055].map((zOffset, i) => (
+          <mesh key={`tube-${i}`} position={[0, -0.01, zOffset]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.014, 0.014, 1.25, 12]} />
+            <meshStandardMaterial
+              color="#d4d4d8"
+              emissive="#000000"
+              emissiveIntensity={0.0}
+              roughness={0.4}
+            />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
