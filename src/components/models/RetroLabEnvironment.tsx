@@ -433,9 +433,9 @@ function CRTVideoWall() {
       />
 
       {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
-      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={0.7} distance={2.8} decay={2} color="#60a5fa" />
-      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.2} decay={2} color="#34d399" />
-      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.2} decay={2} color="#f59e0b" />
+      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.2} decay={2} color="#60a5fa" />
+      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.8} distance={2.6} decay={2} color="#34d399" />
+      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.8} distance={2.6} decay={2} color="#f59e0b" />
 
       {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
       <mesh position={[0, 0.45, S.ROOM.WALL_Z + 0.2]}>
@@ -589,18 +589,20 @@ export function RetroLabEnvironment() {
           <boxGeometry args={[1.4, 0.035, 0.22]} />
           <meshStandardMaterial color="#c8c2b5" roughness={0.6} metalness={0.4} />
         </mesh>
-        {/* 2 Bóng tuýp huỳnh quang T8 (Tắt đèn để chỉ duy trì ánh sáng từ màn CRT & đèn bàn) */}
+        {/* 2 Bóng tuýp huỳnh quang T8 phát sáng dịu nâng sáng không gian phòng */}
         {[-0.055, 0.055].map((zOffset, i) => (
           <mesh key={`tube-${i}`} position={[0, -0.01, zOffset]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.014, 0.014, 1.25, 12]} />
             <meshStandardMaterial
-              color="#d4d4d8"
-              emissive="#000000"
-              emissiveIntensity={0.0}
-              roughness={0.4}
+              color="#ffffff"
+              emissive="#e0f2fe"
+              emissiveIntensity={0.65}
+              roughness={0.25}
             />
           </mesh>
         ))}
+        {/* Nguồn sáng mềm từ trần rọi xuống cả phòng */}
+        <pointLight position={[0, -0.1, 0]} intensity={0.75} distance={3.8} decay={2} color="#f0f6ff" />
       </group>
     </group>
   );

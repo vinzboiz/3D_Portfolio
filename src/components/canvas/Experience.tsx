@@ -15,14 +15,15 @@ export function Experience() {
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
   const spotTargetRef = useRef<THREE.Object3D | null>(null);
 
-  const { spotIntensity, ambientIntensity, lampWarmth } = useControls(
+  const { spotIntensity, ambientIntensity, bulbGlowIntensity, lampWarmth } = useControls(
     'Workbench Lighting',
     {
-      spotIntensity: { value: 2.8, min: 0.5, max: 15, step: 0.2 },
-      ambientIntensity: { value: 0.35, min: 0.05, max: 1.5, step: 0.05 },
-      lampWarmth: { value: '#ffdfa8' },
+      spotIntensity: { value: 6.8, min: 0.5, max: 25, step: 0.2, label: 'Độ sáng Đèn bàn' },
+      bulbGlowIntensity: { value: 1.8, min: 0.1, max: 6.0, step: 0.1, label: 'Quầng bóng đèn' },
+      ambientIntensity: { value: 0.45, min: 0.05, max: 1.5, step: 0.05, label: 'Ánh sáng nền (Ambient)' },
+      lampWarmth: { value: '#ffdfa8', label: 'Màu đèn vàng ấm' },
     },
-    { collapsed: true }
+    { collapsed: false }
   );
 
   useEffect(() => {
@@ -40,8 +41,8 @@ export function Experience() {
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
 
-      {/* Ánh sáng môi trường tối thiểu (Chỉ giữ bóng mờ nền cực nhẹ, ánh sáng chính 100% từ Đèn bàn & Dàn CRT) */}
-      <ambientLight intensity={0.1} color="#b8c8d8" />
+      {/* Ánh sáng môi trường cân bằng rõ nét */}
+      <ambientLight intensity={ambientIntensity} color="#cdd9e6" />
 
       {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm mặt bàn và bo mạch chủ) */}
       <object3D
@@ -61,10 +62,10 @@ export function Experience() {
           4.66 * S.DESK_ITEMS_SCALE,
           0.85 * S.DESK_ITEMS_SCALE,
         ]}
-        angle={0.92}
+        angle={1.05}
         penumbra={0.65}
-        distance={2.8}
-        decay={1.6}
+        distance={3.8}
+        decay={1.5}
         intensity={isLampOn ? spotIntensity : 0}
         color={lampWarmth}
         castShadow
@@ -79,10 +80,17 @@ export function Experience() {
           4.60 * S.DESK_ITEMS_SCALE,
           0.86 * S.DESK_ITEMS_SCALE,
         ]}
-        intensity={isLampOn ? 0.85 : 0}
-        distance={1.2}
+        intensity={isLampOn ? bulbGlowIntensity : 0}
+        distance={1.6}
         decay={1.8}
         color="#ffe6b5"
+      />
+
+      {/* Nguồn sáng mềm bổ trợ từ góc trước-phải rọi vào mặt trước Thùng máy, Màn CRT và Bàn phím */}
+      <directionalLight
+        position={[1.2, 1.8, 1.8]}
+        intensity={0.42}
+        color={isTurbo ? '#fff2d6' : '#e6f0fa'}
       />
 
       {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy */}

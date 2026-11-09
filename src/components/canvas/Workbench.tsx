@@ -108,7 +108,7 @@ function ChromeArchitectDeskLamp() {
     const innerShade = new THREE.MeshStandardMaterial({
       color: '#fff8e8',
       emissive: '#ffdf9a',
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.55,
       roughness: 0.35,
       metalness: 0.1,
       side: THREE.BackSide,
