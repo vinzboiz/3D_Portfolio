@@ -510,22 +510,23 @@ export function ProjectTunnelShowcase() {
 
       {/* =====================================================================
           3. RETRO VIEWFINDER HUD (GIAO DIỆN 4 GÓC MÀN HÌNH CHUẨN THẬP NIÊN 90)
+          Đẩy xuống top-[96px] để tách biệt an toàn dưới thanh Navbar 80px
          ===================================================================== */}
       {/* 4 Dấu ngoặc vuông chữ L (Corner Brackets) */}
-      <div className="pointer-events-none absolute top-4 left-4 h-8 w-8 border-t-2 border-l-2 border-white/70" />
-      <div className="pointer-events-none absolute top-4 right-4 h-8 w-8 border-t-2 border-r-2 border-white/70" />
+      <div className="pointer-events-none absolute top-[96px] left-4 h-8 w-8 border-t-2 border-l-2 border-white/70" />
+      <div className="pointer-events-none absolute top-[96px] right-4 h-8 w-8 border-t-2 border-r-2 border-white/70" />
       <div className="pointer-events-none absolute bottom-4 left-4 h-8 w-8 border-b-2 border-l-2 border-white/70" />
       <div className="pointer-events-none absolute bottom-4 right-4 h-8 w-8 border-b-2 border-r-2 border-white/70" />
 
       {/* CHÍNH GIỮA CẠNH TRÊN: CHỈ DẪN NHẤP CHUỘT */}
-      <div className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 border border-white/20 bg-black/80 px-4 py-1 backdrop-blur-sm">
+      <div className="pointer-events-none absolute top-[96px] left-1/2 -translate-x-1/2 border border-white/20 bg-black/80 px-4 py-1 backdrop-blur-sm">
         <span className="font-mono text-[11px] tracking-widest text-[#ffdf66]">
           CLICK A FRAME TO VIEW THE PROJECT
         </span>
       </div>
 
       {/* GÓC TRÊN BÊN PHẢI: THÔNG SỐ RETRO + CHỈ DẪN CUỘN LÊN ĐỂ THOÁT */}
-      <div className="pointer-events-none absolute top-5 right-6 flex items-center gap-3">
+      <div className="pointer-events-none absolute top-[96px] right-6 flex items-center gap-3">
         <div className="hidden sm:block font-mono text-xs text-white/60 tracking-wider">
           CAM 04 · 60 FPS · 3DFX GLIDE
         </div>

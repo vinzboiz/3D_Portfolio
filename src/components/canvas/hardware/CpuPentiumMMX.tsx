@@ -147,26 +147,10 @@ export const CpuPentiumMMX = forwardRef<THREE.Group>(function CpuPentiumMMX(_, r
         material={retroMaterials.ceramicCpu}
       />
 
-      {/* Chấm & Vạch tam giác mạ vàng định vị Pin 1 ở góc trên trái (-X, -Z) */}
-      <mesh
-        position={[-0.205, 0.0145, -0.205]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={retroMaterials.goldPin}
-      >
-        <ringGeometry args={[0.008, 0.024, 16]} />
-      </mesh>
-      <mesh
-        position={[-0.225, 0.0145, -0.225]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={retroMaterials.goldPin}
-      >
-        <circleGeometry args={[0.012, 3]} />
-      </mesh>
-
       {/* 2. MẶT LƯNG KIM LOẠI VÀNG (GOLD HEAT SPREADER) TRỌN VẸN MẶT TRÊN NHƯ ẢNH 2 */}
       {/* Khối đế kim loại vàng mạ bóng có độ dày thực tế */}
       <RoundedBox
-        args={[0.455, 0.009, 0.455]}
+        args={[0.485, 0.009, 0.485]}
         radius={0.003}
         smoothness={2}
         position={[0, 0.0175, 0]}
@@ -177,7 +161,7 @@ export const CpuPentiumMMX = forwardRef<THREE.Group>(function CpuPentiumMMX(_, r
 
       {/* Mặt phẳng in laser kim loại vàng chuẩn planar UV (tuyệt đối không bị co giãn hay cắt xén chữ) */}
       <mesh position={[0, 0.0225, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.45, 0.45]} />
+        <planeGeometry args={[0.485, 0.485]} />
         <meshStandardMaterial
           map={spreaderTexture}
           roughness={0.32}

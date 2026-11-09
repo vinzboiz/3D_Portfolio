@@ -21,7 +21,7 @@ export function CameraRig() {
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
   useEffect(() => {
-    const stepData = ASSEMBLY_STEPS[currentStep - 1] ?? ASSEMBLY_STEPS[0];
+    const stepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
     desiredPos.current.set(...stepData.cameraPos);
     desiredTarget.current.set(...stepData.cameraTarget);
 
@@ -31,7 +31,7 @@ export function CameraRig() {
     }
   }, [currentStep, freeCam]);
 
-  useFrame((_, delta) => {
+  useFrame((r3fState, delta) => {
     const state = useBuildStore.getState();
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
@@ -50,7 +50,47 @@ export function CameraRig() {
 
     const stepNum = state.currentStep;
     const stepP = state.benchProgress;
-    const stepData = ASSEMBLY_STEPS[stepNum - 1] ?? ASSEMBLY_STEPS[0];
+    const stepData = ASSEMBLY_STEPS[stepNum] ?? ASSEMBLY_STEPS[0];
+
+    const scrollVal = state.scrollCurrent;
+
+    // YÊU CẦU #2: KHI TRONG ĐOẠN HOME (0.0) <-> ABOUT STEP 1 (1.0):
+    // Tự động nội suy mượt từ góc nhìn bàn lắp ráp Step 01 về lại góc nhìn trên cao của Step 00
+    if (
+      scrollVal < 1.0 &&
+      state.stageTransition !== 'TO_PROJECT' &&
+      state.stageTransition !== 'TO_MY_CV'
+    ) {
+      const t = THREE.MathUtils.clamp(scrollVal, 0, 1);
+      const homePos = new THREE.Vector3(-4.2, 4.6, 6.2);
+      const homeTarget = new THREE.Vector3(0, 0.4, 0);
+      const step1Pos = new THREE.Vector3(-1.55, 3.65, 4.35);
+      const step1Target = new THREE.Vector3(-0.35, 0.22, -0.1);
+
+      // Nội suy mượt vị trí Camera giữa Home và Step 1
+      desiredPos.current.lerpVectors(homePos, step1Pos, t);
+      desiredTarget.current.lerpVectors(homeTarget, step1Target, t);
+
+      // Hiệu ứng chuột nhìn quanh tại Home (giảm dần về 0 khi t -> 1)
+      const isTransitioning =
+        state.stageTransition === 'TO_HOME' || state.stageTransition === 'TO_HOME_STEP1';
+      const mouseWeight = isTransitioning ? 0 : Math.max(0, 1 - t * 1.5);
+      const lookOffsetX = mouseWeight * r3fState.pointer.x * 2.8;
+      const lookOffsetY = mouseWeight * r3fState.pointer.y * 1.6;
+      const lookOffsetZ = mouseWeight * (-r3fState.pointer.x * 1.2);
+
+      desiredTarget.current.x += lookOffsetX;
+      desiredTarget.current.y += lookOffsetY;
+      desiredTarget.current.z += lookOffsetZ;
+
+      const posSpeed = isTransitioning ? safeDelta * 3.8 : safeDelta * 3.2;
+      const targetSpeed = isTransitioning ? safeDelta * 4.2 : safeDelta * 4.5;
+
+      camera.position.lerp(desiredPos.current, posSpeed);
+      smoothedTarget.current.lerp(desiredTarget.current, targetSpeed);
+      camera.lookAt(smoothedTarget.current);
+      return;
+    }
 
     // Sau khi lắp đủ toàn bộ linh kiện vào thùng máy (cuối Step 09 -> nửa đầu Step 10 khi đóng nắp chữ U):
     // Zoom lùi ra góc nhìn ngang toàn cảnh để thấy trọn vẹn bên phải và toàn bộ lòng thùng máy trước khi đóng nắp,

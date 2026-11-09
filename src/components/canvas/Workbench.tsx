@@ -458,7 +458,7 @@ export function Workbench() {
     };
   }, [matWithZonesTex, matCleanTex]);
 
-  const activeStepData = ASSEMBLY_STEPS[currentStep - 1] ?? ASSEMBLY_STEPS[0];
+  const activeStepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
 
   useFrame((_, delta) => {
     const state = useBuildStore.getState();
@@ -537,6 +537,72 @@ export function Workbench() {
       transitionTimeRef.current += dt;
       const t = transitionTimeRef.current;
 
+      // XỬ LÝ TO_HOME_STEP1 (Khi click Home từ Step 01):
+      // Tween mượt smoothScrollProgress từ 1.0 về 0.0 trong 1.2s với easePower3InOut
+      if (stageTransition === 'TO_HOME_STEP1') {
+        const duration = 1.2;
+        const p = Math.min(1, t / duration);
+        // power3.inOut
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+        const curScroll = THREE.MathUtils.lerp(1.0, 0.0, ease);
+        useBuildStore.getState().syncScrollCurrent(curScroll);
+
+        if (p >= 1) {
+          useBuildStore.getState().syncScrollCurrent(0.0);
+          useBuildStore.getState().setStageTransition('IDLE');
+          transitionTimeRef.current = 0;
+          retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+        }
+        return;
+      }
+
+      // XỬ LÝ TO_HOME (Khi click Home từ Step >= 2):
+      // Pha 1 (0.0s -> 0.6s): Đẩy mượt cụm máy sang phải x = +18 với power2.in
+      // Pha 2 (0.6s -> 1.5s, duration 0.9s): Reset bàn x = 0, tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
+      if (stageTransition === 'TO_HOME') {
+        const exitDuration = 0.60;
+        const enterDuration = 0.90;
+
+        if (transitionPhaseRef.current === 'EXIT') {
+          const p1 = Math.min(1, t / exitDuration);
+          const easeIn = p1 * p1; // power2.in
+          const offsetX = THREE.MathUtils.lerp(0, 18, easeIn);
+          if (componentsStageGroupRef.current) {
+            componentsStageGroupRef.current.position.x = offsetX;
+          }
+
+          if (p1 >= 1) {
+            transitionPhaseRef.current = 'ENTER';
+            transitionTimeRef.current = 0;
+            // Bước B (mốc 0.6s): Reset ngầm về Step 00, đưa bàn thiết kế về lại x = 0, đặt scrollCurrent = 1.0
+            useBuildStore.getState().applyHomeResetState();
+            if (componentsStageGroupRef.current) {
+              componentsStageGroupRef.current.position.x = 0;
+            }
+          }
+        } else {
+          // Pha ENTER (0.9s): Tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
+          const p2 = Math.min(1, t / enterDuration);
+          const easeOut = 1 - Math.pow(1 - p2, 3); // power3.out
+          const curScroll = THREE.MathUtils.lerp(1.0, 0.0, easeOut);
+          useBuildStore.getState().syncScrollCurrent(curScroll);
+
+          if (componentsStageGroupRef.current) {
+            componentsStageGroupRef.current.position.x = 0;
+          }
+
+          if (p2 >= 1) {
+            useBuildStore.getState().syncScrollCurrent(0.0);
+            transitionPhaseRef.current = 'EXIT';
+            transitionTimeRef.current = 0;
+            useBuildStore.getState().setStageTransition('IDLE');
+            retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+          }
+        }
+        return;
+      }
+
+      // XỬ LÝ CÁC CHUYỂN CẢNH KHÁC (TO_ABOUT, TO_PROJECT, TO_MY_CV):
       const exitDuration = stageTransition === 'TO_ABOUT' ? 0.75 : 0.70;
       const enterDuration = 0.85;
 
@@ -549,27 +615,21 @@ export function Workbench() {
         }
 
         if (p1 >= 1) {
-          // Khi đã bay khuất hoàn toàn sang phải (+18): chuyển sang pha ENTER
           transitionPhaseRef.current = 'ENTER';
           transitionTimeRef.current = 0;
-          // Đặt cụm stage tức thời ở vị trí ngoài màn hình bên trái (-18)
           if (componentsStageGroupRef.current) {
             componentsStageGroupRef.current.position.x = -18;
           }
-          // Kích hoạt nạp trạng thái mục tiêu trong khi đang ẩn ngoài màn hình
           if (stageTransition === 'TO_ABOUT') {
             useBuildStore.getState().applyStep1State();
           } else if (stageTransition === 'TO_MY_CV') {
             useBuildStore.getState().applyStep12State();
           } else {
-            // 'TO_PROJECT'
             useBuildStore.getState().applyStep11State();
           }
         }
       } else {
-        // Pha ENTER: Cụm máy tính di chuyển từ trái (-18) sang giữa (0) trong 0.85s với Power3.out
         const p2 = Math.min(1, t / enterDuration);
-        // Power3.out (cubic ease-out: 1 - Math.pow(1 - p2, 3))
         const easeOut = 1 - Math.pow(1 - p2, 3);
         const offsetX = THREE.MathUtils.lerp(-18, 0, easeOut);
         if (componentsStageGroupRef.current) {
@@ -577,7 +637,6 @@ export function Workbench() {
         }
 
         if (p2 >= 1) {
-          // Hoàn tất chuyển cảnh: Khóa chặt tại tâm (0)
           if (componentsStageGroupRef.current) {
             componentsStageGroupRef.current.position.x = 0;
           }
@@ -587,7 +646,6 @@ export function Workbench() {
           useBuildStore.getState().setStageTransition('IDLE');
           retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
 
-          // Chỉ sau khi bộ máy đã trượt vào đứng yên ở giữa bàn mới kích hoạt nạp đĩa / cắm thẻ
           if (finishedTransition === 'TO_PROJECT') {
             useBuildStore.getState().triggerInsertCdSequence();
           } else if (finishedTransition === 'TO_MY_CV') {
@@ -809,8 +867,8 @@ export function Workbench() {
         <PeripheralsCRT peripheralsProgress={peripheralsProgress} />
       )}
 
-        {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 10) */}
-        <group ref={targetRingRef} position={[0, 0.015, 0]} visible={currentStep < 10}>
+        {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0 VÀ STEP 10) */}
+        <group ref={targetRingRef} position={[0, 0.015, 0]} visible={currentStep >= 1 && currentStep < 10}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.38, 0.41, 32]} />
             <meshBasicMaterial

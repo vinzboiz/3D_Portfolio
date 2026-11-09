@@ -35,7 +35,9 @@ export type StageTransition =
   | 'ABOUT_TO_PROJECT'
   | 'TO_ABOUT'
   | 'TO_PROJECT'
-  | 'TO_MY_CV';
+  | 'TO_MY_CV'
+  | 'TO_HOME'
+  | 'TO_HOME_STEP1';
 
 export type CdLocation = 'DESK' | 'TRAY' | 'INSIDE';
 export type CardLocation = 'DESK' | 'INSERTED';
@@ -187,6 +189,9 @@ export interface BuildStoreState {
   enterProjectApp: () => void;
   exitProjectApp: () => void;
   quickJumpToProjects: () => void;
+  homeTransitionProgress: number;
+  setHomeTransitionProgress: (val: number) => void;
+  jumpToHome: () => void;
   jumpToAbout: () => void;
   jumpToProject: () => void;
   jumpToCv: () => void;
@@ -194,6 +199,7 @@ export interface BuildStoreState {
   applyStep11State: () => void;
   applyStep12State: () => void;
   applyStep1State: () => void;
+  applyHomeResetState: () => void;
   setStageTransition: (val: StageTransition) => void;
   setProjectScrollProgress: (val: number) => void;
   setCrtExpandProgress: (val: number) => void;
@@ -237,7 +243,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   const crtDisplaying = () => get().isCrtPowered && get().isPoweredOn;
 
   return {
-  currentStep: 1,
+  currentStep: 0,
+  homeTransitionProgress: 0,
   isTurbo: true,
   isPoweredOn: false,
   freeCam: false,
@@ -283,14 +290,46 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   benchProgress: 0,
   benchAutoTarget: 0,
   benchScrubbing: true,
-  scrollTarget: 0,
-  scrollCurrent: 0,
+  scrollTarget: 0.0,
+  scrollCurrent: 0.0,
+
+  setHomeTransitionProgress: (val: number) => {
+    set({ homeTransitionProgress: Math.max(0, Math.min(1, val)) });
+  },
 
   setStep: (step: number) => {
-    const clamped = Math.max(1, Math.min(ASSEMBLY_STEPS.length, step));
+    const clamped = Math.max(0, Math.min(12, step));
     // CHẶN: Khi đang ở Step 10 mà máy chưa khởi động xong vào DESKTOP -> Không cho cuộn sang Step 11/12
     if (get().currentStep === 10 && clamped > 10 && get().osState !== 'DESKTOP') {
       get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+      return;
+    }
+
+    // 0. KHI VỀ LẠI STEP 00 (HOME):
+    if (clamped === 0) {
+      if (cdSequenceTimer) {
+        clearTimeout(cdSequenceTimer);
+        cdSequenceTimer = null;
+      }
+      set({ isCdAnimating: false });
+      if (get().currentStep >= 11) {
+        if (get().cdLocation === 'INSIDE' || get().cdLocation === 'TRAY') {
+          get().triggerEjectCdToDeskSequence(true);
+        }
+        if (get().cardLocation === 'INSERTED') {
+          set({ cardLocation: 'DESK', floppyInserted: false });
+        }
+        const currentWins = get().openWindows;
+        const nextWins = currentWins.filter((w) => w !== 'AUTORUN' && w !== 'WORDPAD_CV');
+        set({
+          openWindows: nextWins,
+          activeWindow: nextWins.length > 0 ? nextWins[nextWins.length - 1] : null,
+        });
+      }
+      set({
+        scrollTarget: 0.0,
+        benchScrubbing: true,
+      });
       return;
     }
 
@@ -329,7 +368,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     // 3. KHI CUỘN NGƯỢC TỪ STEP 10 VỀ STEP 09 TRỞ XUỐNG (ABOUT STEP 10 -> STEP 09 THÁO MÁY):
     // BẮT BUỘC TẮT MÁY AN TOÀN TRƯỚC KHI THÁO LINH KIỆN
-    const targetTimeline = clamped === 1 ? 0 : (clamped - 1) + 0.99;
+    const targetTimeline = clamped;
 
     if (get().currentStep === 10 && clamped <= 9) {
       if (shutdownDisassemblyTimer) {
@@ -411,6 +450,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({
       scrollTarget: targetTimeline,
       benchScrubbing: true,
+      homeTransitionProgress: 1,
     });
   },
 
@@ -431,24 +471,38 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
       return;
     }
-    const next = Math.max(0, Math.min(ASSEMBLY_STEPS.length, get().scrollTarget + delta));
+    const next = Math.max(0.0, Math.min(12, get().scrollTarget + delta));
     set({ scrollTarget: next, benchScrubbing: true });
   },
 
   syncScrollCurrent: (val: number) => {
-    const clamped = Math.max(0, Math.min(ASSEMBLY_STEPS.length, val));
+    const clamped = Math.max(0.0, Math.min(12, val));
     const prevStep = get().currentStep;
     const prevScroll = get().scrollCurrent;
 
     let nextStepNum: number;
     let nextBenchP: number;
+    let nextHomeP: number;
 
-    if (clamped >= ASSEMBLY_STEPS.length) {
-      nextStepNum = ASSEMBLY_STEPS.length;
+    if (clamped <= 0.05) {
+      nextStepNum = 0;
+      nextBenchP = 0.0;
+      nextHomeP = 0.0;
+    } else if (clamped < 1.0) {
+      // Phân đoạn chuyển tiếp liên tục giữa HOME (0.0) và ABOUT STEP 01 (1.0)
+      nextStepNum = clamped < 0.5 ? 0 : 1;
+      nextBenchP = clamped;
+      nextHomeP = clamped;
+    } else if (clamped >= 12.0) {
+      nextStepNum = 12;
       nextBenchP = 1.0;
+      nextHomeP = 1.0;
     } else {
-      nextStepNum = Math.floor(clamped) + 1;
-      nextBenchP = clamped - Math.floor(clamped);
+      const k = Math.ceil(clamped);
+      nextStepNum = k;
+      const frac = clamped - (k - 1);
+      nextBenchP = frac < 0.005 ? 1.0 : frac;
+      nextHomeP = 1.0;
     }
 
     if (nextStepNum !== prevStep) {
@@ -578,6 +632,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       currentStep: nextStepNum,
       benchProgress: nextBenchP,
       benchAutoTarget: nextBenchP,
+      homeTransitionProgress: nextHomeP,
       benchScrubbing: true,
     });
   },
@@ -1267,6 +1322,61 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     get().jumpToProject();
   },
 
+  jumpToHome: () => {
+    const { currentStep, isInsideProjectApp, soundEnabled, stageTransition } = get();
+    // Nếu đang ở Home rồi (currentStep === 0) và không có transition thì bỏ qua
+    if (currentStep === 0 && stageTransition === 'IDLE') return;
+    if (stageTransition !== 'IDLE') return;
+
+    if (shutdownDisassemblyTimer) {
+      clearTimeout(shutdownDisassemblyTimer);
+      shutdownDisassemblyTimer = null;
+    }
+    if (cdSequenceTimer) {
+      clearTimeout(cdSequenceTimer);
+      cdSequenceTimer = null;
+    }
+    set({ isCdAnimating: false });
+
+    if (expandRaf) {
+      cancelAnimationFrame(expandRaf);
+      expandRaf = null;
+    }
+    if (divingTimer) {
+      clearTimeout(divingTimer);
+      divingTimer = null;
+    }
+    if (exitTimer) {
+      clearTimeout(exitTimer);
+      exitTimer = null;
+    }
+
+    // 1. Nếu đang ở trong màn hình xem project (isInsideProjectApp === true), thoát ra ngoài ngay lập tức
+    if (isInsideProjectApp) {
+      get().exitProjectApp();
+    }
+
+    retroSound.playButtonClick(soundEnabled);
+
+    if (currentStep === 1) {
+      // YÊU CẦU #3: Nếu đang ở Step 01 -> tween mượt smoothScrollProgress từ 1.0 về 0.0 trong 1.2s power3.inOut
+      set({
+        stageTransition: 'TO_HOME_STEP1',
+        scrollTarget: 0.0,
+      });
+    } else {
+      // YÊU CẦU #3: Nếu đang ở Step >= 2: Pha 1 (0.0s -> 0.6s) cất máy sang phải -> Pha 2 (0.6s -> 1.5s) tween 1.0 về 0.0
+      set({
+        stageTransition: 'TO_HOME',
+        scrollTarget: 0.0,
+      });
+    }
+    get().showHudWarning(
+      'HOME: VINZBOIZ PORTFOLIO · SPLIT-TEXT PORTAL (STEP 00/12)',
+      3000
+    );
+  },
+
   jumpToAbout: () => {
     const { isInsideProjectApp, currentStep, scrollTarget, soundEnabled, stageTransition } = get();
     if (stageTransition !== 'IDLE') return;
@@ -1299,6 +1409,16 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     }
 
     retroSound.playButtonClick(soundEnabled);
+
+    // Khi đang ở Step 00 (HOME): Vào thẳng Step 01 (ABOUT)
+    if (currentStep === 0) {
+      get().setStep(1);
+      get().showHudWarning(
+        'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
+        3000
+      );
+      return;
+    }
 
     // KHI ĐANG Ở BỘ MÁY ĐÃ HOÀN CHỈNH (STEP 10, 11, 12):
     // Chuyển mượt về Step 10 (Góc nhìn toàn cảnh bộ máy hoàn chỉnh của ABOUT)
@@ -1578,6 +1698,37 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       currentStep: 1,
       scrollTarget: 0,
       scrollCurrent: 0,
+      benchProgress: 0,
+      benchAutoTarget: 0,
+      benchScrubbing: false,
+      freeCam: false,
+      isPoweredOn: false,
+      osState: 'OFF',
+      bootElapsedTime: 0,
+
+      cdLocation: 'DESK',
+      isCdTrayOpen: false,
+      isCdInserted: false,
+      isCdAnimating: false,
+
+      cardLocation: 'DESK',
+      floppyInserted: false,
+
+      activeWindow: null,
+      openWindows: [],
+      isInsideProjectApp: false,
+      projectAppTransition: 'IDLE',
+      crtExpandProgress: 0,
+      projectScrollProgress: 0,
+    });
+  },
+
+  applyHomeResetState: () => {
+    set({
+      currentStep: 0,
+      scrollTarget: 0.0,
+      scrollCurrent: 1.0,
+      homeTransitionProgress: 1.0,
       benchProgress: 0,
       benchAutoTarget: 0,
       benchScrubbing: false,

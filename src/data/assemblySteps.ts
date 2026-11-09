@@ -29,6 +29,34 @@ export interface AssemblyStepData {
 
 export const ASSEMBLY_STEPS: AssemblyStepData[] = [
   {
+    step: 0,
+    code: '00',
+    shortName: 'PORTAL HOME',
+    title: 'RETRO 1997 WORKSTATION // SPLIT-TEXT PORTAL',
+    partNumber: 'PORTAL-HOME-VIEWFINDER',
+    manufacturer: 'VINZBOIZ STUDIO // WEBGL ARCHITECT',
+    category: 'STEP 00 // PORTAL VIEWPORT & SLOGAN',
+    zoneId: 'ZONE-PORTAL',
+    cameraPos: [-4.2, 4.6, 6.2],
+    cameraTarget: [0, 0.4, 0],
+    hardwareSpecs: [
+      { label: 'ARCHITECTURE', value: '100% PROCEDURAL THREE.JS / R3F' },
+      { label: 'VIEWFINDER', value: '28VW CENTER MASK · SPLIT-TEXT' },
+      { label: 'TIMELINE', value: '12-STEP HARDWARE STORYLINE' },
+      { label: 'ENGINE', value: '60 FPS GSAP + ZUSTAND ENGINE' },
+    ],
+    portfolioMapping: {
+      title: 'KIẾN TẠO KHÔNG GIAN TỪ NHỮNG VI MẠCH SỐNG',
+      roleOrTag: 'PRINCIPAL CREATIVE TECHNOLOGIST & ARCHITECT',
+      metrics: 'INTERACTIVE 3D PORTFOLIO 1997',
+      summary:
+        'Trang bìa mở đầu dẫn lối vào không gian xưởng chế tác máy tính năm 1997. Khung cửa sổ trung tâm mở rộng khi cuộn chuột để bước vào quy trình lắp ráp và khám phá các dự án 3D tương tác.',
+      techStack: ['Three.js', 'React', 'TypeScript', 'TailwindCSS', 'Zustand'],
+    },
+    manualNote:
+      'FIG 0.00: Chào mừng đến với xưởng chế tác Retro 1997 của vinzboiz. Cuộn chuột để mở rộng khung ngắm và bắt đầu quy trình lắp ráp phần cứng.',
+  },
+  {
     step: 1,
     code: '01',
     shortName: 'BENCH ASSEMBLY',

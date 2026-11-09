@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Leva } from 'leva';
 import { Experience } from './components/canvas/Experience';
 import { RetroHUD } from './components/ui/RetroHUD';
+import { HomePortalOverlay } from './components/ui/HomePortalOverlay';
 import { ProjectTunnelShowcase } from './components/ui/ProjectTunnelShowcase';
 import { useBuildStore } from './store/useBuildStore';
 
@@ -19,6 +20,9 @@ export function App() {
 
       {/* Giao diện 2D Retro HUD (Hardware Manual + Windows 95 Bevel) */}
       <RetroHUD />
+
+      {/* Giao diện 2D Split-Text Portal Mask khi ở Step 00 (HOME) */}
+      <HomePortalOverlay />
 
       {/* Không gian 3D Retro Fly-Through Showcase khi nạp đĩa CD */}
       <ProjectTunnelShowcase />

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Orbit, Volume2, VolumeX } from 'lucide-react';
 import { useBuildStore } from '../../store/useBuildStore';
 
 export function RetroHUD() {
@@ -9,8 +8,7 @@ export function RetroHUD() {
   const projectAppTransition = useBuildStore((s) => s.projectAppTransition);
   const toggleFreeCam = useBuildStore((s) => s.toggleFreeCam);
   const addScrollDelta = useBuildStore((s) => s.addScrollDelta);
-  const soundEnabled = useBuildStore((s) => s.soundEnabled);
-  const toggleSound = useBuildStore((s) => s.toggleSound);
+  const jumpToHome = useBuildStore((s) => s.jumpToHome);
   const jumpToAbout = useBuildStore((s) => s.jumpToAbout);
   const jumpToProject = useBuildStore((s) => s.jumpToProject);
   const jumpToCv = useBuildStore((s) => s.jumpToCv);
@@ -18,11 +16,13 @@ export function RetroHUD() {
   const touchStartYRef = useRef<number | null>(null);
 
   // Xác định tab điều hướng nào đang active trên thanh Header:
-  // Step 1 -> 10: ABOUT (Lắp ráp phần cứng & Khởi động máy)
-  // Step 11: PROJECT (Tự động nạp đĩa CD & mở My Projects)
-  // Step 12: MY CV (Tự động cắm thẻ nhớ & mở CV)
-  const isAboutActive = currentStep <= 10 && !isInsideProjectApp;
-  const isProjectActive = (currentStep === 11 || isInsideProjectApp);
+  // Step 00: HOME
+  // Step 01 -> 10: ABOUT
+  // Step 11: PROJECT
+  // Step 12: MY CV
+  const isHomeActive = currentStep === 0 && !isInsideProjectApp;
+  const isAboutActive = currentStep >= 1 && currentStep <= 10 && !isInsideProjectApp;
+  const isProjectActive = currentStep === 11 || isInsideProjectApp;
   const isCvActive = currentStep === 12 && !isInsideProjectApp;
 
   useEffect(() => {
@@ -49,14 +49,22 @@ export function RetroHUD() {
       if (dir < 0) {
         lastScrollTime = now;
         lastDir = dir;
-        const targetStep = Math.max(1, state.currentStep - 1);
+        const targetStep = Math.max(0, state.currentStep - 1);
         if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
         return;
       }
 
-      // Cuộn xuôi (dir > 0): Cooldown 650ms để nhảy từng bước rõ ràng
+      // Cuộn xuôi từ Step 0 sang Step 1: Phản hồi tức thì không bị cooldown cản trở!
+      if (state.currentStep === 0) {
+        lastScrollTime = now;
+        lastDir = dir;
+        state.setStep(1);
+        return;
+      }
+
+      // Cuộn xuôi các bước tiếp theo (Step 1 -> 12): Cooldown 650ms để nhảy từng bước rõ ràng
       if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
       lastDir = dir;
@@ -101,10 +109,19 @@ export function RetroHUD() {
         lastScrollTime = now;
         lastDir = dir;
         touchStartYRef.current = currentY;
-        const targetStep = Math.max(1, state.currentStep - 1);
+        const targetStep = Math.max(0, state.currentStep - 1);
         if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
+        return;
+      }
+
+      // Vuốt cuộn xuôi từ Step 0 sang Step 1: Phản hồi tức thì
+      if (state.currentStep === 0) {
+        lastScrollTime = now;
+        lastDir = dir;
+        touchStartYRef.current = currentY;
+        state.setStep(1);
         return;
       }
 
@@ -139,7 +156,7 @@ export function RetroHUD() {
         }
         state.setStep(Math.min(12, state.currentStep + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        state.setStep(Math.max(1, state.currentStep - 1));
+        state.setStep(Math.max(0, state.currentStep - 1));
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFreeCam();
       }
@@ -160,121 +177,196 @@ export function RetroHUD() {
   if (isInsideProjectApp || projectAppTransition !== 'IDLE') return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 select-none">
+    <>
       {/* =======================================================================
-          1. TOP NAVIGATION HEADER (ABOUT | PROJECT | MY CV)
-          Thanh điều hướng 3 nút chuẩn Windows 95 với trạng thái Highlight tự động
+          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - 80PX TOP SAFE ZONE)
+          fixed top-0 left-0 right-0 h-[80px] z-[100], nền đen đặc #0a0a0c
          ======================================================================= */}
-      <div className="flex w-full items-center justify-end">
-        {/* THANH ĐIỀU HƯỚNG CHÍNH [ ABOUT ] / [ PROJECT ] / [ MY CV ] */}
-        <div className="pointer-events-auto flex items-center gap-1.5 win95-outset bg-[#c0c0c0] p-1 border-2 border-[#ffffff] shadow-xl">
-          <button
-            type="button"
-            onClick={jumpToAbout}
-            title="Phần 1: Giới thiệu & Lắp ráp phần cứng (Step 01 - 10)"
-            className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer ${
-              isAboutActive
-                ? 'win95-inset bg-[#0000aa] text-white'
-                : 'win95-outset bg-[#c0c0c0] text-black hover:bg-[#d8d8d8]'
-            }`}
-          >
-            [ ABOUT ]
-          </button>
+      <header className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none bg-[#0a0a0c] border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
+        {/* Cụm Bên Trái (Brand Identity) */}
+        <div
+          onClick={jumpToHome}
+          className="flex items-center gap-3 cursor-pointer group"
+          title="Về trang chủ (Step 00)"
+        >
+          {/* Icon khối 3D Wireframe (SVG) 28x28px */}
+          <div className="w-7 h-7 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+          </div>
 
-          <button
-            type="button"
-            onClick={jumpToProject}
-            title="Phần 2: Tự động nạp Đĩa CD & Khởi chạy My Projects 3D (Step 11)"
-            className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-              isProjectActive
-                ? 'win95-inset bg-[#10223c] text-[#33ff33]'
-                : 'win95-outset bg-[#c0c0c0] text-black hover:bg-[#d8d8d8]'
-            }`}
-          >
-            <span className="text-[11px]">💿</span>
-            [ PROJECT ]
-          </button>
+          {/* Tên & Chức danh 2 dòng */}
+          <div className="flex flex-col text-left">
+            <span className="font-sans font-bold text-white text-[1.05rem] tracking-[-0.02em] leading-tight group-hover:text-[#f2f0ea] transition-colors">
+              Nguyễn Xuân Vinh
+            </span>
+            <span className="font-mono text-[0.68rem] tracking-[0.16em] uppercase text-[#8a8a8e] leading-tight">
+              FULL-STACK & 3D DEVELOPER
+            </span>
+          </div>
+        </div>
 
+        {/* Cụm Bên Phải (Menu Links & Language & Pill CTA) */}
+        <div className="flex items-center gap-5 sm:gap-7">
+          {/* Text Links dạng thuần (không đóng khung viền hộp) */}
+          <nav className="flex items-center gap-5 sm:gap-7 text-[0.92rem] font-sans">
+            <button
+              type="button"
+              onClick={jumpToHome}
+              className={`transition-colors duration-250 cursor-pointer font-medium ${
+                isHomeActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
+              }`}
+            >
+              Home
+            </button>
+            <button
+              type="button"
+              onClick={jumpToAbout}
+              className={`transition-colors duration-250 cursor-pointer font-medium ${
+                isAboutActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
+              }`}
+            >
+              About
+            </button>
+            <button
+              type="button"
+              onClick={jumpToProject}
+              className={`transition-colors duration-250 cursor-pointer font-medium ${
+                isProjectActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
+              }`}
+            >
+              Projects
+            </button>
+            <button
+              type="button"
+              onClick={jumpToCv}
+              className={`transition-colors duration-250 cursor-pointer font-medium ${
+                isCvActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
+              }`}
+            >
+              My CV
+            </button>
+          </nav>
+
+          {/* Cụm chọn ngôn ngữ (VI / EN) */}
+          <div className="flex items-center gap-2">
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(255,255,255,0.35)',
+              }}
+              className="text-xs font-semibold text-white shrink-0 select-none"
+            >
+              VI
+            </div>
+            <span className="text-xs font-medium text-[#8e8e93] hover:text-white cursor-pointer transition-colors">
+              EN
+            </span>
+          </div>
+
+          {/* Nút Pill Button [ Liên hệ ] nổi bật ngoài cùng bên phải */}
           <button
             type="button"
             onClick={jumpToCv}
-            title="Phần 3: Tự động cắm Thẻ nhớ & Mở hồ sơ WordPad CV (Step 12)"
-            className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-              isCvActive
-                ? 'win95-inset bg-[#1c3822] text-[#ffdd55]'
-                : 'win95-outset bg-[#c0c0c0] text-black hover:bg-[#d8d8d8]'
-            }`}
+            style={{
+              borderRadius: '9999px',
+              padding: '9px 22px',
+            }}
+            className="bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none"
           >
-            <span className="text-[11px]">💾</span>
-            [ MY CV ]
+            Liên hệ
           </button>
         </div>
-      </div>
+      </header>
 
       {/* =======================================================================
-          2. BOTTOM BAR: CHUYỂN ĐỔI SCROLL/FREE CAM + ÂM THANH
-          Bỏ popup góc dưới bên trái, chỉ giữ cụm điều khiển bên phải
+          2. NÚT TRÒN ĐIỀU KHIỂN SCROLL / FREE ZOOM DƯỚI GÓC PHẢI (YÊU CẦU #2)
+          - Đã xóa hoàn toàn nút âm thanh
+          - Ẩn hoàn toàn khi ở Step 00 (HOME)
+          - Chỉ hiện mượt mà khi vào Step 01 (ABOUT) trở đi
+          - Nút tròn 44px x 44px kèm SVG Icon và Tooltip
          ======================================================================= */}
-      <div className="flex w-full items-center justify-end">
-        {/* BÊN PHẢI: NÚT ÂM THANH + CỤM NÚT CHUYỂN ĐỔI CHẾ ĐỘ CON LĂN CHUỘT (SCROLL TIMELINE VS ZOOM) */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          {/* Nút bật/tắt âm thanh */}
-          <button
-            type="button"
-            onClick={toggleSound}
-            title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh cơ học'}
-            className="win95-btn px-2.5 py-2 flex items-center justify-center cursor-pointer text-black hover:bg-[#d8d8d8]"
-          >
-            {soundEnabled ? (
-              <Volume2 className="h-4 w-4 text-[#0000aa]" />
-            ) : (
-              <VolumeX className="h-4 w-4 text-[#808080]" />
-            )}
-          </button>
+      <div
+        className={`fixed bottom-6 right-6 sm:right-10 z-30 transition-all duration-500 ${
+          currentStep === 0
+            ? 'opacity-0 pointer-events-none translate-y-4'
+            : 'opacity-100 pointer-events-auto translate-y-0'
+        }`}
+      >
+        <div className="relative flex items-center justify-end group">
+          {/* Tooltip khi hover */}
+          <span className="absolute right-14 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 text-[11px] font-sans font-medium px-3 py-1 rounded-md bg-black/80 text-white backdrop-blur border border-white/15 whitespace-nowrap shadow-xl">
+            {freeCam ? 'Free Zoom & Inspect' : 'Scroll Mode'}
+          </span>
 
-          {/* NÚT CHUYỂN ĐỔI CHẾ ĐỘ CON LĂN CHUỘT: SCROLL TIMELINE VS ZOOM TO CURSOR */}
+          {/* Nút tròn 44px x 44px */}
           <button
             type="button"
             onClick={toggleFreeCam}
-            title="Bấm để chuyển đổi giữa Cuộn Timeline và Zoom 3D (Phím tắt: F)"
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-bold tracking-wider uppercase transition-all shadow-xl cursor-pointer ${
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+            }}
+            title={freeCam ? 'Free Zoom & Inspect (Phím tắt: F)' : 'Scroll Mode (Phím tắt: F)'}
+            className={`flex items-center justify-center transition-all duration-300 shadow-xl cursor-pointer active:scale-90 ${
               freeCam
-                ? 'win95-inset bg-[#102010] text-[#33ff33] border-2 border-[#33ff33]'
-                : 'win95-outset bg-[#c0c0c0] text-[#000000] border-2 border-[#808080] hover:bg-[#d4d4d4]'
+                ? 'bg-[#f2f0ea] text-[#111111] hover:bg-white ring-2 ring-white/50'
+                : 'bg-white/[0.08] text-white hover:bg-white/[0.16] border border-white/[0.22] backdrop-blur-md'
             }`}
           >
-            <span
-              className={`inline-block w-2.5 h-2.5 rounded-full ${
-                freeCam
-                  ? 'bg-[#33ff33] shadow-[0_0_8px_#33ff33] animate-pulse'
-                  : 'bg-[#ffb000] shadow-[0_0_4px_#ffb000]'
-              }`}
-            />
-            <div className="flex flex-col items-start leading-tight text-left">
-              <div className="flex items-center gap-1 font-black text-[11px]">
-                {freeCam ? (
-                  <>
-                    <Orbit className="h-3.5 w-3.5 text-[#33ff33]" />
-                    <span>ZOOM & 360° INSPECT</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-[#0000aa]">📜</span>
-                    <span>SCROLL TIMELINE</span>
-                  </>
-                )}
-              </div>
-              <span
-                className={`text-[9px] font-normal tracking-normal ${
-                  freeCam ? 'text-[#88ff88]' : 'text-[#555555]'
-                }`}
+            {freeCam ? (
+              /* SVG Icon 3D Orbit / Inspect */
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#111111"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                {freeCam ? 'Wheel: Zoom | Drag: Orbit [F]' : 'Wheel: Step 01-12 [F]'}
-              </span>
-            </div>
+                <circle cx="12" cy="12" r="3" />
+                <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-30 12 12)" />
+                <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)" />
+              </svg>
+            ) : (
+              /* SVG Icon Mouse / Vertical Scroll */
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="6" y="3" width="12" height="18" rx="6" />
+                <line x1="12" y1="7" x2="12" y2="11" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
