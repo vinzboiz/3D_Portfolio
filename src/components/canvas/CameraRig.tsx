@@ -5,8 +5,13 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useBuildStore, type ProjectAppTransition } from '../../store/useBuildStore';
 import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
+import { S } from '../../constants/scale';
 
-const CRT_SCREEN_CENTER_POS = new THREE.Vector3(-0.85, 1.786, 1.013);
+const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
+  -0.85 * S.DESK_ITEMS_SCALE,
+  1.786 * S.DESK_ITEMS_SCALE,
+  1.013 * S.DESK_ITEMS_SCALE
+);
 const HOME_FOV = 70.0;
 const WORKBENCH_FOV = 40.0;
 
@@ -16,9 +21,9 @@ export function CameraRig() {
   const { camera } = useThree();
 
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  const desiredPos = useRef(new THREE.Vector3(0, 8.8, 10.5));
-  const desiredTarget = useRef(new THREE.Vector3(0, 0.4, 0));
-  const smoothedTarget = useRef(new THREE.Vector3(0, 0.4, 0));
+  const desiredPos = useRef(new THREE.Vector3(0, 0.95, 3.2));
+  const desiredTarget = useRef(new THREE.Vector3(0, 0.05, -0.6));
+  const smoothedTarget = useRef(new THREE.Vector3(0, 0.05, -0.6));
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
@@ -56,11 +61,15 @@ export function CameraRig() {
 
     const scrollVal = state.scrollCurrent;
 
-    // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG Ở HOME (FOV 70°, THẤY BÀN, CHÂN BÀN, GHẾ VÀ TƯỜNG)
+    // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG Ở HOME THEO HỆ TỈ LỆ S (1 UNIT = 1 MÉT)
     const aspect = r3fState.size.width / Math.max(1, r3fState.size.height);
     const aspectMultiplier = aspect < 1.0 ? Math.max(1.0, 1.18 / aspect) : 1.0;
-    const homePos = new THREE.Vector3(0, 2.4 * Math.min(1.25, aspectMultiplier), 10.0 * aspectMultiplier);
-    const homeTarget = new THREE.Vector3(0, 0.2, -2.0);
+    const homePos = new THREE.Vector3(
+      0,
+      0.95 * Math.min(1.25, aspectMultiplier),
+      3.2 * aspectMultiplier
+    );
+    const homeTarget = new THREE.Vector3(0, 0.05, -0.6);
 
     const persCam = camera as THREE.PerspectiveCamera;
 
@@ -68,8 +77,16 @@ export function CameraRig() {
     if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
       const t = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
       const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // power3.inOut
-      const destPos = new THREE.Vector3(0.15, 3.25, 9.45);
-      const destTarget = new THREE.Vector3(0.05, 1.65, 0.25);
+      const destPos = new THREE.Vector3(
+        0.15 * S.DESK_ITEMS_SCALE,
+        3.25 * S.DESK_ITEMS_SCALE,
+        9.45 * S.DESK_ITEMS_SCALE
+      );
+      const destTarget = new THREE.Vector3(
+        0.05 * S.DESK_ITEMS_SCALE,
+        1.65 * S.DESK_ITEMS_SCALE,
+        0.25 * S.DESK_ITEMS_SCALE
+      );
 
       desiredPos.current.lerpVectors(homePos, destPos, ease);
       desiredTarget.current.lerpVectors(homeTarget, destTarget, ease);
@@ -95,8 +112,16 @@ export function CameraRig() {
     ) {
       const t = THREE.MathUtils.clamp(scrollVal, 0, 1);
       const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // power3.inOut
-      const step1Pos = new THREE.Vector3(-1.55, 3.65, 4.35);
-      const step1Target = new THREE.Vector3(-0.35, 0.22, -0.1);
+      const step1Pos = new THREE.Vector3(
+        -1.55 * S.DESK_ITEMS_SCALE,
+        3.65 * S.DESK_ITEMS_SCALE,
+        4.35 * S.DESK_ITEMS_SCALE
+      );
+      const step1Target = new THREE.Vector3(
+        -0.35 * S.DESK_ITEMS_SCALE,
+        0.22 * S.DESK_ITEMS_SCALE,
+        -0.1 * S.DESK_ITEMS_SCALE
+      );
 
       // Nội suy mượt vị trí Camera giữa Home và Step 1
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
@@ -115,9 +140,9 @@ export function CameraRig() {
         state.stageTransition === 'TO_HOME_STEP1' ||
         state.stageTransition === 'HOME_TO_ABOUT';
       const mouseWeight = isTransitioning ? 0 : Math.max(0, 1 - t * 1.5);
-      const lookOffsetX = mouseWeight * r3fState.pointer.x * 2.8;
-      const lookOffsetY = mouseWeight * r3fState.pointer.y * 1.6;
-      const lookOffsetZ = mouseWeight * (-r3fState.pointer.x * 1.2);
+      const lookOffsetX = mouseWeight * r3fState.pointer.x * 0.35;
+      const lookOffsetY = mouseWeight * r3fState.pointer.y * 0.20;
+      const lookOffsetZ = mouseWeight * (-r3fState.pointer.x * 0.15);
 
       desiredTarget.current.x += lookOffsetX;
       desiredTarget.current.y += lookOffsetY;

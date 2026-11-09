@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
+import { S, validateScaleContract } from '../../constants/scale';
 import {
   createCuttingMatTexture,
   retroMaterials,
@@ -423,6 +424,46 @@ function ChromeArchitectDeskLamp() {
   );
 }
 
+/**
+ * KHỐI NGƯỜI MẪU 1.70M (DEBUG_SCALE_REF)
+ * Dùng để kiểm tra tỉ lệ trực quan (Human-Scale) so với bàn, ghế và thiết bị.
+ * Bật bằng flag S.DEBUG_SCALE_REF trong src/constants/scale.ts.
+ */
+function HumanScaleDummy() {
+  return (
+    <group position={[1.22, S.FLOOR_Y, 0.15]}>
+      {/* Đôi chân (cao 0.80m từ sàn y = -0.75 tới hông y = +0.05) */}
+      <mesh position={[-0.1, 0.4, 0]}>
+        <cylinderGeometry args={[0.055, 0.05, 0.8, 12]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </mesh>
+      <mesh position={[0.1, 0.4, 0]}>
+        <cylinderGeometry args={[0.055, 0.05, 0.8, 12]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </mesh>
+      {/* Thân người (Torso: cao 0.58m, từ y = +0.05 tới y = +0.63) */}
+      <mesh position={[0, 1.09, 0]}>
+        <boxGeometry args={[0.38, 0.58, 0.22]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </mesh>
+      {/* Đầu & Cổ (đỉnh đầu đạt 1.70m so với sàn, y = -0.75 + 1.70 = +0.95) */}
+      <mesh position={[0, 1.42, 0]}>
+        <cylinderGeometry args={[0.045, 0.055, 0.08, 12]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </mesh>
+      <mesh position={[0, 1.57, 0]}>
+        <sphereGeometry args={[0.115, 12, 12]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </mesh>
+      {/* Vạch vàng đánh dấu độ cao mắt người ngồi 1.15m (y = -0.75 + 1.15 = +0.40m trên bàn) */}
+      <mesh position={[0, 1.15, 0.12]}>
+        <planeGeometry args={[0.24, 0.015]} />
+        <meshBasicMaterial color="#ffcc00" side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
 export function Workbench() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const benchProgress = useBuildStore((s) => s.benchProgress);
@@ -769,89 +810,112 @@ export function Workbench() {
 
   const activeCuttingMatTex = currentStep >= 5 ? matCleanTex : matWithZonesTex;
 
+  // Tính toán tọa độ kết cấu bàn vẽ kỹ thuật chuẩn theo S.TABLE (1 Three.js unit = 1 mét)
+  const tableLegX = S.TABLE.W / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.905m
+  const tableLegZ = S.TABLE.D / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.380m
+  const legHeight = -S.TABLE.TOP_THICK - S.FLOOR_Y; // 0.70m
+  const tableLegY = (-S.TABLE.TOP_THICK + S.FLOOR_Y) / 2; // -0.40m
+  const tableSpanX = 2 * tableLegX - S.TABLE.LEG; // 1.74m
+  const tableSpanZ = 2 * tableLegZ - S.TABLE.LEG; // 0.69m
+  const upperRailY = -S.TABLE.TOP_THICK - S.TABLE.RAIL_H / 2; // -0.10m
+
   return (
     <group position={[0, 0, 0]} visible={!isInsideProjectApp}>
-      {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC */}
-      {/* Mặt bàn gỗ công nghiệp ép phenolic chống tĩnh điện màu đen mờ */}
+      {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC (CHUẨN TỈ LỆ S.TABLE) */}
       <RoundedBox
-        args={[12.6, 0.24, 6.8]}
-        radius={0.03}
+        args={[S.TABLE.W, S.TABLE.TOP_THICK, S.TABLE.D]}
+        radius={0.008}
         smoothness={2}
-        position={[0, -0.12, 0]}
+        position={[0, -S.TABLE.TOP_THICK / 2, 0]}
         receiveShadow
       >
         <meshStandardMaterial color="#0e0e0d" roughness={0.88} metalness={0.06} />
       </RoundedBox>
 
-      {/* 4 Chân bàn thép hộp chữ nhật chịu lực nối từ đáy mặt bàn xuống sàn xưởng y = -1.62 */}
-      {[-5.8, 5.8].map((lx) =>
-        [-3.0, 3.0].map((lz) => (
-          <group key={`table-leg-${lx}-${lz}`} position={[lx, -0.88, lz]}>
+      {/* 4 Chân bàn thép hộp vuông chịu lực (0.07m x 0.07m) nối từ đáy mặt bàn (y = -0.05) xuống sàn (y = -0.75) */}
+      {[-tableLegX, tableLegX].map((lx) =>
+        [-tableLegZ, tableLegZ].map((lz) => (
+          <group key={`table-leg-${lx}-${lz}`} position={[lx, tableLegY, lz]}>
             {/* Thân chân thép hộp */}
             <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.16, 1.48, 0.16]} />
+              <boxGeometry args={[S.TABLE.LEG, legHeight, S.TABLE.LEG]} />
               <meshStandardMaterial color="#1a1c22" roughness={0.45} metalness={0.8} />
             </mesh>
             {/* Đệm chân ren kim loại chạm sàn */}
-            <mesh position={[0, -0.74, 0]}>
-              <cylinderGeometry args={[0.11, 0.13, 0.04, 16]} />
+            <mesh position={[0, -legHeight / 2 + 0.0075, 0]}>
+              <cylinderGeometry args={[0.042, 0.048, 0.015, 16]} />
               <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.85} />
             </mesh>
           </group>
         ))
       )}
 
-      {/* Các thanh giằng thép hộp liên kết 4 chân bàn tạo độ vững chắc */}
-      <mesh position={[0, -1.25, -3.0]} castShadow>
-        <boxGeometry args={[11.6, 0.08, 0.08]} />
+      {/* Thanh giằng ngang trên (Apron/Rails) dưới mặt bàn: RAIL_H = 0.10m, Y = -0.10m */}
+      <mesh position={[0, upperRailY, -tableLegZ]} castShadow>
+        <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
-      <mesh position={[0, -1.25, 3.0]} castShadow>
-        <boxGeometry args={[11.6, 0.08, 0.08]} />
+      <mesh position={[0, upperRailY, tableLegZ]} castShadow>
+        <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
-      <mesh position={[-5.8, -1.25, 0]} castShadow>
-        <boxGeometry args={[0.08, 0.08, 6.0]} />
+      <mesh position={[-tableLegX, upperRailY, 0]} castShadow>
+        <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
-      <mesh position={[5.8, -1.25, 0]} castShadow>
-        <boxGeometry args={[0.08, 0.08, 6.0]} />
+      <mesh position={[tableLegX, upperRailY, 0]} castShadow>
+        <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
         <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
       </mesh>
 
-      {/* 2. THẢM CẮT CHỐNG TĨNH ĐIỆN (PROCEDURAL CUTTING MAT KHỚP MẶT BÀN) */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10.5, 6.2]} />
+      {/* Thanh giằng thấp nối các chân (LOWER_BRACE_Y = -0.55m): thanh sau và 2 thanh bên hông (chừa gầm trước cho ghế luồn) */}
+      <mesh position={[0, S.TABLE.LOWER_BRACE_Y, -tableLegZ]} castShadow>
+        <boxGeometry args={[tableSpanX, 0.035, 0.035]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+      <mesh position={[-tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
+        <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+      <mesh position={[tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
+        <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
+        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+      </mesh>
+
+      {/* 2. THẢM CẮT CHỐNG TĨNH ĐIỆN (CUTTING MAT CHUẨN A1 TRÊN MẶT BÀN 2.0m x 0.95m) */}
+      <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[1.14, 0.66]} />
         <meshStandardMaterial
           map={activeCuttingMatTex}
           roughness={0.82}
           metalness={0.04}
         />
       </mesh>
-
-      {/* Viền cao su chống tĩnh điện bao quanh Cutting Mat */}
       <RoundedBox
-        args={[10.68, 0.02, 6.38]}
-        radius={0.008}
+        args={[1.16, 0.004, 0.68]}
+        radius={0.004}
         smoothness={1}
-        position={[0, -0.008, 0]}
+        position={[0, 0.001, 0]}
         receiveShadow
       >
         <meshStandardMaterial {...RETRO_PBR_PARAMS.blackAnodized} />
       </RoundedBox>
 
-      {/* 3. NÚT BẤM TIẾP ĐỊA CHỐNG TĨNH ĐIỆN (ESD GROUNDING SNAP CORNER) */}
-      <group position={[-4.85, 0.02, 4.85]}>
+      {/* 3. NÚT BẤM TIẾP ĐỊA CHỐNG TĨNH ĐIỆN (ESD GROUNDING SNAP GÓC THẢM) */}
+      <group position={[-0.52, 0.004, 0.28]}>
         <mesh castShadow receiveShadow material={retroMaterials.goldPin}>
-          <cylinderGeometry args={[0.12, 0.14, 0.04, 24]} />
+          <cylinderGeometry args={[0.015, 0.018, 0.006, 20]} />
         </mesh>
-        <mesh position={[0, 0.025, 0]} material={retroMaterials.blackAnodized}>
-          <cylinderGeometry args={[0.05, 0.05, 0.025, 16]} />
+        <mesh position={[0, 0.004, 0]} material={retroMaterials.blackAnodized}>
+          <cylinderGeometry args={[0.007, 0.007, 0.004, 16]} />
         </mesh>
       </group>
 
-      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (CHỊU HIỆU ỨNG CHUYỂN CẢNH ĐẨY PHẢI / VÀO TỪ TRÁI) */}
-      <group ref={componentsStageGroupRef}>
+      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (QUY ĐỔI THEO S.DESK_ITEMS_SCALE) */}
+      <group
+        ref={componentsStageGroupRef}
+        scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
+      >
         {/* 4. YÊU CẦU #5: 3 Ô ĐEN ĐẶT CHỜ LINH KIỆN TRÊN BÀN CẮT (STAGING PADS)
                Chỉ hiển thị ở Step 01 khi CPU, Tản nhiệt và RAM còn nằm trên bàn;
                ẩn hoàn toàn (visible={currentStep === 1}) ngay sau khi lắp xong Step 01! */}
@@ -978,8 +1042,13 @@ export function Workbench() {
         </group>
       </group>
 
-      {/* 8. ĐÈN BÀN LÒ XO MẠ CRÔM CAO LỚN ĐẶT CẠNH TRÁI MÁY TÍNH (CHROME ARCHITECT DESK LAMP) */}
-      <ChromeArchitectDeskLamp />
+      {/* 8. ĐÈN BÀN LÒ XO MẠ CRÔM CỐ ĐỊNH TRÊN MẶT BÀN (CHROME ARCHITECT DESK LAMP - QUY ĐỔI S) */}
+      <group scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}>
+        <ChromeArchitectDeskLamp />
+      </group>
+
+      {/* 9. DEBUG SCALE REFERENCE: Người mẫu 1.70m đứng cạnh bàn (bật bằng flag S.DEBUG_SCALE_REF) */}
+      {S.DEBUG_SCALE_REF && <HumanScaleDummy />}
     </group>
   );
 }
