@@ -11,18 +11,24 @@ export function RetroHUD() {
   const addScrollDelta = useBuildStore((s) => s.addScrollDelta);
   const soundEnabled = useBuildStore((s) => s.soundEnabled);
   const toggleSound = useBuildStore((s) => s.toggleSound);
-  const quickJumpToProjects = useBuildStore((s) => s.quickJumpToProjects);
   const jumpToAbout = useBuildStore((s) => s.jumpToAbout);
+  const jumpToProject = useBuildStore((s) => s.jumpToProject);
+  const jumpToCv = useBuildStore((s) => s.jumpToCv);
 
   const touchStartYRef = useRef<number | null>(null);
 
-  // Xác định tab điều hướng nào đang active dựa trên tiến trình cuộn hiện tại:
-  // Step 1 -> 5: Thuộc về ABOUT (Linh kiện, bo mạch chủ, CPU, RAM & nguồn AT)
-  // Step 6 -> 10: Thuộc về PROJECT (Hoàn thiện thùng máy, hệ điều hành & dự án)
-  const isAboutActive = currentStep <= 5;
-  const isProjectActive = currentStep > 5;
+  // Xác định tab điều hướng nào đang active trên thanh Header:
+  // Step 1 -> 10: ABOUT (Lắp ráp phần cứng & Khởi động máy)
+  // Step 11: PROJECT (Tự động nạp đĩa CD & mở My Projects)
+  // Step 12: MY CV (Tự động cắm thẻ nhớ & mở CV)
+  const isAboutActive = currentStep <= 10 && !isInsideProjectApp;
+  const isProjectActive = (currentStep === 11 || isInsideProjectApp);
+  const isCvActive = currentStep === 12 && !isInsideProjectApp;
 
   useEffect(() => {
+    let lastScrollTime = 0;
+    let lastDir = 0;
+
     const handleWheel = (e: WheelEvent) => {
       const state = useBuildStore.getState();
       // Khi bật Free Cam hoặc đang trong quá trình chuyển cảnh / 3D Project Tunnel: không can thiệp cuộn timeline
@@ -34,10 +40,35 @@ export function RetroHUD() {
       ) {
         return;
       }
-      // Tính toán delta nhạy và mượt mà: lăn nhẹ đổi step, lăn nhanh trượt qua các cụm
-      const sign = Math.sign(e.deltaY);
-      const magnitude = Math.min(3.5, Math.max(1, Math.abs(e.deltaY) / 100));
-      addScrollDelta(sign * magnitude * 0.22);
+      if (Math.abs(e.deltaY) <= 15) return;
+
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const now = performance.now();
+
+      // Cuộn ngược (dir < 0): Phản hồi tức thì 0ms delay, không bị chặn bởi cooldown
+      if (dir < 0) {
+        lastScrollTime = now;
+        lastDir = dir;
+        const targetStep = Math.max(1, state.currentStep - 1);
+        if (targetStep !== state.currentStep) {
+          state.setStep(targetStep);
+        }
+        return;
+      }
+
+      // Cuộn xuôi (dir > 0): Cooldown 650ms để nhảy từng bước rõ ràng
+      if (now - lastScrollTime < 650) return;
+      lastScrollTime = now;
+      lastDir = dir;
+
+      if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
+        state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+        return;
+      }
+      const targetStep = Math.min(12, state.currentStep + 1);
+      if (targetStep !== state.currentStep) {
+        state.setStep(targetStep);
+      }
     };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -60,10 +91,36 @@ export function RetroHUD() {
       }
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartYRef.current - currentY;
+      if (Math.abs(deltaY) < 30) return;
+
+      const dir = deltaY > 0 ? 1 : -1;
+      const now = performance.now();
+
+      // Vuốt cuộn ngược: Phản hồi tức thì 0ms delay
+      if (dir < 0) {
+        lastScrollTime = now;
+        lastDir = dir;
+        touchStartYRef.current = currentY;
+        const targetStep = Math.max(1, state.currentStep - 1);
+        if (targetStep !== state.currentStep) {
+          state.setStep(targetStep);
+        }
+        return;
+      }
+
+      if (now - lastScrollTime < 650) return;
+      lastScrollTime = now;
+      lastDir = dir;
       touchStartYRef.current = currentY;
-      const sign = Math.sign(deltaY);
-      const magnitude = Math.min(3, Math.max(1, Math.abs(deltaY) / 40));
-      addScrollDelta(sign * magnitude * 0.2);
+
+      if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
+        state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+        return;
+      }
+      const targetStep = Math.min(12, state.currentStep + 1);
+      if (targetStep !== state.currentStep) {
+        state.setStep(targetStep);
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -76,9 +133,13 @@ export function RetroHUD() {
         return;
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-        addScrollDelta(0.35);
+        if (state.currentStep === 10 && state.osState !== 'DESKTOP') {
+          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
+          return;
+        }
+        state.setStep(Math.min(12, state.currentStep + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        addScrollDelta(-0.35);
+        state.setStep(Math.max(1, state.currentStep - 1));
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFreeCam();
       }
@@ -101,16 +162,16 @@ export function RetroHUD() {
   return (
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4 select-none">
       {/* =======================================================================
-          1. TOP NAVIGATION HEADER (ABOUT / PROJECT)
-          Bỏ popup góc trên bên trái, chỉ giữ thanh điều hướng chính ở góc trên
+          1. TOP NAVIGATION HEADER (ABOUT | PROJECT | MY CV)
+          Thanh điều hướng 3 nút chuẩn Windows 95 với trạng thái Highlight tự động
          ======================================================================= */}
       <div className="flex w-full items-center justify-end">
-        {/* THANH ĐIỀU HƯỚNG CHÍNH [ ABOUT ] / [ PROJECT ] */}
+        {/* THANH ĐIỀU HƯỚNG CHÍNH [ ABOUT ] / [ PROJECT ] / [ MY CV ] */}
         <div className="pointer-events-auto flex items-center gap-1.5 win95-outset bg-[#c0c0c0] p-1 border-2 border-[#ffffff] shadow-xl">
           <button
             type="button"
             onClick={jumpToAbout}
-            title="Về đầu trang: Giới thiệu & Lắp ráp phần cứng (Step 01)"
+            title="Phần 1: Giới thiệu & Lắp ráp phần cứng (Step 01 - 10)"
             className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer ${
               isAboutActive
                 ? 'win95-inset bg-[#0000aa] text-white'
@@ -122,8 +183,8 @@ export function RetroHUD() {
 
           <button
             type="button"
-            onClick={quickJumpToProjects}
-            title="Lắp ráp nhanh hoàn thiện Step 10 & Nạp đĩa CD mở My Projects (D:\)"
+            onClick={jumpToProject}
+            title="Phần 2: Tự động nạp Đĩa CD & Khởi chạy My Projects 3D (Step 11)"
             className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
               isProjectActive
                 ? 'win95-inset bg-[#10223c] text-[#33ff33]'
@@ -132,6 +193,20 @@ export function RetroHUD() {
           >
             <span className="text-[11px]">💿</span>
             [ PROJECT ]
+          </button>
+
+          <button
+            type="button"
+            onClick={jumpToCv}
+            title="Phần 3: Tự động cắm Thẻ nhớ & Mở hồ sơ WordPad CV (Step 12)"
+            className={`px-3 py-1 font-mono text-xs font-bold tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+              isCvActive
+                ? 'win95-inset bg-[#1c3822] text-[#ffdd55]'
+                : 'win95-outset bg-[#c0c0c0] text-black hover:bg-[#d8d8d8]'
+            }`}
+          >
+            <span className="text-[11px]">💾</span>
+            [ MY CV ]
           </button>
         </div>
       </div>
@@ -194,7 +269,7 @@ export function RetroHUD() {
                   freeCam ? 'text-[#88ff88]' : 'text-[#555555]'
                 }`}
               >
-                {freeCam ? 'Wheel: Zoom | Drag: Orbit [F]' : 'Wheel: Step 01-10 [F]'}
+                {freeCam ? 'Wheel: Zoom | Drag: Orbit [F]' : 'Wheel: Step 01-12 [F]'}
               </span>
             </div>
           </button>

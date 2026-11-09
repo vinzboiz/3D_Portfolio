@@ -33,15 +33,16 @@ export function CameraRig() {
 
   useFrame((_, delta) => {
     const state = useBuildStore.getState();
-    const dt = Math.min(delta, 0.1);
+    const safeDelta = Math.min(delta, 0.05);
+    const dt = safeDelta;
 
-    if (Math.abs(state.scrollTarget - state.scrollCurrent) > 0.0001) {
-      const nextScroll = THREE.MathUtils.damp(
-        state.scrollCurrent,
-        state.scrollTarget,
-        3.2,
-        dt
-      );
+    const diff = state.scrollTarget - state.scrollCurrent;
+    if (Math.abs(diff) > 0.0005) {
+      // Giới hạn vận tốc tối đa tuyến tính 0.5 step/s kết hợp di chuyển đều, mượt mà không bị giật
+      const maxChange = 0.5 * safeDelta;
+      const clampedDiff = THREE.MathUtils.clamp(diff, -maxChange, maxChange);
+      const stepChange = clampedDiff;
+      const nextScroll = state.scrollCurrent + stepChange;
       state.syncScrollCurrent(nextScroll);
     } else if (state.scrollCurrent !== state.scrollTarget) {
       state.syncScrollCurrent(state.scrollTarget);
@@ -54,10 +55,21 @@ export function CameraRig() {
     // Sau khi lắp đủ toàn bộ linh kiện vào thùng máy (cuối Step 09 -> nửa đầu Step 10 khi đóng nắp chữ U):
     // Zoom lùi ra góc nhìn ngang toàn cảnh để thấy trọn vẹn bên phải và toàn bộ lòng thùng máy trước khi đóng nắp,
     // sau đó mới xoay camera sang góc chính diện để hiển thị trọn bộ máy tính.
-    if (state.stageTransition === 'ABOUT_TO_PROJECT') {
+    if (
+      state.stageTransition === 'ABOUT_TO_PROJECT' ||
+      state.stageTransition === 'TO_PROJECT' ||
+      state.stageTransition === 'TO_MY_CV'
+    ) {
       desiredPos.current.set(0.15, 3.25, 9.45);
       desiredTarget.current.set(0.05, 1.65, 0.25);
-    } else if ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.52)) {
+    } else if (state.stageTransition === 'TO_ABOUT') {
+      desiredPos.current.set(-1.55, 3.65, 4.35);
+      desiredTarget.current.set(-0.35, 0.22, -0.1);
+    } else if (
+      !state.isPoweredOn &&
+      state.scrollCurrent < 9.9 &&
+      ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.52))
+    ) {
       desiredPos.current.set(-6.15, 2.25, 0.05);
       desiredTarget.current.set(0.1, 1.85, -0.15);
     } else {
@@ -131,12 +143,11 @@ export function CameraRig() {
 
     wasInspectRef.current = false;
 
-    // Chuyển góc máy: mượt mà hài hòa, tăng tốc khi chuyển cảnh ABOUT -> PROJECT
-    const speed = state.stageTransition === 'ABOUT_TO_PROJECT' ? 3.4 : 1.85;
-    const alpha = 1 - Math.exp(-speed * dt);
+    // Chuyển góc máy: cực kỳ đằm, lướt chậm như dolly camera điện ảnh theo safeDelta * 1.2
+    const camAlpha = Math.min(1, safeDelta * 1.2);
 
-    camera.position.lerp(desiredPos.current, alpha);
-    smoothedTarget.current.lerp(desiredTarget.current, alpha);
+    camera.position.lerp(desiredPos.current, camAlpha);
+    smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
     camera.lookAt(smoothedTarget.current);
   });
 

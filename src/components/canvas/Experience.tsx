@@ -7,7 +7,7 @@ import { Workbench } from './Workbench';
 import { useBuildStore } from '../../store/useBuildStore';
 
 export function Experience() {
-  const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
+  const isLampOn = useBuildStore((s) => s.isLampOn);
   const isTurbo = useBuildStore((s) => s.isTurbo);
 
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
@@ -38,16 +38,16 @@ export function Experience() {
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
 
-      {/* Ánh sáng môi trường cân bằng giúp làm nổi rõ các chi tiết nhựa Beige và bản mạch PCB */}
-      <ambientLight intensity={isPoweredOn ? ambientIntensity : 0.22} color="#ded8ca" />
+      {/* Ánh sáng môi trường cân bằng: khi tắt đèn bàn, chỉ giữ lại ánh sáng phòng tối nhẹ để tôn vinh CRT & LED */}
+      <ambientLight intensity={isLampOn ? ambientIntensity : 0.08} color="#ded8ca" />
       <hemisphereLight
-        args={['#f5efe2', '#1c1b18', isPoweredOn ? 0.55 : 0.15]}
+        args={['#f5efe2', '#1c1b18', isLampOn ? 0.55 : 0.05]}
       />
 
       {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm cụm Màn hình CRT, Bàn phím & Thùng máy PC) */}
       <object3D ref={spotTargetRef} position={[0.25, 1.15, 0.55]} />
 
-      {/* NGUỒN SÁNG CHÍNH ĐẶT TRỰC TIẾP TẠI BẦU CHỤP ĐÈN BÀN CRÔM BÊN TRÁI MÁY TÍNH */}
+      {/* NGUỒN SÁNG CHÍNH ĐẶT TRỰC TIẾP TẠI BẦU CHỤP ĐÈN BÀN CRÔM BÊN TRÁI MÁY TÍNH (ĐỘC LẬP HOÀN TOÀN VỚI NGUỒN PC) */}
       <spotLight
         ref={spotLightRef}
         position={[-3.15, 4.58, 0.6]}
@@ -55,7 +55,7 @@ export function Experience() {
         penumbra={0.68}
         distance={26}
         decay={1.2}
-        intensity={isPoweredOn ? spotIntensity : 12}
+        intensity={isLampOn ? spotIntensity : 0}
         color={lampWarmth}
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -65,7 +65,7 @@ export function Experience() {
       {/* Quầng sáng tỏa dịu (Fill Glow) ngay tại bóng đèn bên trong chao đèn crôm */}
       <pointLight
         position={[-3.09, 4.52, 0.62]}
-        intensity={isPoweredOn ? 18 : 2}
+        intensity={isLampOn ? 18 : 0}
         distance={9}
         decay={1.6}
         color="#ffe6b5"
@@ -74,7 +74,7 @@ export function Experience() {
       {/* Ánh sáng phụ (Rim / Blueprint Fill Light) từ phía trước-phải giúp mặt trước Case & CRT rõ nét */}
       <directionalLight
         position={[5.5, 6.5, 7.5]}
-        intensity={isPoweredOn ? 0.95 : 0.25}
+        intensity={isLampOn ? 0.95 : 0.05}
         color={isTurbo ? '#fff2d6' : '#dce6ff'}
       />
 

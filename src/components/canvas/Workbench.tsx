@@ -1,6 +1,6 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBox, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   createCuttingMatTexture,
@@ -74,16 +74,23 @@ function StrutBetween({
  * - Chụp đèn hình chuông bậc (Stepped Bell Shade) bằng LatheGeometry + dây điện uốn vòng ở cổ đèn
  */
 function ChromeArchitectDeskLamp() {
-  const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
+  const isLampOn = useBuildStore((s) => s.isLampOn);
+  const toggleLamp = useBuildStore((s) => s.toggleLamp);
+  const setHoveredControl = useBuildStore((s) => s.setHoveredControl);
+  const [switchHovered, setSwitchHovered] = useState(false);
+
+  useCursor(switchHovered, 'pointer');
 
   const {
     chromeMat,
     springMat,
     innerShadeMat,
+    deskLampCordMat,
+    switchHousingMat,
     baseLatheGeo,
     bellShadeGeo,
     topCordGeo,
-    baseCordGeo,
+    deskPowerCordGeo,
   } = useMemo(() => {
     const chrome = new THREE.MeshStandardMaterial({
       color: '#e8edf2',
@@ -106,6 +113,18 @@ function ChromeArchitectDeskLamp() {
       side: THREE.BackSide,
     });
 
+    const cordMat = new THREE.MeshStandardMaterial({
+      color: '#1a1a1a',
+      roughness: 0.8,
+      metalness: 0.06,
+    });
+
+    const switchHousing = new THREE.MeshStandardMaterial({
+      color: '#161616',
+      roughness: 0.45,
+      metalness: 0.6,
+    });
+
     // 1. Chân đế tròn vòm cong mềm mại (Domed Circular Chrome Base)
     const basePts = [
       new THREE.Vector2(0.0, 0.22),
@@ -121,51 +140,63 @@ function ChromeArchitectDeskLamp() {
     baseGeo.computeVertexNormals();
 
     // 2. Chụp đèn hình chuông có cổ bậc (Stepped Bell Reflector Shade)
-    // Dọc theo trục Y cục bộ của chụp đèn: từ đỉnh đuôi đui đèn (y = +0.46) xuống miệng loe (y = -0.46)
     const shadePts = [
       new THREE.Vector2(0.0, 0.46),
       new THREE.Vector2(0.11, 0.45),
       new THREE.Vector2(0.13, 0.34),
       new THREE.Vector2(0.14, 0.2),
-      // Bậc chuyển tiếp từ cổ trụ sang bầu chuông
       new THREE.Vector2(0.19, 0.15),
       new THREE.Vector2(0.28, 0.04),
       new THREE.Vector2(0.37, -0.12),
       new THREE.Vector2(0.44, -0.28),
       new THREE.Vector2(0.49, -0.43),
-      // Gờ cuộn mép miệng chao đèn
       new THREE.Vector2(0.505, -0.45),
       new THREE.Vector2(0.485, -0.46),
     ];
     const shadeGeo = new THREE.LatheGeometry(shadePts, 40);
     shadeGeo.computeVertexNormals();
 
-    // 3. Đoạn dây điện màu trắng uốn cong từ đầu tay đòn trên vòng vào cổ chụp đèn (như ảnh mẫu)
+    // 3. Dây điện màu đen ở khớp cổ chụp đèn
     const topCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(0.76, 4.78, 0),
       new THREE.Vector3(0.84, 5.05, 0),
       new THREE.Vector3(0.98, 5.08, 0),
       new THREE.Vector3(1.04, 4.92, 0),
     ]);
-    const tCordGeo = new THREE.TubeGeometry(topCurve, 24, 0.014, 8, false);
+    const tCordGeo = new THREE.TubeGeometry(topCurve, 24, 0.016, 8, false);
 
-    // 4. Dây nguồn trắng đi từ chân đế ra mép bàn
-    const bCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.12, 0.14, 0),
-      new THREE.Vector3(-0.55, 0.05, -0.15),
-      new THREE.Vector3(-1.35, 0.02, -0.45),
-      new THREE.Vector3(-2.15, 0.02, -0.85),
+    // 4. DÂY NGUỒN ĐÈN BÀN THỰC TẾ (YÊU CẦU #3):
+    // - Đoạn 1: Xuất phát từ cổ chân đế đèn (y ~ 0.035), uốn lượn tự nhiên nằm sát trên mặt bàn
+    // - Đoạn 2: Vắt 90 độ qua mép bàn rồi buông thòng thẳng xuống gầm bàn (y từ 0 xuống -3.50)
+    const cordCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.66, 0.035, -0.15),
+      new THREE.Vector3(-0.85, 0.024, -0.25),
+      new THREE.Vector3(-1.35, 0.022, -0.42),
+      new THREE.Vector3(-1.95, 0.022, -0.55),
+      new THREE.Vector3(-2.65, 0.022, -0.62),
+      new THREE.Vector3(-3.35, 0.022, -0.65),
+      new THREE.Vector3(-3.72, 0.016, -0.65),
+      // Uốn cong 90 độ vắt qua mép bàn
+      new THREE.Vector3(-3.78, -0.06, -0.65),
+      new THREE.Vector3(-3.80, -0.25, -0.65),
+      // Buông thòng thẳng xuống phía dưới gầm bàn
+      new THREE.Vector3(-3.80, -0.85, -0.65),
+      new THREE.Vector3(-3.79, -1.85, -0.65),
+      new THREE.Vector3(-3.78, -2.75, -0.65),
+      new THREE.Vector3(-3.77, -3.50, -0.65),
     ]);
-    const bCordGeo = new THREE.TubeGeometry(bCurve, 24, 0.015, 8, false);
+    const dCordGeo = new THREE.TubeGeometry(cordCurve, 64, 0.025, 10, false);
 
     return {
       chromeMat: chrome,
       springMat: spring,
       innerShadeMat: innerShade,
+      deskLampCordMat: cordMat,
+      switchHousingMat: switchHousing,
       baseLatheGeo: baseGeo,
       bellShadeGeo: shadeGeo,
       topCordGeo: tCordGeo,
-      baseCordGeo: bCordGeo,
+      deskPowerCordGeo: dCordGeo,
     };
   }, []);
 
@@ -174,19 +205,23 @@ function ChromeArchitectDeskLamp() {
       chromeMat.dispose();
       springMat.dispose();
       innerShadeMat.dispose();
+      deskLampCordMat.dispose();
+      switchHousingMat.dispose();
       baseLatheGeo.dispose();
       bellShadeGeo.dispose();
       topCordGeo.dispose();
-      baseCordGeo.dispose();
+      deskPowerCordGeo.dispose();
     };
   }, [
     chromeMat,
     springMat,
     innerShadeMat,
+    deskLampCordMat,
+    switchHousingMat,
     baseLatheGeo,
     bellShadeGeo,
     topCordGeo,
-    baseCordGeo,
+    deskPowerCordGeo,
   ]);
 
   return (
@@ -202,6 +237,61 @@ function ChromeArchitectDeskLamp() {
       <mesh position={[0, 0.27, 0]} castShadow material={chromeMat}>
         <cylinderGeometry args={[0.065, 0.085, 0.14, 20]} />
       </mesh>
+
+      {/* 1B. NÚT CÔNG TẮC BẬT/TẮT VẬT LÝ TRÊN CHÂN ĐẾ ĐÈN (YÊU CẦU #2) */}
+      <group
+        position={[0.35, 0.095, 0.22]}
+        rotation={[-0.24, 0.52, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleLamp();
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setSwitchHovered(true);
+          setHoveredControl('[CLICK] DESK LAMP SWITCH');
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          setSwitchHovered(false);
+          setHoveredControl(null);
+        }}
+      >
+        {/* Khung viền công tắc màu đen chìm vào chân đế */}
+        <RoundedBox
+          args={[0.08, 0.034, 0.13]}
+          radius={0.005}
+          smoothness={2}
+          castShadow
+          material={switchHousingMat}
+        />
+        {/* Lòng ổ công tắc */}
+        <mesh position={[0, 0.006, 0]} material={retroMaterials.blackAnodized}>
+          <boxGeometry args={[0.062, 0.016, 0.11]} />
+        </mesh>
+        {/* Phím bập bênh (Rocker Switch): gạt nghiêng -0.22 khi BẬT (ON) và +0.22 khi TẮT (OFF) */}
+        <group position={[0, 0.014, 0]} rotation={[isLampOn ? -0.22 : 0.22, 0, 0]}>
+          <RoundedBox
+            args={[0.052, 0.024, 0.098]}
+            radius={0.005}
+            smoothness={2}
+            castShadow
+          >
+            <meshStandardMaterial
+              color={isLampOn ? '#d32f2f' : '#681818'}
+              emissive={isLampOn ? '#ff3333' : '#000000'}
+              emissiveIntensity={isLampOn ? 0.6 : 0.0}
+              roughness={0.4}
+              metalness={0.1}
+            />
+          </RoundedBox>
+          {/* Vạch ký hiệu công tắc nhỏ trên mặt nút */}
+          <mesh position={[0, 0.013, isLampOn ? -0.025 : 0.025]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.018, 0.008]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+        </group>
+      </group>
 
       {/* 2. CỤM TAY ĐÒN DƯỚI & CẶP LÒ XO CĂNG (LOWER ARTICULATED ARM & TENSION SPRINGS) */}
       {/* Chốt bản lề dưới */}
@@ -223,7 +313,7 @@ function ChromeArchitectDeskLamp() {
         material={chromeMat}
       />
 
-      {/* Ngàm móc lò xo dưới & 2 Lò xo kéo chéo đặc trưng (như ảnh mẫu) */}
+      {/* Ngàm móc lò xo dưới & 2 Lò xo kéo chéo đặc trưng */}
       <StrutBetween
         start={[0, 0.34, 0]}
         end={[-0.06, 0.62, 0]}
@@ -255,21 +345,18 @@ function ChromeArchitectDeskLamp() {
       </group>
 
       {/* 4. CỤM TAY ĐÒN TRÊN SONG SONG VƯƠN CAO VỀ PHÍA MÁY TÍNH (UPPER PARALLEL TWIN-ARM) */}
-      {/* Thanh song song trên */}
       <StrutBetween
         start={[-1.06, 2.55, 0]}
         end={[0.84, 4.82, 0]}
         radius={0.025}
         material={chromeMat}
       />
-      {/* Thanh song song dưới */}
       <StrutBetween
         start={[-1.02, 2.41, 0]}
         end={[0.86, 4.68, 0]}
         radius={0.022}
         material={chromeMat}
       />
-      {/* Lò xo kéo dọc nửa dưới của tay đòn trên (giống ảnh mẫu) */}
       <StrutBetween
         start={[-0.98, 2.35, 0]}
         end={[-0.18, 3.38, 0]}
@@ -294,30 +381,40 @@ function ChromeArchitectDeskLamp() {
         material={chromeMat}
       />
 
-      {/* Dây điện màu trắng uốn vòng trên đỉnh cổ đèn & dưới chân đế */}
-      <mesh geometry={topCordGeo} material={retroMaterials.beigePlastic} />
-      <mesh geometry={baseCordGeo} material={retroMaterials.beigePlastic} />
+      {/* Dây điện uốn vòng trên đỉnh cổ đèn */}
+      <mesh geometry={topCordGeo} material={deskLampCordMat} />
 
-      {/* 5. BẦU CHỤP ĐÈN HÌNH CHUÔNG BẬC MẠ CRÔM & BÓNG ĐÈN SỢI ĐỐT (STEPPED BELL REFLECTOR SHADE)
-             Hướng nghiêng trực tiếp xuống màn hình CRT, bàn phím & thùng máy PC */}
+      {/* Đệm cao su giảm căng (Strain Relief Collar) ở đuôi chân đế đèn */}
+      <mesh position={[-0.64, 0.038, -0.14]} rotation={[0, -0.4, 0]} material={deskLampCordMat}>
+        <cylinderGeometry args={[0.036, 0.048, 0.07, 12]} />
+      </mesh>
+
+      {/* DÂY ĐIỆN NGUỒN CỦA ĐÈN BÀN NẰM SÁT MẶT BÀN & THÒNG XUỐNG GẦM BÀN (YÊU CẦU #3) */}
+      <mesh geometry={deskPowerCordGeo} castShadow receiveShadow material={deskLampCordMat} />
+
+      {/* 5. BẦU CHỤP ĐÈN HÌNH CHUÔNG BẬC MẠ CRÔM & BÓNG ĐÈN SỢI ĐỐT (STEPPED BELL REFLECTOR SHADE) */}
       <group position={[1.14, 4.66, 0]} rotation={[0, 0, 0.72]}>
         {/* Mặt ngoài mạ crôm sáng bóng */}
         <mesh geometry={bellShadeGeo} castShadow material={chromeMat} />
-        {/* Mặt trong tráng men trắng phát sáng ấm */}
-        <mesh geometry={bellShadeGeo} scale={[0.985, 0.99, 0.985]} material={innerShadeMat} />
+        {/* Mặt trong tráng men trắng phản xạ */}
+        <mesh
+          geometry={bellShadeGeo}
+          scale={[0.985, 0.99, 0.985]}
+          material={innerShadeMat}
+        />
 
-        {/* Núm công tắc bật/tắt nhỏ trên đỉnh cổ chụp đèn (như ảnh mẫu) */}
+        {/* Núm vặn nhỏ trên đỉnh cổ chụp đèn */}
         <mesh position={[0, 0.5, 0]} material={chromeMat}>
           <cylinderGeometry args={[0.018, 0.024, 0.08, 12]} />
         </mesh>
 
-        {/* Bóng đèn sợi đốt phát sáng vàng ấm bên trong bầu chụp đèn */}
+        {/* Bóng đèn sợi đốt phát sáng vàng ấm bên trong bầu chụp đèn (ĐỘC LẬP THEO isLampOn) */}
         <mesh position={[0, -0.08, 0]}>
           <sphereGeometry args={[0.17, 20, 20]} />
           <meshStandardMaterial
             color="#fff6d6"
             emissive="#ffda85"
-            emissiveIntensity={isPoweredOn ? 3.2 : 0.35}
+            emissiveIntensity={isLampOn ? 3.5 : 0.0}
             roughness={0.15}
           />
         </mesh>
@@ -329,6 +426,7 @@ function ChromeArchitectDeskLamp() {
 export function Workbench() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const benchProgress = useBuildStore((s) => s.benchProgress);
+  const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
   const isTurbo = useBuildStore((s) => s.isTurbo);
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const stageTransition = useBuildStore((s) => s.stageTransition);
@@ -417,61 +515,63 @@ export function Workbench() {
       const step10ShiftX =
         state.currentStep === 10
           ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, remap(curP, 0.55, 0.82))
-          : TOWER_BUILD_X;
+          : state.currentStep > 10
+            ? TOWER_STEP10_X
+            : TOWER_BUILD_X;
       const targetX = state.currentStep >= 2 ? step10ShiftX : 4.2;
       const alpha = Math.min(1, delta * 8);
 
       caseWrapperRef.current.position.x =
-        state.currentStep === 10
+        state.currentStep >= 10
           ? targetX
           : THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
       caseWrapperRef.current.position.y = TOWER_BASE_Y;
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
     }
 
-    // Diễn hoạt chuyển cảnh từ ABOUT sang PROJECT mượt mà tuyệt đối:
-    // Pha 1 (EXIT: 0.38s): Đẩy các linh kiện rời sang phải (0 -> +10) với Cubic Ease In
-    // Pha 2 (WAIT: 0.20s): Chờ ở ngoài màn hình bên trái (-10) để WebGL nạp xong shader mà KHÔNG bị giật hình
-    // Pha 3 (ENTER: 0.72s): Dàn PC đầy đủ trượt từ trái (-10 -> 0) với Quintic Ease Out siêu êm đềm
-    if (stageTransition === 'ABOUT_TO_PROJECT') {
+    // Diễn hoạt chuyển cảnh giữa các phân đoạn (ABOUT / PROJECT / MY CV) mượt mà tuyệt đối (YÊU CẦU #3 & #4):
+    // Pha 1 (EXIT: 0.75s với ABOUT, 0.70s với PROJECT/CV): Đẩy toàn bộ cụm máy sang phải (0 -> +18) với Power2.in (p1 * p1)
+    // Pha 2 (ENTER: 0.85s): Cụm máy mục tiêu từ bên trái (-18 -> 0) trượt vào với Power3.out (1 - (1 - p2)^3)
+    if (stageTransition !== 'IDLE') {
       const dt = Math.min(delta, 0.05);
       transitionTimeRef.current += dt;
       const t = transitionTimeRef.current;
 
+      const exitDuration = stageTransition === 'TO_ABOUT' ? 0.75 : 0.70;
+      const enterDuration = 0.85;
+
       if (transitionPhaseRef.current === 'EXIT') {
-        const p1 = Math.min(1, t / 0.38);
-        const easeOut = p1 * p1 * p1; // Cubic Ease In
-        const offsetX = THREE.MathUtils.lerp(0, 10, easeOut);
+        const p1 = Math.min(1, t / exitDuration);
+        const easeIn = p1 * p1; // power2.in
+        const offsetX = THREE.MathUtils.lerp(0, 18, easeIn);
         if (componentsStageGroupRef.current) {
           componentsStageGroupRef.current.position.x = offsetX;
         }
 
         if (p1 >= 1) {
-          // Khi đã bay khuất hoàn toàn sang phải: chuyển sang pha WAIT
-          transitionPhaseRef.current = 'WAIT';
-          transitionTimeRef.current = 0;
-          // Đặt cụm PC đầy đủ ở vị trí xuất phát ngoài màn hình bên trái (-10)
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = -10;
-          }
-          // Kích hoạt nạp Step 10 trong khi đang ẩn ngoài màn hình
-          useBuildStore.getState().applyStep10State();
-        }
-      } else if (transitionPhaseRef.current === 'WAIT') {
-        // Giữ nguyên ngoài màn hình (-10) trong 200ms để GPU biên dịch trọn vẹn 100% shader màn hình CRT & bàn phím
-        if (componentsStageGroupRef.current) {
-          componentsStageGroupRef.current.position.x = -10;
-        }
-        if (t >= 0.20) {
+          // Khi đã bay khuất hoàn toàn sang phải (+18): chuyển sang pha ENTER
           transitionPhaseRef.current = 'ENTER';
           transitionTimeRef.current = 0;
+          // Đặt cụm stage tức thời ở vị trí ngoài màn hình bên trái (-18)
+          if (componentsStageGroupRef.current) {
+            componentsStageGroupRef.current.position.x = -18;
+          }
+          // Kích hoạt nạp trạng thái mục tiêu trong khi đang ẩn ngoài màn hình
+          if (stageTransition === 'TO_ABOUT') {
+            useBuildStore.getState().applyStep1State();
+          } else if (stageTransition === 'TO_MY_CV') {
+            useBuildStore.getState().applyStep12State();
+          } else {
+            // 'TO_PROJECT'
+            useBuildStore.getState().applyStep11State();
+          }
         }
       } else {
-        // Pha ENTER: Bộ PC đầy đủ di chuyển từ trái sang giữa (0.0s -> 0.72s)
-        const p2 = Math.min(1, t / 0.72);
-        // Quintic Ease Out siêu êm ái: hãm phanh mềm mại khi vào trung tâm
-        const easeIn = 1 - Math.pow(1 - p2, 5);
-        const offsetX = THREE.MathUtils.lerp(-10, 0, easeIn);
+        // Pha ENTER: Cụm máy tính di chuyển từ trái (-18) sang giữa (0) trong 0.85s với Power3.out
+        const p2 = Math.min(1, t / enterDuration);
+        // Power3.out (cubic ease-out: 1 - Math.pow(1 - p2, 3))
+        const easeOut = 1 - Math.pow(1 - p2, 3);
+        const offsetX = THREE.MathUtils.lerp(-18, 0, easeOut);
         if (componentsStageGroupRef.current) {
           componentsStageGroupRef.current.position.x = offsetX;
         }
@@ -481,10 +581,18 @@ export function Workbench() {
           if (componentsStageGroupRef.current) {
             componentsStageGroupRef.current.position.x = 0;
           }
+          const finishedTransition = stageTransition;
           transitionPhaseRef.current = 'EXIT';
           transitionTimeRef.current = 0;
           useBuildStore.getState().setStageTransition('IDLE');
           retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+
+          // Chỉ sau khi bộ máy đã trượt vào đứng yên ở giữa bàn mới kích hoạt nạp đĩa / cắm thẻ
+          if (finishedTransition === 'TO_PROJECT') {
+            useBuildStore.getState().triggerInsertCdSequence();
+          } else if (finishedTransition === 'TO_MY_CV') {
+            useBuildStore.getState().handleCardClick();
+          }
         }
       }
     } else {
@@ -528,8 +636,18 @@ export function Workbench() {
         : 1;
 
   const uCoverCloseProgress =
-    currentStep < 10 ? 0 : remap(benchProgress, 0.22, 0.52);
-  const peripheralsProgress = currentStep < 10 ? 0 : benchProgress;
+    currentStep < 10 ? 0 : currentStep === 10 ? remap(benchProgress, 0.22, 0.52) : 1;
+  const peripheralsProgress =
+    currentStep < 10
+      ? 0
+      : currentStep === 10
+        ? (isPoweredOn ? 1 : benchProgress)
+        : 1;
+
+  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 khi benchProgress >= 0.52 hoặc đã bật nguồn, hoặc Step 11 & 12):
+  // Ẩn toàn bộ linh kiện bên trong lòng thùng máy để chống PCB clipping 100% và tối ưu GPU
+  const isCaseCoverClosed =
+    currentStep > 10 || (currentStep === 10 && (isPoweredOn || benchProgress >= 0.52));
 
   const activeCuttingMatTex = currentStep >= 5 ? matCleanTex : matWithZonesTex;
 
@@ -658,27 +776,33 @@ export function Workbench() {
         )}
 
         {currentStep >= 5 && (
-          <StorageDrives driveInstallProgress={driveInstallProgress} />
+          <StorageDrives
+            driveInstallProgress={driveInstallProgress}
+            isCaseCoverClosed={isCaseCoverClosed}
+          />
         )}
 
-        {currentStep >= 6 && (
+        {currentStep >= 6 && !isCaseCoverClosed && (
           <PowerAndFrontCables
             powerCableProgress={powerCableProgress}
             frontPanelProgress={frontPanelProgress}
           />
         )}
 
-        {currentStep >= 7 && (
+        {currentStep >= 7 && !isCaseCoverClosed && (
           <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
         )}
 
-        {currentStep >= 9 && (
+        {currentStep >= 9 && !isCaseCoverClosed && (
           <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
         )}
       </group>
 
-      {/* 6. CỤM LINH KIỆN BO MẠCH CHỦ (STEP 01 TRÊN BÀN -> STEP 04 DỰNG ĐỨNG VÀO LÒNG CASE) */}
-      <BenchAssemblyGroup />
+      {/* 6. CỤM LINH KIỆN BO MẠCH CHỦ (STEP 01 TRÊN BÀN -> STEP 04 DỰNG ĐỨNG VÀO LÒNG CASE)
+             Ẩn hoàn toàn khi nắp vỏ thùng máy đã đóng kín để loại bỏ 100% lỗi lộ bo mạch xanh */}
+      <group visible={!isCaseCoverClosed}>
+        <BenchAssemblyGroup />
+      </group>
 
       {/* 6B. CỤM NGOẠI VI MÀN HÌNH CRT SONY TRINITRON 15" + BÀN PHÍM IBM MODEL M + CHUỘT BI (STEP 10) */}
       {currentStep >= 10 && (

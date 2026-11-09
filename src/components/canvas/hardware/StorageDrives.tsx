@@ -284,9 +284,13 @@ const DRIVE_SCREW_TARGETS: [number, number, number][] = [
 export interface StorageDrivesProps {
   /** Tiến trình lắp 3 ổ đĩa ở Step 05 (0.0 -> 1.0) */
   driveInstallProgress: number;
+  isCaseCoverClosed?: boolean;
 }
 
-export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
+export function StorageDrives({
+  driveInstallProgress,
+  isCaseCoverClosed = false,
+}: StorageDrivesProps) {
   const currentStep = useBuildStore((s) => s.currentStep);
   const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
   const isCdTrayOpen = useBuildStore((s) => s.isCdTrayOpen);
@@ -322,22 +326,19 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
-    // 1. Khay đĩa CD-ROM trượt mượt ra trước mặt nạ khoảng 1.2 units khi mở (tự đóng nếu tắt nguồn)
+    // 1. Khay đĩa CD-ROM từ từ trượt mượt ra trước mặt nạ 1.2 units trong 0.5s (damp factor 6.0)
     const trayTarget = isCdTrayOpen && isPoweredOn ? 1.2 : 0;
-    cdTrayOffsetRef.current = THREE.MathUtils.damp(cdTrayOffsetRef.current, trayTarget, 5.2, dt);
+    cdTrayOffsetRef.current = THREE.MathUtils.damp(cdTrayOffsetRef.current, trayTarget, 6.0, dt);
     if (cdTraySlideRef.current) {
       cdTraySlideRef.current.position.x = cdTrayOffsetRef.current;
     }
 
-    // 2. Thẻ nhớ / Đĩa mềm 3.5" diễn hoạt 2 giai đoạn mượt mà:
-    // - Giai đoạn 1 (t: 0 -> 0.50): Bay từ mặt bàn lên điểm chờ ngay phía trước cửa khe đọc
-    // - Giai đoạn 2 (t: 0.50 -> 1.0): ĐÚT TỪ TỪ TỪ NGOÀI VÀO TRONG khe đọc (giữ thẳng trục)
-    // Khi lấy ra (t: 1.0 -> 0): Rút từ từ từ trong ra ngoài, rồi hạ xuống mặt bàn
+    // 2. Thẻ nhớ / Đĩa mềm 3.5" diễn hoạt bay 2 giai đoạn vào/ra khe đọc chậm rãi mượt mà trong ~1.2s (damp factor 2.5)
     const cardTarget = cardLocation === 'INSERTED' ? 1.0 : 0.0;
     cardAnimProgRef.current = THREE.MathUtils.damp(
       cardAnimProgRef.current,
       cardTarget,
-      3.8,
+      2.5,
       dt
     );
     const t = cardAnimProgRef.current;
@@ -378,7 +379,7 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
       floppyDiskGroupRef.current.position.set(curX, curY, curZ);
     }
 
-    // 3. Đĩa CD-ROM diễn hoạt 2 giai đoạn mượt mà:
+    // 3. Đĩa CD-ROM diễn hoạt bay 2 giai đoạn trong 0.6s (damp factor 5.2 - YÊU CẦU #1):
     // - Giai đoạn 1 (u: 0 -> 0.55): Bay từ mặt bàn lên điểm lơ lửng ngay phía trên lòng khay đĩa
     // - Giai đoạn 2 (u: 0.55 -> 1.0): HẠ XUỐNG TỪ TỪ TỪ TRÊN XUỐNG khớp vào lòng khay đĩa
     // Khi lấy ra (u: 1.0 -> 0): NHẤC LÊN TỪ TỪ TỪ DƯỚI LÊN khỏi lòng khay, rồi bay hạ xuống bàn
@@ -386,7 +387,7 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
     cdFlightProgRef.current = THREE.MathUtils.damp(
       cdFlightProgRef.current,
       cdTarget,
-      3.4,
+      5.2,
       dt
     );
     const u = cdFlightProgRef.current;
@@ -466,15 +467,17 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
              Nằm gọn 100% trong khung hở Bay 1 (rộng 0.81 <= 0.82, cao 0.265 <= 0.275)
          ===================================================================== */}
       <group position={[cdX, cdY, cdZ]}>
-        {/* Thân ổ bằng thép mạ kẽm (0.98 x 0.78 x 0.25) */}
-        <RoundedBox
-          args={[0.98, 0.78, 0.25]}
-          radius={0.006}
-          smoothness={1}
-          castShadow
-          receiveShadow
-          material={retroMaterials.galvanizedSteel}
-        />
+        {/* Thân ổ bằng thép mạ kẽm (0.98 x 0.78 x 0.25) - Ẩn khi đóng nắp case */}
+        <group visible={!isCaseCoverClosed}>
+          <RoundedBox
+            args={[0.98, 0.78, 0.25]}
+            radius={0.006}
+            smoothness={1}
+            castShadow
+            receiveShadow
+            material={retroMaterials.galvanizedSteel}
+          />
+        </group>
 
         {/* Mặt nạ trước bằng nhựa Retro Beige (#d8d2c5) tại X = +0.50 (X_int = 2.34) */}
         <group position={[0.5, 0, 0]}>
@@ -575,7 +578,7 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
         </group>
 
         {/* Mặt sau ổ CD-ROM (X = -0.49): Khu vực chân cắm IDE 40-pin, Jumper & Molex 4-pin */}
-        <group position={[-0.492, 0, 0]}>
+        <group position={[-0.492, 0, 0]} visible={!isCaseCoverClosed}>
           <mesh position={[0, -0.05, 0]} material={retroMaterials.isaBlack}>
             <boxGeometry args={[0.02, 0.28, 0.06]} />
           </mesh>
@@ -593,15 +596,17 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
              Nằm phẳng phiu, khe đĩa nằm ngang gọn 100% trong khung 3.5" bên trái
          ===================================================================== */}
       <group position={[fddX, fddY, fddZ]}>
-        {/* Thân ổ mềm bằng kim loại (0.74 x 0.45 x 0.16) */}
-        <RoundedBox
-          args={[0.74, 0.45, 0.16]}
-          radius={0.005}
-          smoothness={1}
-          castShadow
-          receiveShadow
-          material={retroMaterials.galvanizedSteel}
-        />
+        {/* Thân ổ mềm bằng kim loại (0.74 x 0.45 x 0.16) - Ẩn khi đóng nắp case */}
+        <group visible={!isCaseCoverClosed}>
+          <RoundedBox
+            args={[0.74, 0.45, 0.16]}
+            radius={0.005}
+            smoothness={1}
+            castShadow
+            receiveShadow
+            material={retroMaterials.galvanizedSteel}
+          />
+        </group>
 
         {/* Mặt nạ trước bằng nhựa Beige tại X = +0.385 (rộng 0.468 <= 0.48 của khung hở) */}
         <group position={[0.385, 0, 0]}>
@@ -679,7 +684,7 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
         </group>
 
         {/* Mặt sau ổ mềm: Cổng cáp Floppy 34-pin & Nguồn Berg 4-pin */}
-        <group position={[-0.375, 0, 0]}>
+        <group position={[-0.375, 0, 0]} visible={!isCaseCoverClosed}>
           <mesh position={[0, -0.05, 0]} material={retroMaterials.isaBlack}>
             <boxGeometry args={[0.02, 0.2, 0.045]} />
           </mesh>
@@ -691,8 +696,9 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
 
       {/* =====================================================================
           C. Ổ CỨNG CƠ QUANTUM FIREBALL ST 3.2GB (CHUẨN 3.5 INCH KÍN BÊN TRONG)
+          Ẩn hoàn toàn khi nắp vỏ thùng máy đã đóng để loại bỏ clipping và tối ưu GPU
          ===================================================================== */}
-      <group position={[hddX, hddY, hddZ]}>
+      <group position={[hddX, hddY, hddZ]} visible={!isCaseCoverClosed}>
         {/* Thân ổ cứng bằng kim loại đúc màu đen nhám (0.74 x 0.45 x 0.14) */}
         <RoundedBox
           args={[0.74, 0.45, 0.14]}
@@ -749,7 +755,7 @@ export function StorageDrives({ driveInstallProgress }: StorageDrivesProps) {
       {/* =====================================================================
           D. TÁM ỐC VÍT HÔNG LỒNG ĐĨA TỰ ĐỘNG XOÁY VÀO CỐ ĐỊNH CẢ 3 Ổ (PHA 4)
          ===================================================================== */}
-      {screwT > 0.01 && (
+      {screwT > 0.01 && !isCaseCoverClosed && (
         <Instances limit={DRIVE_SCREW_TARGETS.length} material={retroMaterials.galvanizedSteel}>
           <cylinderGeometry args={[0.018, 0.018, 0.028, 8]} />
           {DRIVE_SCREW_TARGETS.map(([tx, ty, tz], idx) => {

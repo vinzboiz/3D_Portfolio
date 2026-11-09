@@ -143,9 +143,9 @@ export function BenchAssemblyGroup() {
           THREE.MathUtils.lerp(1, TOWER_SCALE[1], liftAndRotate),
           THREE.MathUtils.lerp(1, TOWER_SCALE[2], liftAndRotate)
         );
-      } else if (currentStep === 10) {
-        // Step 10: Dịch chuyển đồng bộ cùng Thùng máy đứng sang bên phải màn hình CRT (X_world = +1.85) sau khi đậy nắp chữ U
-        const shiftT = remap(stepP, 0.55, 0.82);
+      } else if (currentStep >= 10) {
+        // Step 10+: Dịch chuyển đồng bộ cùng Thùng máy đứng sang bên phải màn hình CRT (X_world = +1.85) sau khi đậy nắp chữ U
+        const shiftT = currentStep > 10 ? 1 : remap(stepP, 0.55, 0.82);
         const curX = THREE.MathUtils.lerp(seatedMoboX, step10MoboX, shiftT);
         rootGroupRef.current.position.set(curX, TOWER_BASE_Y, TOWER_CENTER_Z);
         rootGroupRef.current.rotation.set(Math.PI / 2, 0, Math.PI / 2);

@@ -308,4 +308,60 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manualNote:
       'FIG 1.10: (1) Nắp vỏ chữ U trượt đóng kín thùng máy InWin A500 và siết 4 ốc lưng -> (2) Thùng máy dịch sang phải, màn hình CRT Sony Trinitron, bàn phím IBM Model M và chuột Logitech xuất hiện kèm cáp VGA/AC/dây xoắn lò xo -> (3) Khởi động màn hình Award BIOS!',
   },
+  {
+    step: 11,
+    code: '11',
+    shortName: 'MY PROJECTS',
+    title: 'CREATIVE 24X CD-ROM AUTORUN // 3D PROJECTS TUNNEL',
+    partNumber: 'APP-PROJECTS98-AUTORUN',
+    manufacturer: 'CREATIVE INFRA // VINZBOIZ 3D STUDIO',
+    category: 'STEP 11 // OPTICAL MEDIA & INTERACTIVE PROJECTS',
+    zoneId: 'ZONE-C05',
+    cameraPos: [0.15, 3.25, 9.45],
+    cameraTarget: [0.05, 1.65, 0.25],
+    hardwareSpecs: [
+      { label: 'OPTICAL DISC', value: 'PORTFOLIO SOURCE CODE (650 MB MASTER)' },
+      { label: 'DRIVE UNIT', value: 'CREATIVE INFRA 24X MX (ATAPI SECONDARY MASTER)' },
+      { label: 'AUTORUN APP', value: 'PROJECTS_98.EXE // 3D FLY-THROUGH TUNNEL' },
+      { label: 'GRAPHICS STACK', value: '3DFX GLIDE + CUSTOM GLSL VERTEX SHADERS' },
+    ],
+    portfolioMapping: {
+      title: 'FEATURED WORKS // REAL-TIME 3D SHOWCASE APPS',
+      roleOrTag: 'PRINCIPAL CREATIVE TECHNOLOGIST & LEAD',
+      metrics: '3 CORE SHOWCASE APPS // 60 FPS GLSL ENGINES',
+      summary:
+        'Khay ổ quang Creative 24X tự động mở ra, đĩa CD Portfolio 650MB từ mặt bàn bay vào khay và khay đóng lại, kích hoạt Autorun mở ứng dụng My Projects trên màn hình CRT. Bấm nút [ VIEW ] trên cửa sổ để bước vào trải nghiệm đường hầm 3D tương tác!',
+      techStack: ['Three.js', 'React Three Fiber', 'GLSL Shaders', 'Howler.js', 'TypeScript'],
+    },
+    manualNote:
+      'FIG 1.11: Đĩa CD Portfolio từ bàn bay vào khay ổ quang Creative 24X CD-ROM, khay đóng lại và hệ thống Retro OS tự động kích hoạt Autorun mở cửa sổ My Projects trên màn hình CRT Sony Trinitron.',
+  },
+  {
+    step: 12,
+    code: '12',
+    shortName: 'MY CV / RESUME',
+    title: 'SONY 1.44MB FLOPPY & VINZBOIZ CURRICULUM VITAE',
+    partNumber: 'DOC-WORDPAD-CV-VINZBOIZ',
+    manufacturer: 'SONY CORP // MICROSOFT WORDPAD',
+    category: 'STEP 12 // REMOVABLE MEDIA & CAREER DOSSIER',
+    zoneId: 'ZONE-C05',
+    cameraPos: [0.15, 3.25, 9.45],
+    cameraTarget: [0.05, 1.65, 0.25],
+    hardwareSpecs: [
+      { label: 'REMOVABLE MEDIA', value: 'SONY 2HD 3.5" DISKETTE (1.44 MB FORMATTED)' },
+      { label: 'DRIVE UNIT', value: 'SONY MPF920 DIRECT DRIVE FLOPPY (A:)' },
+      { label: 'DOCUMENT FORMAT', value: 'WORDPAD RESUME_CV.DOC / TEXT DOSSIER' },
+      { label: 'ONE-CLICK EXPORT', value: 'DIRECT DOWNLOAD TO HOST MACHINE' },
+    ],
+    portfolioMapping: {
+      title: 'CAREER HIGHLIGHTS, CORE SKILLS & CONTACT',
+      roleOrTag: 'LEAD CREATIVE TECHNOLOGIST & WEBGL ENGINEER',
+      metrics: '10+ YRS EXPERIENCE // PRODUCTION PROVEN',
+      summary:
+        'Thẻ nhớ đĩa mềm chứa hồ sơ năng lực của vinzboiz từ mặt bàn bay lên cắm thẳng vào khe đọc 3.5", đèn LED xanh sáng và tự động mở trình soạn thảo WordPad CV trên màn hình CRT. Bạn có thể đọc trực tiếp hoặc bấm nút tải file CV về máy thật.',
+      techStack: ['TypeScript', 'WebGL 2.0', 'Architecture Design', 'Mentorship', 'Performance'],
+    },
+    manualNote:
+      'FIG 1.12: Đĩa mềm 3.5" RESUME_CV tự động cắm vào ổ Sony MPF920 và hiển thị hồ sơ cá nhân của vinzboiz trong WordPad trên màn hình CRT, sẵn sàng liên hệ và hợp tác.',
+  },
 ];
