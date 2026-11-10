@@ -10,9 +10,167 @@ import { S } from '../../constants/scale';
 // =============================================================================
 const MAIN_MONITOR_W = 0.40;
 const MAIN_MONITOR_H = 0.36;
-const MAIN_MONITOR_DEPTH = 0.38;
-const SCREEN_GLASS_W = 0.32;
-const SCREEN_GLASS_H = 0.24;
+const MAIN_MONITOR_DEPTH = 0.30;
+const SCREEN_GLASS_W = 0.308;
+const SCREEN_GLASS_H = 0.222;
+
+/**
+ * Tạo khung viền mặt trước bo tròn có hốc khoét âm cho màn hình CRT (Sony Trinitron Style)
+ * 100% Procedural ExtrudeGeometry có lỗ hổng (Shape with Hole cutout)
+ */
+function createBezelGeometry(): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  const w = MAIN_MONITOR_W;
+  const h = MAIN_MONITOR_H;
+  const r = 0.012; // Bo tròn góc ngoài
+  const x = -w / 2;
+  const y = -h / 2;
+
+  // Đường viền bo ngoài
+  shape.moveTo(x + r, y);
+  shape.lineTo(x + w - r, y);
+  shape.quadraticCurveTo(x + w, y, x + w, y + r);
+  shape.lineTo(x + w, y + h - r);
+  shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  shape.lineTo(x + r, y + h);
+  shape.quadraticCurveTo(x, y + h, x, y + h - r);
+  shape.lineTo(x, y + r);
+  shape.quadraticCurveTo(x, y, x + r, y);
+
+  // Hốc khoét âm cho mặt kính CRT (Screen Aperture Hole)
+  const hole = new THREE.Path();
+  const sw = 0.304;
+  const sh = 0.218;
+  const sy = 0.032; // Tâm hốc kính CRT hơi nâng lên để chừa chỗ cho cằm điều khiển & logo
+  const sr = 0.008; // Bo nhẹ góc kính
+  const hx = -sw / 2;
+  const hy = sy - sh / 2;
+
+  hole.moveTo(hx + sr, hy);
+  hole.lineTo(hx + sw - sr, hy);
+  hole.quadraticCurveTo(hx + sw, hy, hx + sw, hy + sr);
+  hole.lineTo(hx + sw, hy + sh - sr);
+  hole.quadraticCurveTo(hx + sw, hy + sh, hx + sw - sr, hy + sh);
+  hole.lineTo(hx + sr, hy + sh);
+  hole.quadraticCurveTo(hx, hy + sh, hx, hy + sh - sr);
+  hole.lineTo(hx, hy + sr);
+  hole.quadraticCurveTo(hx, hy, hx + sr, hy);
+
+  shape.holes.push(hole);
+
+  const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+    depth: 0.024,
+    bevelEnabled: true,
+    bevelThickness: 0.003,
+    bevelSize: 0.003,
+    bevelOffset: 0,
+    bevelSegments: 2,
+  };
+
+  const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * Tạo Decal CanvasTexture sắc nét chuẩn Sony Trinitron Multiscan 100ES:
+ * - Góc trên trái: Trinitron
+ * - Góc trên phải: Multiscan 100ES
+ * - Dưới màn hình: Logo SONY ánh bạc dập nổi
+ * - Rãnh phân cách cằm điều khiển
+ * - Ký hiệu các nút OSD cân chỉnh
+ * - Ký hiệu nút nguồn POWER ( | )
+ */
+function createCrtFrontDecalTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 922; // Khớp tỉ lệ 0.40m x 0.36m
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.clearRect(0, 0, 1024, 922);
+
+  // 1. TOP BEZEL BRANDING
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowBlur = 2;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+
+  // "Trinitron" (góc trên bên trái)
+  ctx.fillStyle = '#2d2b28';
+  ctx.font = 'bold 30px Georgia, "Times New Roman", serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Trinitron', 132, 60);
+
+  // "Multiscan 100ES" (góc trên bên phải)
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#4a4640';
+  ctx.font = 'italic bold 21px "IBM Plex Mono", monospace, sans-serif';
+  ctx.fillText('Multiscan ', 825, 60);
+  ctx.fillStyle = '#22201d';
+  ctx.font = 'bold 28px "JetBrains Mono", monospace, sans-serif';
+  ctx.fillText('100ES', 900, 60);
+
+  // 2. LOGO "SONY" CHỮ NỔI ÁNH BẠC Ở CHÍNH GIỮA DƯỚI MÀN HÌNH
+  ctx.textAlign = 'center';
+  const silverGrad = ctx.createLinearGradient(0, 680, 0, 715);
+  silverGrad.addColorStop(0, '#f4f2ee');
+  silverGrad.addColorStop(0.5, '#a4a8ac');
+  silverGrad.addColorStop(1, '#505458');
+  ctx.fillStyle = silverGrad;
+  ctx.font = 'bold 40px Georgia, "Times New Roman", serif';
+  ctx.fillText('SONY', 512, 710);
+  ctx.restore();
+
+  // 3. RÃNH PHÂN CÁCH NGANG (HORIZONTAL CHIN DIVIDER GROOVE)
+  ctx.strokeStyle = 'rgba(60, 56, 52, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(70, 758);
+  ctx.lineTo(954, 758);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(70, 760);
+  ctx.lineTo(954, 760);
+  ctx.stroke();
+
+  // 4. KÝ HIỆU CÁC NÚT OSD CÂN CHỈNH MẶT TRƯỚC
+  ctx.fillStyle = '#3c3834';
+  ctx.font = 'bold 15px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('[ - ]', 243, 782);
+  ctx.fillText('[ + ]', 333, 782);
+  ctx.fillText('☼', 422, 782);
+  ctx.fillText('◐', 512, 782);
+
+  // 5. CHỈ BÁO STANDBY & NÚT POWER
+  ctx.font = 'bold 12px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#48443e';
+  ctx.fillText('STANDBY', 737, 782);
+
+  ctx.fillText('POWER', 858, 782);
+
+  // Biểu tượng nút nguồn (|) trên mặt nút vuông
+  ctx.strokeStyle = '#322f2a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(858, 825, 12, 0.35 * Math.PI, 0.65 * Math.PI, true);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(858, 810);
+  ctx.lineTo(858, 825);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 // =============================================================================
 // GLSL SHADER: "MẤT TÍN HIỆU RETRO 90S" (100% PROCEDURAL - 1 DRAW CALL CHO CẢ BỨC TƯỜNG)
@@ -224,10 +382,15 @@ function CRTVideoWall() {
   const stageTransition = useBuildStore((s) => s.stageTransition);
 
   const bodyInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const bezelInstancedRef = useRef<THREE.InstancedMesh>(null);
   const screenInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const decalInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const adjustBtnInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const powerBtnInstancedRef = useRef<THREE.InstancedMesh>(null);
+  const powerLedInstancedRef = useRef<THREE.InstancedMesh>(null);
   const lastUpdateRef = useRef(0);
 
-  // Khởi tạo ShaderMaterial chuyên dụng 1 draw call duy nhất
+  // Khởi tạo ShaderMaterial chuyên dụng 1 draw call duy nhất cho mặt kính CRT
   const shaderMat = useMemo(() => {
     return new THREE.ShaderMaterial({
       vertexShader: crtWallVertexShader,
@@ -241,7 +404,24 @@ function CRTVideoWall() {
     });
   }, []);
 
-  // Bố cục ma trận màn hình phẳng tại z = S.ROOM.WALL_Z (-2.4m):
+  // Decal CanvasTexture chuẩn Sony Trinitron (Logo SONY, Trinitron, Multiscan 100ES, nút nguồn, OSD)
+  const decalTexture = useMemo(() => createCrtFrontDecalTexture(), []);
+  const decalMat = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      map: decalTexture,
+      transparent: true,
+      depthWrite: false,
+    });
+  }, [decalTexture]);
+
+  // Vật liệu LED phát sáng không qua ToneMapping để đạt độ sáng rực của bóng bán dẫn
+  const ledMat = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      toneMapped: false,
+    });
+  }, []);
+
+  // Bố cục ma trận màn hình phẳng tại z = S.ROOM.WALL_Z:
   // 6 Cột x 4 Hàng = 24 Màn hình chuẩn Human-Scale (0.40m x 0.36m)
   const wallConfig = useMemo(() => {
     const cols = 6;
@@ -259,9 +439,17 @@ function CRTVideoWall() {
     const modes = new Float32Array(totalCount);
     const brightnesses = new Float32Array(totalCount);
     const bodyColors: THREE.Color[] = [];
+    const adjustBtnColors: THREE.Color[] = [];
+    const powerBtnColors: THREE.Color[] = [];
+    const ledColors: THREE.Color[] = [];
 
     const beigeColor = new THREE.Color('#cfc8b8');
     const darkColor = new THREE.Color('#2a2c30');
+    const beigeBtnColor = new THREE.Color('#b0a898');
+    const darkBtnColor = new THREE.Color('#1c1e22');
+    const ledGreen = new THREE.Color('#33ff33');
+    const ledAmber = new THREE.Color('#ffb000');
+    const ledOff = new THREE.Color('#181816');
 
     let idx = 0;
     for (let r = 0; r < rows; r++) {
@@ -271,7 +459,7 @@ function CRTVideoWall() {
         const seed2 = Math.cos(c * 23.7 + r * 37.1);
         const jitterX = seedVal * 0.004;
         const jitterY = seed2 * 0.004;
-        const rotZ = seedVal * 0.016; // ±1° quanh trục Z, KHÔNG xoay hướng camera, giữ phẳng
+        const rotZ = seedVal * 0.016; // ±1° quanh trục Z, giữ phẳng không chĩa vào camera
 
         // Biến thể nhỏ ±5% kích thước
         const sizeVar = 1.0 + seedVal * 0.05;
@@ -294,8 +482,22 @@ function CRTVideoWall() {
         const isOff = Math.abs(seed2) > 0.88;
         brightnesses[idx] = isOff ? 0.0 : 0.85 + Math.abs(seedVal) * 0.35;
 
-        // Xen kẽ màu vỏ nhựa kem và xám đen
-        bodyColors.push((c + r) % 2 === 0 ? beigeColor : darkColor);
+        // Xen kẽ màu vỏ nhựa kem retro và xám đen kỹ thuật
+        const isBeige = (c + r) % 2 === 0;
+        bodyColors.push(isBeige ? beigeColor : darkColor);
+        powerBtnColors.push(isBeige ? beigeBtnColor : darkBtnColor);
+        for (let b = 0; b < 4; b++) {
+          adjustBtnColors.push(isBeige ? beigeBtnColor : darkBtnColor);
+        }
+
+        // Màu đèn LED chỉ báo nguồn (Xanh lá bật, Cam chờ/vcr, Đen tắt)
+        if (isOff) {
+          ledColors.push(ledOff);
+        } else if (modeChoice === 4 || modeChoice === 3) {
+          ledColors.push(ledAmber);
+        } else {
+          ledColors.push(ledGreen);
+        }
 
         idx++;
       }
@@ -310,10 +512,13 @@ function CRTVideoWall() {
       modes,
       brightnesses,
       bodyColors,
+      adjustBtnColors,
+      powerBtnColors,
+      ledColors,
     };
   }, []);
 
-  // Geometry mặt kính màn hình phẳng hơi vát mép
+  // Geometry mặt kính màn hình phẳng lõm bên trong hốc
   const screenGeometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(SCREEN_GLASS_W, SCREEN_GLASS_H, 2, 2);
     geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(wallConfig.seeds, 1));
@@ -322,42 +527,117 @@ function CRTVideoWall() {
     return geo;
   }, [wallConfig]);
 
-  // Geometry vỏ thân máy CRT
+  // Geometry thân vỏ hộp CRT
   const bodyGeometry = useMemo(() => {
-    // Khối thân vỏ màn hình CRT bo viền
-    return new THREE.BoxGeometry(MAIN_MONITOR_W, MAIN_MONITOR_H, MAIN_MONITOR_DEPTH);
+    return new THREE.BoxGeometry(MAIN_MONITOR_W * 0.98, MAIN_MONITOR_H * 0.98, MAIN_MONITOR_DEPTH);
   }, []);
 
-  // Thiết lập ma trận cho cả 2 InstancedMesh ngay khi mount
+  // Geometry khung viền mặt trước bo góc có hốc khoét âm (Sony Trinitron)
+  const bezelGeometry = useMemo(() => createBezelGeometry(), []);
+
+  // Geometry tấm decal mặt trước (chứa SONY, Trinitron, Multiscan 100ES, icon Power)
+  const decalGeometry = useMemo(() => new THREE.PlaneGeometry(MAIN_MONITOR_W, MAIN_MONITOR_H), []);
+
+  // Geometry 4 nút bấm cân chỉnh OSD (View Only)
+  const adjustBtnGeo = useMemo(() => new THREE.BoxGeometry(0.022, 0.010, 0.008), []);
+
+  // Geometry nút nguồn chính hình vuông (View Only)
+  const powerBtnGeo = useMemo(() => new THREE.BoxGeometry(0.028, 0.028, 0.008), []);
+
+  // Geometry đèn LED báo nguồn
+  const powerLedGeo = useMemo(() => new THREE.CylinderGeometry(0.0035, 0.0035, 0.006, 12), []);
+
+  // Thiết lập ma trận cho toàn bộ 7 InstancedMesh ngay khi mount
   useEffect(() => {
-    if (!bodyInstancedRef.current || !screenInstancedRef.current) return;
+    if (
+      !bodyInstancedRef.current ||
+      !bezelInstancedRef.current ||
+      !screenInstancedRef.current ||
+      !decalInstancedRef.current ||
+      !adjustBtnInstancedRef.current ||
+      !powerBtnInstancedRef.current ||
+      !powerLedInstancedRef.current
+    )
+      return;
 
-    const dummy = new THREE.Object3D();
+    const monitorMat = new THREE.Matrix4();
+    const localMat = new THREE.Matrix4();
+    const partMat = new THREE.Matrix4();
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const ledRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+
+    const depthHalf = MAIN_MONITOR_DEPTH * 0.5;
+    const btnX = [-0.105, -0.070, -0.035, 0.000];
+
     for (let i = 0; i < wallConfig.totalCount; i++) {
-      dummy.position.set(...wallConfig.positions[i]);
-      dummy.rotation.set(...wallConfig.rotations[i]);
-      dummy.scale.set(...wallConfig.scales[i]);
-      dummy.updateMatrix();
+      pos.set(...wallConfig.positions[i]);
+      quat.setFromEuler(new THREE.Euler(...wallConfig.rotations[i]));
+      scale.set(...wallConfig.scales[i]);
+      monitorMat.compose(pos, quat, scale);
 
-      // InstancedMesh #1: Thân vỏ
-      bodyInstancedRef.current.setMatrixAt(i, dummy.matrix);
+      // 1. Thân vỏ hộp (Body Housing)
+      localMat.makeTranslation(0, 0, 0);
+      partMat.multiplyMatrices(monitorMat, localMat);
+      bodyInstancedRef.current.setMatrixAt(i, partMat);
       bodyInstancedRef.current.setColorAt(i, wallConfig.bodyColors[i]);
 
-      // InstancedMesh #2: Mặt kính màn hình (dịch phía trước mặt vỏ)
-      dummy.position.z += MAIN_MONITOR_DEPTH * 0.5 * wallConfig.scales[i][2] + 0.015;
-      dummy.updateMatrix();
-      screenInstancedRef.current.setMatrixAt(i, dummy.matrix);
+      // 2. Khung viền mặt trước bo góc có hốc khoét âm (Front Bezel with Cutout Aperture)
+      localMat.makeTranslation(0, 0, depthHalf);
+      partMat.multiplyMatrices(monitorMat, localMat);
+      bezelInstancedRef.current.setMatrixAt(i, partMat);
+      bezelInstancedRef.current.setColorAt(i, wallConfig.bodyColors[i]);
+
+      // 3. Mặt kính màn hình CRT lõm sâu bên trong hốc (Recessed Screen Glass)
+      localMat.makeTranslation(0, 0.032, depthHalf + 0.005);
+      partMat.multiplyMatrices(monitorMat, localMat);
+      screenInstancedRef.current.setMatrixAt(i, partMat);
+
+      // 4. Decal mặt trước (Logo SONY, Trinitron, Multiscan 100ES, vạch phân tách)
+      localMat.makeTranslation(0, 0, depthHalf + 0.0275);
+      partMat.multiplyMatrices(monitorMat, localMat);
+      decalInstancedRef.current.setMatrixAt(i, partMat);
+
+      // 5. 4 Phím OSD / Cân chỉnh mặt trước (Adjust Buttons)
+      for (let b = 0; b < 4; b++) {
+        localMat.makeTranslation(btnX[b], -0.142, depthHalf + 0.030);
+        partMat.multiplyMatrices(monitorMat, localMat);
+        const btnIdx = i * 4 + b;
+        adjustBtnInstancedRef.current.setMatrixAt(btnIdx, partMat);
+        adjustBtnInstancedRef.current.setColorAt(btnIdx, wallConfig.adjustBtnColors[btnIdx]);
+      }
+
+      // 6. Phím Nguồn chính vuông (Power Switch)
+      localMat.makeTranslation(0.135, -0.142, depthHalf + 0.030);
+      partMat.multiplyMatrices(monitorMat, localMat);
+      powerBtnInstancedRef.current.setMatrixAt(i, partMat);
+      powerBtnInstancedRef.current.setColorAt(i, wallConfig.powerBtnColors[i]);
+
+      // 7. Đèn LED chỉ báo nguồn (Power LED)
+      localMat.compose(new THREE.Vector3(0.088, -0.142, depthHalf + 0.030), ledRot, new THREE.Vector3(1, 1, 1));
+      partMat.multiplyMatrices(monitorMat, localMat);
+      powerLedInstancedRef.current.setMatrixAt(i, partMat);
+      powerLedInstancedRef.current.setColorAt(i, wallConfig.ledColors[i]);
     }
 
-    bodyInstancedRef.current.instanceMatrix.needsUpdate = true;
-    if (bodyInstancedRef.current.instanceColor) {
-      bodyInstancedRef.current.instanceColor.needsUpdate = true;
-    }
-    screenInstancedRef.current.instanceMatrix.needsUpdate = true;
+    const meshes = [
+      bodyInstancedRef.current,
+      bezelInstancedRef.current,
+      screenInstancedRef.current,
+      decalInstancedRef.current,
+      adjustBtnInstancedRef.current,
+      powerBtnInstancedRef.current,
+      powerLedInstancedRef.current,
+    ];
 
-    // BẮT BUỘC: Đặt frustumCulled = false để bức tường không bao giờ bị biến mất
-    bodyInstancedRef.current.frustumCulled = false;
-    screenInstancedRef.current.frustumCulled = false;
+    meshes.forEach((mesh) => {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
+      }
+      mesh.frustumCulled = false;
+    });
   }, [wallConfig]);
 
   // Vòng lặp useFrame tối ưu:
@@ -386,8 +666,28 @@ function CRTVideoWall() {
       shaderMat.dispose();
       screenGeometry.dispose();
       bodyGeometry.dispose();
+      bezelGeometry.dispose();
+      decalGeometry.dispose();
+      adjustBtnGeo.dispose();
+      powerBtnGeo.dispose();
+      powerLedGeo.dispose();
+      decalTexture.dispose();
+      decalMat.dispose();
+      ledMat.dispose();
     };
-  }, [shaderMat, screenGeometry, bodyGeometry]);
+  }, [
+    shaderMat,
+    screenGeometry,
+    bodyGeometry,
+    bezelGeometry,
+    decalGeometry,
+    adjustBtnGeo,
+    powerBtnGeo,
+    powerLedGeo,
+    decalTexture,
+    decalMat,
+    ledMat,
+  ]);
 
   return (
     <group>
@@ -425,10 +725,51 @@ function CRTVideoWall() {
         <meshStandardMaterial roughness={0.65} metalness={0.05} />
       </instancedMesh>
 
-      {/* 3. INSTANCED MESH #2: MẶT KÍNH SHADER MẤT TÍN HIỆU 90S (1 DRAW CALL DUY NHẤT) */}
+      {/* 3. INSTANCED MESH #2: KHUNG VIỀN MẶT TRƯỚC SONY TRINITRON CÓ HỐC ÂM */}
+      <instancedMesh
+        ref={bezelInstancedRef}
+        args={[bezelGeometry, undefined, wallConfig.totalCount]}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial roughness={0.60} metalness={0.05} />
+      </instancedMesh>
+
+      {/* 4. INSTANCED MESH #3: MẶT KÍNH SHADER MẤT TÍN HIỆU 90S (1 DRAW CALL DUY NHẤT) */}
       <instancedMesh
         ref={screenInstancedRef}
         args={[screenGeometry, shaderMat, wallConfig.totalCount]}
+        frustumCulled={false}
+      />
+
+      {/* 5. INSTANCED MESH #4: DECAL TEM TRINITRON, MULTISCAN 100ES & LOGO SONY */}
+      <instancedMesh
+        ref={decalInstancedRef}
+        args={[decalGeometry, decalMat, wallConfig.totalCount]}
+        frustumCulled={false}
+      />
+
+      {/* 6. INSTANCED MESH #5: 4 NÚT BẤM OSD CÂN CHỈNH MẶT TRƯỚC (VIEW ONLY) */}
+      <instancedMesh
+        ref={adjustBtnInstancedRef}
+        args={[adjustBtnGeo, undefined, wallConfig.totalCount * 4]}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial roughness={0.70} metalness={0.05} />
+      </instancedMesh>
+
+      {/* 7. INSTANCED MESH #6: NÚT NGUỒN CHÍNH POWER SWITCH (VIEW ONLY) */}
+      <instancedMesh
+        ref={powerBtnInstancedRef}
+        args={[powerBtnGeo, undefined, wallConfig.totalCount]}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial roughness={0.65} metalness={0.05} />
+      </instancedMesh>
+
+      {/* 8. INSTANCED MESH #7: ĐÈN LED CHỈ BÁO NGUỒN CỦA MÀN HÌNH */}
+      <instancedMesh
+        ref={powerLedInstancedRef}
+        args={[powerLedGeo, ledMat, wallConfig.totalCount]}
         frustumCulled={false}
       />
 
