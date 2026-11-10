@@ -3,51 +3,51 @@ import { useState } from 'react';
 const EXPERIENCES = [
   {
     period: '2024 — NAY',
-    role: 'Lead WebGL Architect & Creative Technologist',
-    company: 'Vinzboiz Spatial Labs',
+    role: 'Full-Stack & Frontend Developer',
+    company: 'Pungkook Saigon II',
     highlights: [
-      'Kiến trúc giải pháp 3D Digital Twin quy mô 12,000 m² cho nhà máy công nghiệp, tích hợp dữ liệu MQTT thời gian thực dưới 45ms.',
-      'Tối ưu hóa pipeline render Three.js bằng InstancedMesh và GPU Batching, duy trì 60 FPS ổn định với hơn 1,200 thiết bị trên trình duyệt.',
-      'Xây dựng thư viện shader GLSL tùy biến cho bản đồ nhiệt không gian, hiệu ứng ánh sáng PBR và khử răng cưa hậu kỳ.',
+      'Trực tiếp tham gia phát triển và vận hành các hệ thống Enterprise cốt lõi: PLMV2, PK PLM, MES Home, SCADA UI, QA Dashboard & Efficiency Summary.',
+      'Thiết kế giao diện thời gian thực giám sát dây chuyền sản xuất công nghiệp, tối ưu hóa hiển thị dữ liệu lớn với độ trễ thấp.',
+      'Phối hợp đa phòng ban giữa đội ngũ Backend, QA và khối sản xuất để đảm bảo độ tin cậy và chuẩn hóa quy trình phần mềm.',
     ],
-    tech: ['Three.js', 'WebGL 2.0', 'GLSL', 'React Three Fiber', 'TypeScript', 'MQTT / WebSocket'],
+    tech: ['Angular', 'React 19', 'TypeScript', 'C# .NET Core', 'RESTful API', 'SQL Server', 'SCADA / MES'],
+  },
+  {
+    period: '2023 — 2024',
+    role: 'AI Data & Computer Vision Specialist',
+    company: 'Alchera',
+    highlights: [
+      'Khai thác và xử lý dữ liệu Computer Vision độ chính xác cao phục vụ huấn luyện các mô hình AI thị giác máy tính.',
+      'Xây dựng các phân hệ xử lý 360 Media annotation, tối ưu hóa luồng xuất file ZIP hàng loạt và kiểm soát lỗi dữ liệu lớn tự động.',
+      'Thiết lập pipeline kiểm định chất lượng dữ liệu đầu vào và đầu ra, gia tăng 35% hiệu suất gán nhãn dữ liệu hình ảnh.',
+    ],
+    tech: ['Python', 'Computer Vision', '360 Media Pipeline', 'Data Annotation', 'Automation Tools'],
   },
   {
     period: '2022 — 2024',
-    role: 'Senior Full-Stack Systems Engineer',
-    company: 'Enterprise POS & Cloud Solutions',
+    role: 'Creative WebGL & 3D Systems Engineer',
+    company: 'Freelance & Research Projects',
     highlights: [
-      'Thiết kế kiến trúc serverless Order Hub xử lý hơn 3,500 giao dịch/ngày với độ trễ p99 đạt 18ms trên mạng lưới Cloudflare Workers Edge.',
-      'Phát triển driver WebUSB & Raw TCP trực tiếp từ trình duyệt đến máy in hóa đơn nhiệt ESC/POS với thời gian in dưới 350ms.',
-      'Triển khai state machine quản lý đơn hàng thời gian thực với cơ chế tự giải quyết xung đột khi mất kết nối mạng.',
+      'Nghiên cứu và triển khai các hệ thống 3D Digital Twin, PBR Shaders và kiến trúc Procedural Three.js 60 FPS trên trình duyệt.',
+      'Đạt giải thưởng tại cuộc thi HDBank Hackathon với giải pháp công nghệ sáng tạo và kiến trúc backend phân tán.',
+      'Xây dựng Portfolio 3D năm 1997 không sử dụng file 3D bên ngoài, tối ưu hóa 100% bằng InstancedMesh và CanvasTexture.',
     ],
-    tech: ['Next.js 14', 'TypeScript', 'Cloudflare Workers', 'D1 SQLite', 'Prisma', 'TailwindCSS', 'WebUSB'],
-  },
-  {
-    period: '2020 — 2022',
-    role: 'Frontend & Interactive Web Developer',
-    company: 'Creative Media & ArchViz Studio',
-    highlights: [
-      'Phát triển các trải nghiệm web 3D tương tác phong cách Editorial & Retro, kết hợp timeline hoạt hình phức tạp bằng GSAP và R3F.',
-      'Xây dựng hệ thống Design System chuẩn kiểu Windows 95 / Hardware Manual với cơ chế 3D Bevel và bảng màu PBR thập niên 90.',
-      'Tối ưu Core Web Vitals, giảm 40% dung lượng bundle thông qua tree-shaking và chia tách dynamic chunks.',
-    ],
-    tech: ['React', 'Three.js', 'GSAP', 'Zustand', 'Tailwind CSS', 'WebGL'],
+    tech: ['Three.js', 'React Three Fiber', 'GLSL Shaders', 'Web Audio API', 'GSAP', 'Next.js', 'Zustand'],
   },
 ];
 
 const SKILL_GROUPS = [
   {
-    title: '3D GRAPHICS & CREATIVE ENGINE',
-    skills: ['Three.js', 'React Three Fiber', 'GLSL Shaders', 'WebGL 2.0', 'Procedural 3D Geometry', 'GSAP ScrollTrigger', 'PBR Materials'],
+    title: 'NGÔN NGỮ & CÔNG NGHỆ CỐT LÕI',
+    skills: ['C# .NET Core', 'ASP.NET MVC', 'Java Spring Boot', 'Node.js / Express', 'TypeScript (Strict)', 'Python', 'SQL'],
   },
   {
-    title: 'FRONTEND ARCHITECTURE',
-    skills: ['TypeScript (Strict)', 'React 18 / 19', 'Next.js 14 / 15', 'Tailwind CSS', 'Zustand', 'Design Systems', 'Performance Profiling'],
+    title: 'FRONTEND & 3D WEBGL GRAPHICS',
+    skills: ['Three.js / WebGL', 'React 19 / 18', 'Angular', 'Next.js 14 / 15', 'GLSL Shaders', 'Tailwind CSS / SCSS', 'GSAP', 'Zustand'],
   },
   {
-    title: 'BACKEND, CLOUD & NETWORKING',
-    skills: ['Node.js / Express', 'Python (FastAPI)', 'Rust (PyO3)', 'Cloudflare Workers', 'PostgreSQL', 'Redis', 'Docker', 'MQTT / WebSocket'],
+    title: 'CƠ SỞ DỮ LIỆU & NỀN TẢNG CLOUD',
+    skills: ['PostgreSQL', 'SQL Server', 'MySQL', 'Supabase', 'Docker', 'Redis', 'APS Forge (Autodesk)', 'RESTful API / gRPC'],
   },
 ];
 
@@ -61,7 +61,6 @@ export function EditorialCvSection() {
   };
 
   const handleDownloadPdf = () => {
-    // Tải trực tiếp file CV mẫu hoặc mở tab xem
     const link = document.createElement('a');
     link.href = '/NguyenXuanVinh_CV.pdf';
     link.download = 'NguyenXuanVinh_CV.pdf';
@@ -95,29 +94,28 @@ export function EditorialCvSection() {
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-white/10">
             <div>
               <div className="flex items-baseline flex-wrap">
-                <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.8rem,8.2vw,7.5rem)] leading-[0.92] uppercase">
+                <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(4rem,8.5vw,7.5rem)] leading-[0.92] uppercase">
                   Curriculum
                 </h2>
                 <span
-                  className="italic font-normal text-[#e05a47] text-[clamp(3.6rem,8vw,7.2rem)] leading-[0.92] ml-3 sm:ml-5 select-none"
+                  className="italic font-normal text-[#e05a47] text-[clamp(3.8rem,8.2vw,7.2rem)] leading-[0.92] ml-3 sm:ml-5 select-none"
                   style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
                 >
                   &
                 </span>
               </div>
-              <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.8rem,8.2vw,7.5rem)] leading-[0.92] uppercase mt-1">
+              <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(4rem,8.5vw,7.5rem)] leading-[0.92] uppercase mt-1">
                 Vitae
               </h2>
             </div>
 
-            {/* Nút tải CV và ghi chú */}
+            {/* Nút tải CV lớn */}
             <div className="flex flex-col sm:flex-row sm:items-center lg:flex-col lg:items-end gap-3 pb-2">
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                className="group flex items-center gap-3 px-6 py-3 rounded-full bg-[#f2f0ea] hover:bg-white text-black font-sans font-semibold text-sm transition-all hover:scale-105 active:scale-95 shadow-xl cursor-pointer"
+                className="group flex items-center gap-3 px-7 py-3.5 rounded-full bg-[#f2f0ea] hover:bg-white text-black font-sans font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-xl cursor-pointer"
               >
-                {/* SVG Download icon */}
                 <svg
                   width="18"
                   height="18"
@@ -133,10 +131,10 @@ export function EditorialCvSection() {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Tải CV PDF (Bản đầy đủ)</span>
+                <span>[ Tải xuống CV (PDF) ↗ ]</span>
               </button>
               <div className="font-mono text-[0.72rem] tracking-[0.14em] text-[#6e6e73] uppercase">
-                CẬP NHẬT: THÁNG 11 / 2026 // READY TO RELOCATE
+                NGUYỄN XUÂN VINH · GPA 3.43 / 4.0 · READY TO RELOCATE
               </div>
             </div>
           </div>
@@ -157,7 +155,7 @@ export function EditorialCvSection() {
                 <span className="h-[1px] flex-1 bg-white/10" />
               </div>
               <p className="font-sans text-base sm:text-lg text-[#d1d1d6] leading-relaxed">
-                Kỹ sư phần mềm Full-Stack & Creative Technologist chuyên sâu về đồ họa không gian 3D tương tác cao trên Web (Three.js / WebGL / GLSL). Thế mạnh nổi bật là khả năng làm chủ toàn bộ chuỗi sản phẩm: từ dựng hình thuật toán Procedural 3D mượt mà ở 60 FPS, đến xây dựng backend microservices phân tán chịu tải cao và đáng tin cậy.
+                Kỹ sư Phần mềm tốt nghiệp Đại học Công nghệ TP.HCM (HUTECH) với GPA 3.43/4.0 và danh hiệu Sinh viên Xuất sắc (2024–2025). Sở hữu kinh nghiệm thực chiến phát triển các hệ thống Enterprise cốt lõi (MES, SCADA, PLM) tại Pungkook Saigon II và xử lý dữ liệu Computer Vision tại Alchera. Đam mê kiến trúc Clean Code, đồ họa 3D WebGL và tối ưu hóa hiệu năng hệ thống chịu tải cao.
               </p>
             </div>
 
@@ -165,7 +163,7 @@ export function EditorialCvSection() {
             <div>
               <div className="flex items-center gap-3 mb-8">
                 <span className="font-mono text-xs uppercase tracking-widest text-[#6e6e73]">
-                  LỊCH SỬ DỰ ÁN & VAI TRÒ
+                  LỊCH SỬ KINH NGHIỆM THỰC CHIẾN
                 </span>
                 <span className="h-[1px] flex-1 bg-white/10" />
               </div>
@@ -214,6 +212,43 @@ export function EditorialCvSection() {
 
           {/* Cột Phải (5 Cột): Kỹ năng, Học vấn & Thông tin liên hệ */}
           <div className="lg:col-span-5 space-y-10">
+            {/* Học vấn & Bằng cấp nổi bật */}
+            <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs uppercase tracking-widest text-[#4ade80]">
+                  HỌC VẤN & GIẢI THƯỞNG
+                </span>
+                <span className="h-[1px] flex-1 bg-white/10" />
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-sans font-bold text-lg text-white">
+                    Đại Học Công Nghệ TP.HCM (HUTECH)
+                  </h4>
+                  <div className="font-mono text-xs text-[#8e8e93] uppercase mt-0.5">
+                    KỸ SƯ CÔNG NGHỆ THÔNG TIN · 2021 — 2025
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="px-2.5 py-1 rounded bg-[#4ade80]/15 text-[#4ade80] font-mono text-xs font-semibold border border-[#4ade80]/30">
+                      GPA: 3.43 / 4.0
+                    </span>
+                    <span className="px-2.5 py-1 rounded bg-white/10 text-white font-mono text-xs">
+                      Sinh Viên Xuất Sắc (2024–2025)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-white/10">
+                  <div className="font-mono text-xs text-[#e05a47] font-semibold">
+                    ★ HDBank Hackathon 2024
+                  </div>
+                  <p className="font-sans text-xs text-[#a1a1aa] mt-1">
+                    Đạt thành tích xuất sắc tại cuộc thi phát triển ứng dụng ngân hàng số & giải pháp công nghệ cao.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Ma trận Kỹ năng cốt lõi */}
             <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-6">
               <div className="flex items-center gap-3">
@@ -241,27 +276,6 @@ export function EditorialCvSection() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Học vấn & Bằng cấp */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs uppercase tracking-widest text-[#4ade80]">
-                  HỌC VẤN & CHỨNG CHỈ
-                </span>
-                <span className="h-[1px] flex-1 bg-white/10" />
-              </div>
-              <div>
-                <h4 className="font-sans font-bold text-lg text-white">
-                  Kỹ Sư Công Nghệ Thông Tin
-                </h4>
-                <div className="font-mono text-xs text-[#8e8e93] uppercase mt-1">
-                  ĐẠI HỌC BÁCH KHOA · CHUYÊN NGÀNH KỸ THUẬT PHẦN MỀM
-                </div>
-                <p className="font-sans text-xs sm:text-sm text-[#a1a1aa] mt-2">
-                  Tốt nghiệp loại Giỏi · Đề tài nghiên cứu: "Tối ưu hóa diễn họa đồ họa 3D thời gian thực trên nền tảng WebGL".
-                </p>
               </div>
             </div>
 
@@ -312,7 +326,6 @@ export function EditorialCvSection() {
                 </div>
               </div>
 
-              {/* Nút gửi mail trực tiếp */}
               <a
                 href="mailto:hello@vinzboiz.dev?subject=Hợp tác dự án với Nguyễn Xuân Vinh"
                 className="w-full py-3.5 rounded-xl bg-[#e05a47] hover:bg-[#d04936] text-white font-sans font-bold text-sm flex items-center justify-center gap-2 transition-transform active:scale-98 shadow-lg shadow-[#e05a47]/20"
@@ -345,4 +358,3 @@ export function EditorialCvSection() {
     </section>
   );
 }
-

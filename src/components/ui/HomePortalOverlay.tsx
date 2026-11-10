@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useBuildStore } from '../../store/useBuildStore';
+import { AboutEditorialScroller } from './AboutEditorialScroller';
 import { EditorialProjectsSection } from './EditorialProjectsSection';
 import { EditorialCvSection } from './EditorialCvSection';
 
@@ -76,15 +77,21 @@ export function HomePortalOverlay() {
   return (
     <div className="relative w-full text-white selection:bg-[#e05a47] selection:text-white" style={{ zIndex: 10 }}>
       {/* =======================================================================
+          CỘT CHỮ GIỚI THIỆU BẢN THÂN CUỘN DỌC BÊN TRÁI (ABOUT EDITORIAL SCROLLER)
+          Hiển thị cố định ở nửa bên trái màn hình khi đang ở trong ABOUT (Step 01 -> 10)
+         ======================================================================= */}
+      <AboutEditorialScroller />
+
+      {/* =======================================================================
           TẦNG 1: #home-section (100vh) - SPLIT-TEXT PORTAL MASK & RETRO LAB VIEW
           - Cửa sổ trung tâm nhìn xuyên xuống căn phòng 3D bên dưới
           - Chữ Slogan 2 bên trượt ra khi mở portal
-          - Nhấp vào cửa sổ hoặc nút CTA để mở rộng toàn màn hình vào 3D About
+          - Lăn chuột xuống ngay tại Home hoặc nhấp nút CTA để mở rộng vào 3D About
          ======================================================================= */}
       <section
         id="home-section"
         className={`relative w-full h-screen overflow-hidden select-none ${
-          portalProgress > 0.05 ? 'fixed top-0 left-0 right-0 z-30' : 'relative'
+          portalProgress > 0.05 ? 'fixed top-0 left-0 right-0 z-20' : 'relative'
         }`}
         style={{
           pointerEvents: portalProgress < 0.1 ? 'auto' : portalProgress >= 0.99 ? 'none' : 'auto',

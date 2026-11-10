@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { MOCK_PROJECTS, ProjectItem } from '../../data/mockProjects';
+import { useBuildStore } from '../../store/useBuildStore';
 
 // Bảng màu chấm tròn đặc trưng và thanh Accent Bar cho từng dự án
 const PROJECT_ACCENT_COLORS: Record<string, string> = {
@@ -33,6 +34,7 @@ export function EditorialProjectsSection() {
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const sectionRef = useRef<HTMLElement>(null);
+  const enterProjectApp = useBuildStore((s) => s.enterProjectApp);
 
   // Theo dõi tọa độ chuột khi hover để hiển thị Floating Image Preview mượt mà
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -53,6 +55,12 @@ export function EditorialProjectsSection() {
     };
   }, [selectedProject]);
 
+  // Click vào hàng dự án: Mở trải nghiệm 3D Tunnel Showcase
+  const handleRowClick = (project: ProjectItem) => {
+    // Mở Modal chi tiết hoặc kích hoạt trực tiếp 3D Fly-Through Showcase
+    setSelectedProject(project);
+  };
+
   return (
     <section
       id="projects-section"
@@ -70,7 +78,7 @@ export function EditorialProjectsSection() {
           <div className="flex items-center gap-3 mb-4">
             <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
             <span className="font-mono text-xs sm:text-[0.8rem] uppercase tracking-[0.18em] text-[#6e6e73]">
-              02 / ARCHIVE · WORKS
+              02 / DANH MỤC DỰ ÁN
             </span>
           </div>
 
@@ -79,26 +87,26 @@ export function EditorialProjectsSection() {
             <div>
               {/* Dòng 1: Projects & */}
               <div className="flex items-baseline flex-wrap">
-                <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.8rem,8.2vw,7.5rem)] leading-[0.92] uppercase">
+                <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(4rem,8.5vw,7.5rem)] leading-[0.92] uppercase">
                   Projects
                 </h2>
                 <span
-                  className="italic font-normal text-[#e05a47] text-[clamp(3.6rem,8vw,7.2rem)] leading-[0.92] ml-3 sm:ml-5 select-none"
+                  className="italic font-normal text-[#e05a47] text-[clamp(3.8rem,8.2vw,7.2rem)] leading-[0.92] ml-3 sm:ml-5 select-none"
                   style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
                 >
                   &
                 </span>
               </div>
-              {/* Dòng 2: Works */}
-              <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.8rem,8.2vw,7.5rem)] leading-[0.92] uppercase mt-1">
-                Works
+              {/* Dòng 2: Systems */}
+              <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(4rem,8.5vw,7.5rem)] leading-[0.92] uppercase mt-1">
+                Systems
               </h2>
             </div>
 
             {/* Dòng chú thích căn phải ngang hàng với đáy chữ tiêu đề */}
             <div className="lg:text-right pb-2">
               <p className="font-sans text-[0.92rem] sm:text-[1rem] text-[#8e8e93] max-w-md">
-                Bấm vào từng dự án để xem toàn bộ góc nhìn, thông số kiến trúc và bản thử nghiệm tương tác.
+                Bấm vào từng dự án để xem toàn bộ góc nhìn.
               </p>
               <div className="mt-2 font-mono text-[0.72rem] tracking-[0.14em] text-[#55555c] uppercase">
                 5 SELECTED PRODUCTION RELEASES // 60 FPS
@@ -131,7 +139,7 @@ export function EditorialProjectsSection() {
               return (
                 <div
                   key={project.id}
-                  onClick={() => setSelectedProject(project)}
+                  onClick={() => handleRowClick(project)}
                   onMouseEnter={() => setHoveredProjectId(project.id)}
                   onMouseLeave={() => setHoveredProjectId(null)}
                   className="group relative grid grid-cols-12 items-center py-7 sm:py-9 cursor-pointer transition-colors duration-300 hover:bg-white/[0.02]"
@@ -200,11 +208,10 @@ export function EditorialProjectsSection() {
                   </div>
 
                   {/* =======================================================================
-                      HIỆU ỨNG ACCENT BAR CHẠY NGANG ĐÁY HÀNG (GIỐNG HỆT ẢNH MẪU)
-                      Khi hover, đường kẻ đáy dày lên 4px và đổi sang đúng màu chấm tròn
+                      HIỆU ỨNG ACCENT BAR CHẠY NGANG ĐÁY HÀNG (DÀY 4PX ĐỔI MÀU THEO CHẤM TRÒN)
                      ======================================================================= */}
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-[3px] transition-transform duration-400 ease-out origin-left pointer-events-none"
+                    className="absolute bottom-0 left-0 right-0 h-[4px] transition-transform duration-300 ease-out origin-left pointer-events-none"
                     style={{
                       backgroundColor: accentColor,
                       transform: isHovered ? 'scaleX(1)' : 'scaleX(0)',
@@ -231,7 +238,7 @@ export function EditorialProjectsSection() {
       </div>
 
       {/* =======================================================================
-          3. FLOATING IMAGE PREVIEW (CARD BAY THEO CHUỘT KHI HOVER HÀNG DỰ ÁN)
+          3. FLOATING HOVER IMAGE PREVIEW (CARD NỔI 360x220PX BÁM THEO CHUỘT)
          ======================================================================= */}
       {hoveredProject && (
         <div
@@ -250,7 +257,7 @@ export function EditorialProjectsSection() {
             className="w-full h-full object-cover transform scale-105 transition-transform duration-500"
           />
           {/* Lớp gradient đen bên dưới kèm nhãn dự án */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 p-4 flex flex-col justify-between">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 p-4 flex flex-col justify-between">
             <div className="flex justify-between items-center">
               <span
                 className="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold text-black"
@@ -277,7 +284,7 @@ export function EditorialProjectsSection() {
       )}
 
       {/* =======================================================================
-          4. MODAL CHI TIẾT DỰ ÁN KHI NHẤP VÀO HÀNG BẤT KỲ
+          4. MODAL CHI TIẾT DỰ ÁN & NÚT KHÁM PHÁ 3D FLY-THROUGH TUNNEL
          ======================================================================= */}
       {selectedProject && (
         <div
@@ -291,7 +298,7 @@ export function EditorialProjectsSection() {
             {/* Nút đóng modal */}
             <button
               onClick={() => setSelectedProject(null)}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-white/80 hover:text-white hover:border-white transition-colors"
+              className="absolute top-6 right-6 w-10 h-10 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-white/80 hover:text-white hover:border-white transition-colors cursor-pointer"
             >
               ✕
             </button>
@@ -392,19 +399,33 @@ export function EditorialProjectsSection() {
                 VAI TRÒ: <span className="text-white font-semibold">{selectedProject.role}</span>
               </div>
               <div className="flex items-center gap-3">
+                {/* Nút vào 3D Fly-Through Tunnel Showcase */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProject(null);
+                    enterProjectApp();
+                  }}
+                  className="px-5 py-2.5 rounded-full bg-[#e05a47] hover:bg-[#d04936] text-white font-sans font-semibold text-xs flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-[#e05a47]/30 cursor-pointer"
+                >
+                  <span>Mở 3D Fly-Through Tunnel</span>
+                  <span>↗</span>
+                </button>
+
                 {selectedProject.githubUrl && (
                   <a
                     href={selectedProject.githubUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 rounded-full border border-white/20 hover:border-white text-xs font-mono text-white transition-colors"
+                    className="px-4 py-2.5 rounded-full border border-white/20 hover:border-white text-xs font-mono text-white transition-colors"
                   >
                     GITHUB SOURCE ↗
                   </a>
                 )}
+
                 <button
                   onClick={() => setSelectedProject(null)}
-                  className="px-6 py-2 rounded-full bg-[#f2f0ea] hover:bg-white text-black font-sans font-medium text-xs transition-transform active:scale-95"
+                  className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-sans font-medium text-xs transition-colors cursor-pointer"
                 >
                   ĐÓNG
                 </button>
@@ -416,4 +437,3 @@ export function EditorialProjectsSection() {
     </section>
   );
 }
-

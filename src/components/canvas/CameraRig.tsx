@@ -4,7 +4,6 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useBuildStore, type ProjectAppTransition } from '../../store/useBuildStore';
-import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
 import { S } from '../../constants/scale';
 
 const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
@@ -15,6 +14,13 @@ const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
 const HOME_FOV = 70.0;
 const WORKBENCH_FOV = 40.0;
 
+// =========================================================================
+// 1. TỌA ĐỘ CAMERA CHUẨN CỐ ĐỊNH THEO YÊU CẦU RETRO-PC-WEBGL-ARCHITECT
+// Đẩy CameraTarget lệch sang trái (x ~ -2.1) để đặt mô hình 3D ở nửa phải màn hình (52% -> 96%),
+// để trống hoàn toàn nửa bên trái (4% -> 48%) cho cột chữ giới thiệu cuộn dọc!
+// =========================================================================
+
+// Step 00 (HOME): Nhìn bao quát căn phòng và mặt bàn từ góc cao
 const HOME_CAM_POS = new THREE.Vector3(
   -6.2 * S.DESK_ITEMS_SCALE,
   7.2 * S.DESK_ITEMS_SCALE,
@@ -26,40 +32,43 @@ const HOME_BASE_TARGET = new THREE.Vector3(
   -0.6 * S.DESK_ITEMS_SCALE
 );
 
-// Trạm quan sát Step 09 (gần cụm card PCI/ISA):
-const POS_STEP9 = new THREE.Vector3(
-  -4.45 * S.DESK_ITEMS_SCALE,
-  2.45 * S.DESK_ITEMS_SCALE,
-  -2.45 * S.DESK_ITEMS_SCALE
+// Step 01 -> Step 04 (Lắp Mainboard, CPU, Quạt, RAM trên mặt thảm):
+// Góc Studio Isometric cố định nhìn nghiêng từ trái sang
+const POS_STEP1_4 = new THREE.Vector3(
+  -2.6 * S.DESK_ITEMS_SCALE,
+  3.8 * S.DESK_ITEMS_SCALE,
+  4.2 * S.DESK_ITEMS_SCALE
 );
-const TARGET_STEP9 = new THREE.Vector3(
-  0.1 * S.DESK_ITEMS_SCALE,
-  1.35 * S.DESK_ITEMS_SCALE,
-  -0.4 * S.DESK_ITEMS_SCALE
-);
-
-// Trạm quan sát góc ngang thùng máy (khi nắp chữ U trượt đóng vào):
-const POS_CASE_SIDE = new THREE.Vector3(
-  -6.15 * S.DESK_ITEMS_SCALE,
-  2.25 * S.DESK_ITEMS_SCALE,
-  0.05 * S.DESK_ITEMS_SCALE
-);
-const TARGET_CASE_SIDE = new THREE.Vector3(
-  0.1 * S.DESK_ITEMS_SCALE,
-  1.85 * S.DESK_ITEMS_SCALE,
-  -0.15 * S.DESK_ITEMS_SCALE
+const TARGET_STEP1_4 = new THREE.Vector3(
+  -2.1 * S.DESK_ITEMS_SCALE,
+  0.35 * S.DESK_ITEMS_SCALE,
+  -0.2 * S.DESK_ITEMS_SCALE
 );
 
-// Trạm quan sát góc chính diện Step 10 (bàn phím + màn hình CRT + máy tính hoàn chỉnh):
-const POS_STEP10_FRONT = new THREE.Vector3(
-  0.15 * S.DESK_ITEMS_SCALE,
-  3.25 * S.DESK_ITEMS_SCALE,
-  9.45 * S.DESK_ITEMS_SCALE
+// Step 05 -> Step 09 (Lắp Nguồn, Ổ đĩa, Card, Cáp vào thùng máy đứng):
+// Góc Studio Isometric nâng cao nhẹ để nhìn trọn vẹn lòng thùng máy
+const POS_STEP5_9 = new THREE.Vector3(
+  -2.8 * S.DESK_ITEMS_SCALE,
+  4.2 * S.DESK_ITEMS_SCALE,
+  5.4 * S.DESK_ITEMS_SCALE
 );
-const TARGET_STEP10_FRONT = new THREE.Vector3(
-  0.05 * S.DESK_ITEMS_SCALE,
-  1.65 * S.DESK_ITEMS_SCALE,
-  0.25 * S.DESK_ITEMS_SCALE
+const TARGET_STEP5_9 = new THREE.Vector3(
+  -2.2 * S.DESK_ITEMS_SCALE,
+  0.85 * S.DESK_ITEMS_SCALE,
+  -0.3 * S.DESK_ITEMS_SCALE
+);
+
+// Step 10 (Hoàn tất lắp máy, CRT & Thiết bị ngoại vi):
+// Góc chính diện vừa phải, giữ mô hình ở bên phải để dễ click Login / Đĩa / Thẻ
+const POS_STEP10 = new THREE.Vector3(
+  -1.4 * S.DESK_ITEMS_SCALE,
+  2.5 * S.DESK_ITEMS_SCALE,
+  4.4 * S.DESK_ITEMS_SCALE
+);
+const TARGET_STEP10 = new THREE.Vector3(
+  -1.2 * S.DESK_ITEMS_SCALE,
+  0.9 * S.DESK_ITEMS_SCALE,
+  0.0 * S.DESK_ITEMS_SCALE
 );
 
 export function CameraRig() {
@@ -74,14 +83,13 @@ export function CameraRig() {
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
-  // Stationary Camera Look-Around: Lắng nghe chuột toàn màn hình (Window Level) CHỈ TẠI HOME
+  // Stationary Camera Look-Around: Lắng nghe chuột toàn màn hình CHỈ TẠI HOME
   const mouseRef = useRef({ x: 0, y: 0 });
   const smoothedMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const state = useBuildStore.getState();
-      // CHỈ lắng nghe và xử lý tọa độ chuột khi đang ở màn hình HOME thuần túy
       if (
         state.currentStep !== 0 ||
         state.scrollCurrent > 0.02 ||
@@ -94,43 +102,27 @@ export function CameraRig() {
         }
         return;
       }
-      // Chuẩn hóa về khoảng [-1, 1] (Trái -> Phải: -1 -> 1, Dưới -> Trên: -1 -> 1)
       mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
+
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
-
-  useEffect(() => {
-    const stepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
-    desiredPos.current.set(...stepData.cameraPos);
-    desiredTarget.current.set(...stepData.cameraTarget);
-
-    if (freeCam && currentStep >= 10 && controlsRef.current) {
-      controlsRef.current.target.set(
-        0.05 * S.DESK_ITEMS_SCALE,
-        1.65 * S.DESK_ITEMS_SCALE,
-        0.25 * S.DESK_ITEMS_SCALE
-      );
-      controlsRef.current.update();
-    }
-  }, [currentStep, freeCam]);
 
   useFrame((r3fState, delta) => {
     const state = useBuildStore.getState();
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
-    // Helper giới hạn camera CHẶT CHẼ trong khuôn khổ phòng vuông 6 mặt:
-    // Tuyệt đối không được bay ra ngoài phòng, không lọt qua tường CRT sau và không chúi xuống dưới sàn/bàn
+    // Helper giới hạn camera chặt chẽ trong căn phòng
     const clampCameraInRoom = () => {
-      const minX = -1.25;  // Cách tường trái 17cm (tường trái = -1.425m)
-      const maxX = 1.25;   // Cách tường phải 17cm (tường phải = +1.425m)
-      const minY = 0.08;   // Trên mặt bàn 8cm (mặt bàn = 0.00m, sàn = -0.75m)
-      const maxY = 1.85;   // Dưới trần 20cm (trần = 2.05m)
-      const minZ = -0.42;  // Phía trước bức tường màn hình CRT (màn hình CRT nhô ra tới z = -0.56m)
-      const maxZ = 1.68;   // Cách tường trước 22cm (tường trước = +1.90m)
+      const minX = -1.25;
+      const maxX = 1.25;
+      const minY = 0.08;
+      const maxY = 1.85;
+      const minZ = -0.42;
+      const maxZ = 1.68;
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -138,19 +130,13 @@ export function CameraRig() {
     };
 
     // =========================================================================
-    // CHẾ ĐỘ TƯƠNG TÁC TỰ DO / INSPECT (FREE CAM & ZOOM)
-    // CHỈ khả dụng khi đã hoàn tất đóng nắp máy (currentStep >= 10)
-    // Tách độc lập hoàn toàn khỏi hệ thống cuộn timeline và parallax chuột
+    // CHẾ ĐỘ FREE CAM & INSPECT (CHỈ KHI ĐÃ LẮP XONG STEP 10 VÀ BẬT FREECAM)
     // =========================================================================
     const isInspect = state.freeCam && state.currentStep >= 10;
 
     if (isInspect) {
       if (!wasInspectRef.current && controlsRef.current) {
-        controlsRef.current.target.set(
-          0.05 * S.DESK_ITEMS_SCALE,
-          1.65 * S.DESK_ITEMS_SCALE,
-          0.25 * S.DESK_ITEMS_SCALE
-        );
+        controlsRef.current.target.copy(TARGET_STEP10);
         controlsRef.current.update();
       }
       wasInspectRef.current = true;
@@ -167,12 +153,10 @@ export function CameraRig() {
       }
     }
 
-    // Chỉ tự động điều tiết scrollCurrent khi đang ở trạng thái IDLE
-    // Khi đang có stageTransition (như HOME_TO_ABOUT, TO_HOME, v.v.), transition đó sẽ tự điều phối tiến trình
+    // Điều tiết scrollCurrent khi IDLE
     if (state.stageTransition === 'IDLE') {
       const diff = state.scrollTarget - state.scrollCurrent;
       if (Math.abs(diff) > 0.0002) {
-        // Damping mượt mà theo hàm mũ (exponential ease-out), loại bỏ hoàn toàn hiện tượng khựng tuyến tính
         const alpha = 1 - Math.exp(-8.5 * safeDelta);
         const nextScroll = THREE.MathUtils.lerp(state.scrollCurrent, state.scrollTarget, alpha);
         state.syncScrollCurrent(nextScroll);
@@ -181,13 +165,7 @@ export function CameraRig() {
       }
     }
 
-    const stepNum = state.currentStep;
-    const stepP = state.benchProgress;
-    const stepData = ASSEMBLY_STEPS[stepNum] ?? ASSEMBLY_STEPS[0];
-
     const scrollVal = state.scrollCurrent;
-
-    // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG XÉO TỪ GÓC TRÊN BÊN TRÁI PHÒNG Ở HOME
     const aspect = r3fState.size.width / Math.max(1, r3fState.size.height);
     const homeX = HOME_CAM_POS.x * (aspect < 1.0 ? 0.85 : 1.0);
     const homeY = HOME_CAM_POS.y * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
@@ -197,72 +175,24 @@ export function CameraRig() {
 
     const persCam = camera as THREE.PerspectiveCamera;
 
-    // YÊU CẦU #1: KHI CHUYỂN TỪ HOME SANG PROJECTS HOẶC MY CV (HOME_TO_PROJECT / HOME_TO_MY_CV):
-    if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
-      const t = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
-      const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // power3.inOut
-      const destPos = new THREE.Vector3(
-        0.15 * S.DESK_ITEMS_SCALE,
-        3.25 * S.DESK_ITEMS_SCALE,
-        9.45 * S.DESK_ITEMS_SCALE
-      );
-      const destTarget = new THREE.Vector3(
-        0.05 * S.DESK_ITEMS_SCALE,
-        1.65 * S.DESK_ITEMS_SCALE,
-        0.25 * S.DESK_ITEMS_SCALE
-      );
-
-      desiredPos.current.lerpVectors(homePos, destPos, ease);
-      desiredTarget.current.lerpVectors(homeTarget, destTarget, ease);
-
-      // Tween đồng thời FOV từ 70° về 40°
-      const targetFov = THREE.MathUtils.lerp(HOME_FOV, WORKBENCH_FOV, ease);
-      if (Math.abs(persCam.fov - targetFov) > 0.05) {
-        persCam.fov = targetFov;
-        persCam.updateProjectionMatrix();
-      }
-
-      camera.position.lerp(desiredPos.current, safeDelta * 4.8);
-      smoothedTarget.current.lerp(desiredTarget.current, safeDelta * 5.2);
-      camera.lookAt(smoothedTarget.current);
-      clampCameraInRoom();
-      return;
-    }
-
-    // YÊU CẦU #2: KHI TRONG ĐOẠN HOME (0.0) <-> ABOUT STEP 1 (1.0):
-    if (
-      scrollVal < 1.0 &&
-      state.stageTransition !== 'TO_PROJECT' &&
-      state.stageTransition !== 'TO_MY_CV'
-    ) {
+    // =========================================================================
+    // TÍNH TOÁN VỊ TRÍ & GÓC NHÌN THEO TIẾN TRÌNH CUỘN SCROLLVAL (0.0 -> 10.99)
+    // =========================================================================
+    if (scrollVal < 1.0) {
+      // 1. Phân đoạn HOME (0.0) -> ABOUT STEP 1 (1.0):
       const t = THREE.MathUtils.clamp(scrollVal, 0, 1);
       const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // power3.inOut
-      const step1Pos = new THREE.Vector3(
-        -1.55 * S.DESK_ITEMS_SCALE,
-        3.65 * S.DESK_ITEMS_SCALE,
-        4.35 * S.DESK_ITEMS_SCALE
-      );
-      const step1Target = new THREE.Vector3(
-        -0.35 * S.DESK_ITEMS_SCALE,
-        0.22 * S.DESK_ITEMS_SCALE,
-        -0.1 * S.DESK_ITEMS_SCALE
-      );
 
-      // Nội suy mượt vị trí Camera giữa Home và Step 1
-      desiredPos.current.lerpVectors(homePos, step1Pos, ease);
-      desiredTarget.current.lerpVectors(homeTarget, step1Target, ease);
+      desiredPos.current.lerpVectors(homePos, POS_STEP1_4, ease);
+      desiredTarget.current.lerpVectors(homeTarget, TARGET_STEP1_4, ease);
 
-      // Tween đồng thời FOV từ 70° về 40°
       const targetFov = THREE.MathUtils.lerp(HOME_FOV, WORKBENCH_FOV, ease);
       if (Math.abs(persCam.fov - targetFov) > 0.05) {
         persCam.fov = targetFov;
         persCam.updateProjectionMatrix();
       }
 
-      // Stationary Camera Look-Around:
-      // Tọa độ camera đứng yên tuyệt đối tại homePos.
-      // Chỉ xoay góc nhìn (Target) bao quát mặt bàn và căn phòng theo vị trí chuột.
-      // CHỈ kích hoạt khi đang ở Home (Step 00, scrollVal <= 0.02, IDLE, không freeCam).
+      // Parallax chuột ở Home thuần túy
       const isPureHome =
         state.currentStep === 0 &&
         scrollVal <= 0.02 &&
@@ -273,8 +203,7 @@ export function CameraRig() {
         smoothedMouse.current.x = 0;
         smoothedMouse.current.y = 0;
       } else {
-        // Nội suy mượt mà (Damping) tọa độ chuột
-        const mouseLerpSpeed = safeDelta * 5.0;
+        const mouseLerpSpeed = safeDelta * 2.2;
         smoothedMouse.current.x = THREE.MathUtils.lerp(
           smoothedMouse.current.x,
           mouseRef.current.x,
@@ -286,7 +215,6 @@ export function CameraRig() {
           mouseLerpSpeed
         );
 
-        // Biên độ xoay theo chuột đằm và tinh tế
         const yawOffset = smoothedMouse.current.x * (1.15 * S.DESK_ITEMS_SCALE);
         const pitchOffset = smoothedMouse.current.y * (0.65 * S.DESK_ITEMS_SCALE);
         const depthOffset = -smoothedMouse.current.x * (0.45 * S.DESK_ITEMS_SCALE);
@@ -295,91 +223,34 @@ export function CameraRig() {
         desiredTarget.current.y += pitchOffset;
         desiredTarget.current.z += depthOffset;
       }
-
-      const isTransitioning = state.stageTransition !== 'IDLE';
-
-      const posSpeed = isTransitioning ? safeDelta * 4.2 : safeDelta * 3.8;
-      const targetSpeed = isTransitioning ? safeDelta * 4.6 : safeDelta * 4.5;
-
-      camera.position.lerp(desiredPos.current, posSpeed);
-      smoothedTarget.current.lerp(desiredTarget.current, targetSpeed);
-      camera.lookAt(smoothedTarget.current);
-      clampCameraInRoom();
-      return;
-    }
-
-    // Đảm bảo khi ngồi hẳn vào bàn lắp ráp, FOV được duy trì ở 40°
-    if (Math.abs(persCam.fov - WORKBENCH_FOV) > 0.05) {
-      persCam.fov = WORKBENCH_FOV;
-      persCam.updateProjectionMatrix();
-    }
-
-    // Sau khi lắp đủ toàn bộ linh kiện vào thùng máy (cuối Step 09 -> nửa đầu Step 10 khi đóng nắp chữ U):
-    // Zoom lùi ra góc nhìn ngang toàn cảnh để thấy trọn vẹn bên phải và toàn bộ lòng thùng máy trước khi đóng nắp,
-    // sau đó mới xoay camera sang góc chính diện để hiển thị trọn bộ máy tính.
-    if (
-      state.stageTransition === 'ABOUT_TO_PROJECT' ||
-      state.stageTransition === 'TO_PROJECT' ||
-      state.stageTransition === 'TO_MY_CV'
-    ) {
-      desiredPos.current.set(
-        0.15 * S.DESK_ITEMS_SCALE,
-        3.25 * S.DESK_ITEMS_SCALE,
-        9.45 * S.DESK_ITEMS_SCALE
-      );
-      desiredTarget.current.set(
-        0.05 * S.DESK_ITEMS_SCALE,
-        1.65 * S.DESK_ITEMS_SCALE,
-        0.25 * S.DESK_ITEMS_SCALE
-      );
-    } else if (state.stageTransition === 'TO_ABOUT') {
-      desiredPos.current.set(
-        -1.55 * S.DESK_ITEMS_SCALE,
-        3.65 * S.DESK_ITEMS_SCALE,
-        4.35 * S.DESK_ITEMS_SCALE
-      );
-      desiredTarget.current.set(
-        -0.35 * S.DESK_ITEMS_SCALE,
-        0.22 * S.DESK_ITEMS_SCALE,
-        -0.1 * S.DESK_ITEMS_SCALE
-      );
-    } else if (
-      !state.isPoweredOn &&
-      state.scrollCurrent < 10.95 &&
-      (stepNum === 9 || stepNum === 10)
-    ) {
-      if (stepNum === 9) {
-        if (stepP < 0.65) {
-          desiredPos.current.copy(POS_STEP9);
-          desiredTarget.current.copy(TARGET_STEP9);
-        } else {
-          // Cuối Step 9 (0.65 -> 1.0): Camera lướt mượt mà từ góc trên card PCI sang góc ngang hông thùng máy
-          const t = (stepP - 0.65) / 0.35;
-          const ease = t * t * (3 - 2 * t);
-          desiredPos.current.lerpVectors(POS_STEP9, POS_CASE_SIDE, ease);
-          desiredTarget.current.lerpVectors(TARGET_STEP9, TARGET_CASE_SIDE, ease);
-        }
-      } else {
-        // Step 10:
-        if (stepP <= 0.38) {
-          // Pha 1 (0.00 -> 0.38): Nắp chữ U đóng kín thùng máy, camera giữ góc nhìn hông
-          desiredPos.current.copy(POS_CASE_SIDE);
-          desiredTarget.current.copy(TARGET_CASE_SIDE);
-        } else if (stepP < 0.75) {
-          // Pha 2 (0.38 -> 0.75): Thùng máy dịch sang phải, màn CRT xuất hiện -> Camera lướt mượt sang góc chính diện
-          const t = (stepP - 0.38) / 0.37;
-          const ease = t * t * (3 - 2 * t);
-          desiredPos.current.lerpVectors(POS_CASE_SIDE, POS_STEP10_FRONT, ease);
-          desiredTarget.current.lerpVectors(TARGET_CASE_SIDE, TARGET_STEP10_FRONT, ease);
-        } else {
-          // Pha 3 (0.75 -> 1.0): Cố định ở góc chính diện bao quát bàn làm việc và màn hình POST
-          desiredPos.current.copy(POS_STEP10_FRONT);
-          desiredTarget.current.copy(TARGET_STEP10_FRONT);
-        }
+    } else if (scrollVal <= 4.0) {
+      // 2. Step 01 -> Step 04: Cố định góc Studio Isometric nhìn Mainboard trên thảm (Mô hình lệch phải)
+      desiredPos.current.copy(POS_STEP1_4);
+      desiredTarget.current.copy(TARGET_STEP1_4);
+      if (Math.abs(persCam.fov - WORKBENCH_FOV) > 0.05) {
+        persCam.fov = WORKBENCH_FOV;
+        persCam.updateProjectionMatrix();
       }
+    } else if (scrollVal < 5.0) {
+      // 3. Chuyển tiếp mượt mà giữa Step 04 và Step 05:
+      const t = scrollVal - 4.0;
+      const ease = t * t * (3 - 2 * t);
+      desiredPos.current.lerpVectors(POS_STEP1_4, POS_STEP5_9, ease);
+      desiredTarget.current.lerpVectors(TARGET_STEP1_4, TARGET_STEP5_9, ease);
+    } else if (scrollVal <= 9.0) {
+      // 4. Step 05 -> Step 09: Cố định góc Studio Isometric nhìn Thùng máy (Mô hình lệch phải)
+      desiredPos.current.copy(POS_STEP5_9);
+      desiredTarget.current.copy(TARGET_STEP5_9);
+    } else if (scrollVal < 10.0) {
+      // 5. Chuyển tiếp mượt mà giữa Step 09 và Step 10:
+      const t = scrollVal - 9.0;
+      const ease = t * t * (3 - 2 * t);
+      desiredPos.current.lerpVectors(POS_STEP5_9, POS_STEP10, ease);
+      desiredTarget.current.lerpVectors(TARGET_STEP5_9, TARGET_STEP10, ease);
     } else {
-      desiredPos.current.set(...stepData.cameraPos);
-      desiredTarget.current.set(...stepData.cameraTarget);
+      // 6. Step 10: Góc nhìn chính diện bao quát máy tính hoàn chỉnh & CRT
+      desiredPos.current.copy(POS_STEP10);
+      desiredTarget.current.copy(TARGET_STEP10);
     }
 
     // =========================================================================
@@ -387,8 +258,6 @@ export function CameraRig() {
     // =========================================================================
     const transition = state.projectAppTransition;
 
-    // Pha 1: Khi ứng dụng trên màn CRT đang phóng to từ cửa sổ AUTORUN ra toàn màn hình (EXPANDING_ON_CRT)
-    // KHÓA CHẶT cameraTarget vào đúng tâm mặt kính CRT, không nội suy qua điểm trung gian lệch trái!
     if (transition === 'EXPANDING_ON_CRT') {
       smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       desiredTarget.current.copy(CRT_SCREEN_CENTER_POS);
@@ -401,8 +270,6 @@ export function CameraRig() {
       return;
     }
 
-    // Pha 2: Camera lao thẳng một đường trục Z trực diện xuyên qua tâm mặt kính CRT (DIVING_CAMERA)
-    // Khóa chặt cameraTarget tại CRT_SCREEN_CENTER_POS, tiến thẳng z+0.65 -> z+0.05
     if (transition === 'DIVING_CAMERA') {
       smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       desiredTarget.current.copy(CRT_SCREEN_CENTER_POS);
@@ -415,24 +282,13 @@ export function CameraRig() {
       return;
     }
 
-    // Pha 4: Thoát khỏi ứng dụng - Kéo lùi camera từ tâm mặt kính CRT trở lại bàn làm việc (EXITING_CAMERA)
     if (transition === 'EXITING_CAMERA') {
-      // Khi vừa chuyển từ INSIDE_APP sang EXITING_CAMERA, đặt vị trí camera ngay sát mặt kính CRT
       if (prevTransitionRef.current !== 'EXITING_CAMERA') {
         camera.position.set(CRT_SCREEN_CENTER_POS.x, CRT_SCREEN_CENTER_POS.y, CRT_SCREEN_CENTER_POS.z + 0.05);
         smoothedTarget.current.copy(CRT_SCREEN_CENTER_POS);
       }
-      // Rút lui camera từ từ về góc nhìn toàn cảnh toàn bộ máy tính Step 10
-      desiredPos.current.set(
-        0.15 * S.DESK_ITEMS_SCALE,
-        3.25 * S.DESK_ITEMS_SCALE,
-        9.45 * S.DESK_ITEMS_SCALE
-      );
-      desiredTarget.current.set(
-        0.05 * S.DESK_ITEMS_SCALE,
-        1.65 * S.DESK_ITEMS_SCALE,
-        0.25 * S.DESK_ITEMS_SCALE
-      );
+      desiredPos.current.copy(POS_STEP10);
+      desiredTarget.current.copy(TARGET_STEP10);
       const alpha = 1 - Math.exp(-4.2 * dt);
       camera.position.lerp(desiredPos.current, alpha);
       smoothedTarget.current.lerp(desiredTarget.current, alpha);
@@ -444,8 +300,9 @@ export function CameraRig() {
 
     prevTransitionRef.current = transition;
 
-    // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.5
-    const camAlpha = Math.min(1, safeDelta * 3.5);
+    // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.8
+    const isTransitioning = state.stageTransition !== 'IDLE';
+    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 4.5 : 3.8));
 
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
@@ -468,4 +325,3 @@ export function CameraRig() {
     />
   );
 }
-
