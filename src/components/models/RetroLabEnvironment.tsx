@@ -774,9 +774,9 @@ function CRTVideoWall() {
       />
 
       {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
-      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.2} decay={2} color="#60a5fa" />
-      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.8} distance={2.6} decay={2} color="#34d399" />
-      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.8} distance={2.6} decay={2} color="#f59e0b" />
+      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.5} distance={3.6} decay={2} color="#60a5fa" />
+      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.0} decay={2} color="#34d399" />
+      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.0} decay={2} color="#f59e0b" />
 
       {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
       <mesh position={[0, 0.45, S.ROOM.WALL_Z + 0.2]}>
@@ -784,7 +784,7 @@ function CRTVideoWall() {
         <meshBasicMaterial
           color="#38bdf8"
           transparent
-          opacity={0.065}
+          opacity={0.08}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />

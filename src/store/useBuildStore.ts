@@ -1434,7 +1434,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     // Khi đang ở Step 00 (HOME): Vào Step 01 (ABOUT) bằng hiệu ứng bung khung cửa sổ trong 0.85s
     if (currentStep === 0) {
-      set({ stageTransition: 'HOME_TO_ABOUT' });
+      set({ stageTransition: 'HOME_TO_ABOUT', scrollTarget: 1.0 });
       get().showHudWarning(
         'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
         3000

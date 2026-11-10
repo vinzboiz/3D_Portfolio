@@ -20,7 +20,7 @@ export function Experience() {
     {
       spotIntensity: { value: 6.8, min: 0.5, max: 25, step: 0.2, label: 'Độ sáng Đèn bàn' },
       bulbGlowIntensity: { value: 1.8, min: 0.1, max: 6.0, step: 0.1, label: 'Quầng bóng đèn' },
-      ambientIntensity: { value: 0.45, min: 0.05, max: 1.5, step: 0.05, label: 'Ánh sáng nền (Ambient)' },
+      ambientIntensity: { value: 0.65, min: 0.05, max: 2.0, step: 0.05, label: 'Ánh sáng nền (Ambient)' },
       lampWarmth: { value: '#ffdfa8', label: 'Màu đèn vàng ấm' },
     },
     { collapsed: false }
@@ -89,7 +89,7 @@ export function Experience() {
       {/* Nguồn sáng mềm bổ trợ từ góc trước-phải rọi vào mặt trước Thùng máy, Màn CRT và Bàn phím */}
       <directionalLight
         position={[1.2, 1.8, 1.8]}
-        intensity={0.42}
+        intensity={0.65}
         color={isTurbo ? '#fff2d6' : '#e6f0fa'}
       />
 

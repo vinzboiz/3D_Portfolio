@@ -68,16 +68,18 @@ export function CameraRig() {
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
-    const diff = state.scrollTarget - state.scrollCurrent;
-    if (Math.abs(diff) > 0.0005) {
-      // Giới hạn vận tốc tối đa tuyến tính 0.5 step/s kết hợp di chuyển đều, mượt mà không bị giật
-      const maxChange = 0.5 * safeDelta;
-      const clampedDiff = THREE.MathUtils.clamp(diff, -maxChange, maxChange);
-      const stepChange = clampedDiff;
-      const nextScroll = state.scrollCurrent + stepChange;
-      state.syncScrollCurrent(nextScroll);
-    } else if (state.scrollCurrent !== state.scrollTarget) {
-      state.syncScrollCurrent(state.scrollTarget);
+    // Chỉ tự động điều tiết scrollCurrent khi đang ở trạng thái IDLE
+    // Khi đang có stageTransition (như HOME_TO_ABOUT, TO_HOME, v.v.), transition đó sẽ tự điều phối tiến trình
+    if (state.stageTransition === 'IDLE') {
+      const diff = state.scrollTarget - state.scrollCurrent;
+      if (Math.abs(diff) > 0.0002) {
+        // Damping mượt mà theo hàm mũ (exponential ease-out), loại bỏ hoàn toàn hiện tượng khựng tuyến tính
+        const alpha = 1 - Math.exp(-8.5 * safeDelta);
+        const nextScroll = THREE.MathUtils.lerp(state.scrollCurrent, state.scrollTarget, alpha);
+        state.syncScrollCurrent(nextScroll);
+      } else if (state.scrollCurrent !== state.scrollTarget) {
+        state.syncScrollCurrent(state.scrollTarget);
+      }
     }
 
     const stepNum = state.currentStep;
@@ -144,7 +146,7 @@ export function CameraRig() {
 
     // YÊU CẦU #2: KHI TRONG ĐOẠN HOME (0.0) <-> ABOUT STEP 1 (1.0):
     if (
-      scrollVal < 1.0 &&
+      scrollVal <= 1.0 &&
       state.stageTransition !== 'TO_PROJECT' &&
       state.stageTransition !== 'TO_MY_CV'
     ) {
@@ -209,8 +211,8 @@ export function CameraRig() {
 
       const isTransitioning = state.stageTransition !== 'IDLE';
 
-      const posSpeed = isTransitioning ? safeDelta * 3.8 : safeDelta * 3.2;
-      const targetSpeed = isTransitioning ? safeDelta * 4.2 : safeDelta * 4.5;
+      const posSpeed = isTransitioning ? safeDelta * 4.2 : safeDelta * 3.8;
+      const targetSpeed = isTransitioning ? safeDelta * 4.6 : safeDelta * 4.5;
 
       camera.position.lerp(desiredPos.current, posSpeed);
       smoothedTarget.current.lerp(desiredTarget.current, targetSpeed);
@@ -352,8 +354,8 @@ export function CameraRig() {
 
     wasInspectRef.current = false;
 
-    // Chuyển góc máy: cực kỳ đằm, lướt chậm như dolly camera điện ảnh theo safeDelta * 1.2
-    const camAlpha = Math.min(1, safeDelta * 1.2);
+    // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.5
+    const camAlpha = Math.min(1, safeDelta * 3.5);
 
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
