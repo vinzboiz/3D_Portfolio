@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBuildStore } from '../../store/useBuildStore';
 
 export function RetroHUD() {
@@ -8,31 +8,119 @@ export function RetroHUD() {
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const projectAppTransition = useBuildStore((s) => s.projectAppTransition);
   const toggleFreeCam = useBuildStore((s) => s.toggleFreeCam);
-  const addScrollDelta = useBuildStore((s) => s.addScrollDelta);
-  const jumpToHome = useBuildStore((s) => s.jumpToHome);
-  const jumpToAbout = useBuildStore((s) => s.jumpToAbout);
-  const jumpToProject = useBuildStore((s) => s.jumpToProject);
-  const jumpToCv = useBuildStore((s) => s.jumpToCv);
 
+  const [activeSection, setActiveSection] = useState<'home' | 'about' | 'projects' | 'cv'>('home');
   const touchStartYRef = useRef<number | null>(null);
 
-  // Xác định tab điều hướng nào đang active trên thanh Header:
-  // Step 00: HOME
-  // Step 01 -> 10: ABOUT
-  // Step 11: PROJECT
-  // Step 12: MY CV
-  const isHomeActive = currentStep === 0 && !isInsideProjectApp;
-  const isAboutActive = currentStep >= 1 && currentStep <= 10 && !isInsideProjectApp;
-  const isProjectActive = currentStep === 11 || isInsideProjectApp;
-  const isCvActive = currentStep === 12 && !isInsideProjectApp;
+  const portalProgress = Math.max(0, Math.min(1, homeTransitionProgress));
+  const isInside3D = currentStep >= 1 && portalProgress >= 0.5;
 
+  // Theo dõi vị trí cuộn trang để highlight tab tương ứng khi đang ở ngoài 3D
+  useEffect(() => {
+    if (isInside3D) {
+      setActiveSection('about');
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const projElem = document.getElementById('projects-section');
+      const cvElem = document.getElementById('cv-section');
+
+      const projTop = projElem ? projElem.offsetTop - 250 : 600;
+      const cvTop = cvElem ? cvElem.offsetTop - 250 : 1500;
+
+      if (scrollY >= cvTop) {
+        setActiveSection('cv');
+      } else if (scrollY >= projTop) {
+        setActiveSection('projects');
+      } else {
+        setActiveSection('home');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isInside3D]);
+
+  // Luồng điều hướng thông minh khi nhấn nút Home
+  const handleNavHome = () => {
+    const state = useBuildStore.getState();
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.05;
+
+    if (inside) {
+      state.jumpToHome();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Luồng điều hướng thông minh khi nhấn nút About
+  const handleNavAbout = () => {
+    const state = useBuildStore.getState();
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 && state.homeTransitionProgress > 0.5;
+
+    if (!inside) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      state.jumpToAbout();
+    } else {
+      if (state.currentStep !== 1) {
+        state.setStep(1);
+      }
+    }
+  };
+
+  // Luồng điều hướng thông minh khi nhấn nút Projects
+  const handleNavProjects = () => {
+    const state = useBuildStore.getState();
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1;
+
+    if (!inside) {
+      // Trường hợp 1 — Đang ở ngoài 3D (Home/Projects/CV):
+      // Tuyệt đối KHÔNG chuyển qua About, KHÔNG lắp máy 3D. Cuộn mượt xuống mục #projects-section!
+      document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Trường hợp 2 — Đang ở trong không gian 3D About:
+      // Pha 1 (0.0s -> 0.9s): Zoom out trả về Home
+      state.jumpToHome();
+      // Pha 2 (0.9s -> 1.6s): Cuộn mượt xuống #projects-section
+      setTimeout(() => {
+        document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 900);
+    }
+  };
+
+  // Luồng điều hướng thông minh khi nhấn nút My CV
+  const handleNavCv = () => {
+    const state = useBuildStore.getState();
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1;
+
+    if (!inside) {
+      // Trường hợp 1 — Đang ở ngoài 3D: Cuộn mượt xuống mục #cv-section!
+      document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Trường hợp 2 — Đang ở trong 3D:
+      // Pha 1: Zoom out về Home
+      state.jumpToHome();
+      // Pha 2: Cuộn mượt xuống #cv-section
+      setTimeout(() => {
+        document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 900);
+    }
+  };
+
+  // Điều phối sự kiện lăn chuột, vuốt chạm và phím tắt
   useEffect(() => {
     let lastScrollTime = 0;
-    let lastDir = 0;
 
     const handleWheel = (e: WheelEvent) => {
       const state = useBuildStore.getState();
-      // Khi bật Free Cam hoặc đang trong quá trình chuyển cảnh / 3D Project Tunnel: không can thiệp cuộn timeline
       if (
         state.freeCam ||
         state.isInsideProjectApp ||
@@ -43,44 +131,33 @@ export function RetroHUD() {
       }
       if (Math.abs(e.deltaY) <= 15) return;
 
+      // Khi đang ở ngoài 3D (currentStep === 0): Cho phép trang cuộn dọc tự nhiên xuống Projects và CV
+      if (state.currentStep === 0) {
+        return;
+      }
+
       const dir = e.deltaY > 0 ? 1 : -1;
       const now = performance.now();
 
-      // Cuộn ngược (dir < 0): Phản hồi tức thì 0ms delay, không bị chặn bởi cooldown
+      // Cuộn ngược (dir < 0): Phản hồi tức thì 0ms delay trong 3D
       if (dir < 0) {
         lastScrollTime = now;
-        lastDir = dir;
-        const targetStep = Math.max(0, state.currentStep - 1);
+        const targetStep = Math.max(1, state.currentStep - 1);
         if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
         return;
       }
 
-      // Cuộn xuôi từ Step 0 sang Step 1: Phản hồi tức thì không bị cooldown cản trở!
-      if (state.currentStep === 0) {
-        lastScrollTime = now;
-        lastDir = dir;
-        state.setStep(1);
-        return;
-      }
-
-      // Cuộn xuôi các bước tiếp theo (Step 1 -> 12): Cooldown 650ms để nhảy từng bước rõ ràng
+      // Cuộn xuôi (dir > 0): GIỚI HẠN TỐI ĐA STEP 10
       if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
-      lastDir = dir;
 
-      if (state.currentStep === 10) {
-        if (state.scrollTarget < 10.5) {
-          state.setStep(10);
-          return;
-        }
-        if (state.osState !== 'DESKTOP') {
-          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-          return;
-        }
+      if (state.currentStep >= 10) {
+        // Dừng tại Step 10, không tự động nhét CD hay thẻ khi lăn chuột tiếp!
+        return;
       }
-      const targetStep = Math.min(12, state.currentStep + 1);
+      const targetStep = Math.min(10, state.currentStep + 1);
       if (targetStep !== state.currentStep) {
         state.setStep(targetStep);
       }
@@ -104,6 +181,8 @@ export function RetroHUD() {
       ) {
         return;
       }
+      if (state.currentStep === 0) return;
+
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartYRef.current - currentY;
       if (Math.abs(deltaY) < 30) return;
@@ -111,43 +190,22 @@ export function RetroHUD() {
       const dir = deltaY > 0 ? 1 : -1;
       const now = performance.now();
 
-      // Vuốt cuộn ngược: Phản hồi tức thì 0ms delay
       if (dir < 0) {
         lastScrollTime = now;
-        lastDir = dir;
         touchStartYRef.current = currentY;
-        const targetStep = Math.max(0, state.currentStep - 1);
+        const targetStep = Math.max(1, state.currentStep - 1);
         if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
         return;
       }
 
-      // Vuốt cuộn xuôi từ Step 0 sang Step 1: Phản hồi tức thì
-      if (state.currentStep === 0) {
-        lastScrollTime = now;
-        lastDir = dir;
-        touchStartYRef.current = currentY;
-        state.setStep(1);
-        return;
-      }
-
       if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
-      lastDir = dir;
       touchStartYRef.current = currentY;
 
-      if (state.currentStep === 10) {
-        if (state.scrollTarget < 10.5) {
-          state.setStep(10);
-          return;
-        }
-        if (state.osState !== 'DESKTOP') {
-          state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-          return;
-        }
-      }
-      const targetStep = Math.min(12, state.currentStep + 1);
+      if (state.currentStep >= 10) return;
+      const targetStep = Math.min(10, state.currentStep + 1);
       if (targetStep !== state.currentStep) {
         state.setStep(targetStep);
       }
@@ -162,20 +220,13 @@ export function RetroHUD() {
       ) {
         return;
       }
+      if (state.currentStep === 0) return;
+
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-        if (state.currentStep === 10) {
-          if (state.scrollTarget < 10.5) {
-            state.setStep(10);
-            return;
-          }
-          if (state.osState !== 'DESKTOP') {
-            state.showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-            return;
-          }
-        }
-        state.setStep(Math.min(12, state.currentStep + 1));
+        if (state.currentStep >= 10) return;
+        state.setStep(Math.min(10, state.currentStep + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        state.setStep(Math.max(0, state.currentStep - 1));
+        state.setStep(Math.max(1, state.currentStep - 1));
       } else if (e.key === 'f' || e.key === 'F') {
         if (state.currentStep < 10) return;
         toggleFreeCam();
@@ -192,45 +243,43 @@ export function RetroHUD() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [freeCam, isInsideProjectApp, projectAppTransition, addScrollDelta, toggleFreeCam]);
+  }, [freeCam, isInsideProjectApp, projectAppTransition, toggleFreeCam]);
 
   if (isInsideProjectApp || projectAppTransition !== 'IDLE') return null;
 
-  // Tính toán độ mờ của nền đen Navbar theo tiến trình scroll giữa Home (0.0) và About (1.0):
-  // - Tại Home (Step 00): bgAlpha = 1.0 (màu đen đặc #0a0a0c)
-  // - Khi scroll sang About (Step 01): Màu nền đen mờ dần từ 1.0 về 0.0 theo tiến trình scroll
-  // - Tại các chức năng khác (About, Projects, My CV): bgAlpha = 0.0 (hoàn toàn transparent)
-  // - Khi scroll ngược về Home: Màu nền đen tăng dần từ 0.0 lên 1.0
-  const portalProgress = Math.max(0, Math.min(1, homeTransitionProgress));
-  const bgAlpha =
-    currentStep === 0 || currentStep === 1
-      ? Math.max(0, Math.min(1, 1 - portalProgress))
-      : 0;
+  const isHomeActive = activeSection === 'home';
+  const isAboutActive = activeSection === 'about';
+  const isProjectActive = activeSection === 'projects';
+  const isCvActive = activeSection === 'cv';
+
+  // Độ mờ nền đen của Navbar:
+  // - Khi ở trong 3D: trong suốt để không chắn phòng Lab
+  // - Khi ở ngoài: đen đặc #0a0a0c kèm blur để chữ luôn sắc nét khi cuộn
+  const bgAlpha = isInside3D ? 0 : 0.92;
 
   return (
     <>
       {/* =======================================================================
-          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE - DYNAMIC SCROLL BACKGROUND)
-          - Tại Home (Step 00): Background màu đen đặc #0a0a0c
-          - Tại các chức năng khác (About, Projects, My CV): Background hoàn toàn transparent
-          - Khi scroll: Màu nền đen mờ dần hoặc hiện lên dần tùy theo tiến trình cuộn
+          1. FIXED TOP NAVBAR (EDITORIAL MINIMALIST STYLE)
          ======================================================================= */}
       <header
         style={{
           backgroundColor: `rgba(10, 10, 12, ${bgAlpha})`,
           borderBottom: bgAlpha > 0.01 ? `1px solid rgba(255, 255, 255, ${bgAlpha * 0.08})` : 'none',
           boxShadow: bgAlpha > 0.01 ? `0 4px 24px rgba(0, 0, 0, ${bgAlpha * 0.6})` : 'none',
+          backdropFilter: bgAlpha > 0.01 ? 'blur(12px)' : 'none',
+          WebkitBackdropFilter: bgAlpha > 0.01 ? 'blur(12px)' : 'none',
           willChange: 'background-color, border-color, box-shadow',
         }}
         className="fixed top-0 left-0 right-0 h-[80px] z-[100] px-6 sm:px-12 flex items-center justify-between select-none pointer-events-none"
       >
         {/* Cụm Bên Trái (Brand Identity) */}
         <div
-          onClick={jumpToHome}
+          onClick={handleNavHome}
           className="pointer-events-auto flex items-center gap-3 cursor-pointer group"
-          title="Về trang chủ (Step 00)"
+          title="Về trang chủ"
         >
-          {/* Icon khối 3D Wireframe (SVG) 28x28px */}
+          {/* Icon khối 3D Wireframe (SVG) */}
           <div className="w-7 h-7 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
             <svg
               width="28"
@@ -248,7 +297,7 @@ export function RetroHUD() {
             </svg>
           </div>
 
-          {/* Tên & Chức danh 2 dòng */}
+          {/* Tên & Chức danh */}
           <div className="flex flex-col text-left">
             <span className="font-sans font-bold text-white text-[0.95rem] sm:text-[1.05rem] tracking-[-0.02em] leading-tight group-hover:text-[#f2f0ea] transition-colors whitespace-nowrap">
               Nguyễn Xuân Vinh
@@ -259,13 +308,12 @@ export function RetroHUD() {
           </div>
         </div>
 
-        {/* Cụm Bên Phải (Menu Links & Language & Pill CTA) */}
+        {/* Cụm Bên Phải (Menu Links & Language & CTA) */}
         <div className="pointer-events-auto flex items-center gap-3 sm:gap-7">
-          {/* Text Links dạng thuần (không đóng khung viền hộp) */}
           <nav className="hidden sm:flex items-center gap-4 md:gap-7 text-[0.88rem] md:text-[0.92rem] font-sans">
             <button
               type="button"
-              onClick={jumpToHome}
+              onClick={handleNavHome}
               className={`transition-colors duration-250 cursor-pointer font-medium ${
                 isHomeActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
               }`}
@@ -274,7 +322,7 @@ export function RetroHUD() {
             </button>
             <button
               type="button"
-              onClick={jumpToAbout}
+              onClick={handleNavAbout}
               className={`transition-colors duration-250 cursor-pointer font-medium ${
                 isAboutActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
               }`}
@@ -283,7 +331,7 @@ export function RetroHUD() {
             </button>
             <button
               type="button"
-              onClick={jumpToProject}
+              onClick={handleNavProjects}
               className={`transition-colors duration-250 cursor-pointer font-medium ${
                 isProjectActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
               }`}
@@ -292,7 +340,7 @@ export function RetroHUD() {
             </button>
             <button
               type="button"
-              onClick={jumpToCv}
+              onClick={handleNavCv}
               className={`transition-colors duration-250 cursor-pointer font-medium ${
                 isCvActive ? 'text-white font-semibold' : 'text-[#8e8e93] hover:text-white'
               }`}
@@ -311,10 +359,10 @@ export function RetroHUD() {
             </span>
           </div>
 
-          {/* Nút Pill Button [ Liên hệ ] nổi bật ngoài cùng bên phải */}
+          {/* Nút Pill Button [ Liên hệ ] */}
           <button
             type="button"
-            onClick={jumpToCv}
+            onClick={handleNavCv}
             className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-4 sm:px-[22px] py-1.5 sm:py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none whitespace-nowrap"
           >
             Liên hệ
@@ -323,25 +371,20 @@ export function RetroHUD() {
       </header>
 
       {/* =======================================================================
-          2. NÚT TRÒN ĐIỀU KHIỂN SCROLL / FREE ZOOM DƯỚI GÓC PHẢI
-          - CHỈ xuất hiện khi ĐÃ LẮP XONG MÁY HOÀN CHỈNH (currentStep >= 10)
-          - Ẩn hoàn toàn trong các bước lắp ráp linh kiện (Step 00 đến Step 09)
-          - Nút tròn 44px x 44px kèm SVG Icon và Tooltip
+          2. NÚT TRÒN ĐIỀU KHIỂN SCROLL / FREE ZOOM DƯỚI GÓC PHẢI (CHỈ Ở STEP 10 TRONG 3D)
          ======================================================================= */}
       <div
         className={`fixed bottom-6 right-6 sm:right-10 z-30 transition-all duration-500 ${
-          currentStep >= 10 && !isInsideProjectApp && projectAppTransition === 'IDLE'
+          currentStep >= 10 && isInside3D && !isInsideProjectApp && projectAppTransition === 'IDLE'
             ? 'opacity-100 pointer-events-auto translate-y-0'
             : 'opacity-0 pointer-events-none translate-y-4'
         }`}
       >
         <div className="relative flex items-center justify-end group">
-          {/* Tooltip khi hover */}
           <span className="absolute right-14 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 text-[11px] font-sans font-medium px-3 py-1 rounded-md bg-black/80 text-white backdrop-blur border border-white/15 whitespace-nowrap shadow-xl">
             {freeCam ? 'Free Zoom & Inspect' : 'Scroll Mode'}
           </span>
 
-          {/* Nút tròn 44px x 44px */}
           <button
             type="button"
             onClick={toggleFreeCam}
@@ -353,7 +396,6 @@ export function RetroHUD() {
             }`}
           >
             {freeCam ? (
-              /* SVG Icon 3D Orbit / Inspect */
               <svg
                 width="20"
                 height="20"
@@ -369,7 +411,6 @@ export function RetroHUD() {
                 <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)" />
               </svg>
             ) : (
-              /* SVG Icon Mouse / Vertical Scroll */
               <svg
                 width="20"
                 height="20"

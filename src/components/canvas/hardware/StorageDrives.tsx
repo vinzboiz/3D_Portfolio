@@ -403,7 +403,7 @@ export function StorageDrives({
       // Vị trí đĩa CD nằm phẳng trên mặt bàn cạnh Thẻ nhớ Floppy (World: X = 1.95, Y = 0.0225, Z = 2.70)
       // Nằm song song ngay cạnh thẻ nhớ (X = 1.35) ở khoảng đệm phía trước thùng máy trên thảm cắt
       const deskX = 2.981;
-      const deskY = 0.596;
+      const deskY = 0.980; // Đặt đĩa CD sát cạnh Thẻ nhớ đĩa mềm trên mặt bàn (thay vì văng xa ở 0.596)
       const deskZ = 1.459;
 
       let cx: number;

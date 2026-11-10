@@ -465,29 +465,22 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   nextStep: () => {
-    if (get().currentStep === 10 && get().scrollTarget >= 10.9 && get().osState !== 'DESKTOP') {
-      get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-      return;
-    }
-    get().setStep(get().currentStep + 1);
+    if (get().currentStep >= 10) return;
+    get().setStep(Math.min(10, get().currentStep + 1));
   },
 
   prevStep: () => {
-    get().setStep(get().currentStep - 1);
+    get().setStep(Math.max(0, get().currentStep - 1));
   },
 
   addScrollDelta: (delta: number) => {
     let next = get().scrollTarget + delta;
-    if (next > 11.0 && get().osState !== 'DESKTOP') {
-      next = 10.99;
-      get().showHudWarning('SYSTEM BOOTING... WAITING FOR DESKTOP LOGIN', 2200);
-    }
-    const clampedNext = Math.max(0.0, Math.min(12, next));
+    const clampedNext = Math.max(0.0, Math.min(10.99, next));
     set({ scrollTarget: clampedNext, benchScrubbing: true });
   },
 
   syncScrollCurrent: (val: number) => {
-    const clamped = Math.max(0.0, Math.min(12, val));
+    const clamped = Math.max(0.0, Math.min(10.99, val));
     const prevStep = get().currentStep;
     const prevScroll = get().scrollCurrent;
 
@@ -505,9 +498,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       nextStepNum = clamped < 0.75 ? 0 : 1;
       nextBenchP = 0.0;
       nextHomeP = clamped;
-    } else if (clamped >= 12.0) {
-      nextStepNum = 12;
-      nextBenchP = 1.0;
+    } else if (clamped >= 10.0) {
+      // GIỚI HẠN TRỤC CUỘN 3D ABOUT CHỈ TỚI STEP 10:
+      // Hoàn tất bộ máy, bật nguồn, đĩa CD và Thẻ nhớ nằm trên mặt bàn ở Step 10
+      nextStepNum = 10;
+      nextBenchP = Math.min(1.0, clamped - 10.0);
       nextHomeP = 1.0;
     } else {
       // Khi người dùng cuộn tiếp (clamped > 1.0):
@@ -515,7 +510,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       // - Khoảng [s, s + 1]: Lắp ráp Step s với benchProgress = clamped - s
       const s = Math.floor(clamped);
       const frac = clamped - s;
-      nextStepNum = Math.min(12, s);
+      nextStepNum = Math.min(10, s);
       nextBenchP = frac;
       nextHomeP = 1.0;
     }
@@ -602,51 +597,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
           osState: 'OFF',
           bootElapsedTime: 0,
         });
-      } else if (prevStep >= 11) {
-        // Cuộn ngược từ Step 11 về Step 10:
-        // Đĩa CD tự động trả về mặt bàn tuần tự 3 pha (nếu chưa ở DESK và không đang chạy animation)
-        if ((get().cdLocation === 'INSIDE' || get().cdLocation === 'TRAY') && !get().isCdAnimating) {
-          get().triggerEjectCdToDeskSequence();
-        }
       }
-    } else if (nextStepNum === 11) {
-      // PHÂN ĐOẠN 2 — PROJECT (Step 11): Tự động nạp Đĩa CD vào ổ & mở My Projects trên CRT
-      if (prevStep <= 10) {
-        // Cuộn xuôi từ Step 10 lên Step 11:
-        if (get().cdLocation === 'DESK' && !get().isCdAnimating) {
-          get().triggerInsertCdSequence();
-        }
-      } else if (prevStep === 12) {
-        // Cuộn ngược từ Step 12 về Step 11:
-        // Thẻ nhớ rút ra trả về bàn, phục hồi cửa sổ My Projects
-        retroSound.playFloppySeek(get().soundEnabled);
-        set({
-          cardLocation: 'DESK',
-          floppyInserted: false,
-          activeWindow: 'AUTORUN',
-        });
-      }
-    } else if (nextStepNum === 12) {
-      // PHÂN ĐOẠN 3 — MY CV (Step 12): Tự động cắm Thẻ nhớ vào khe đọc & mở WordPad CV
-      if (prevStep <= 11 || get().cardLocation !== 'INSERTED') {
-        retroSound.playFloppySeek(get().soundEnabled);
-      }
-      const existingWins = get().openWindows;
-      const cvWins = existingWins.includes('WORDPAD_CV')
-        ? existingWins
-        : [...existingWins, 'WORDPAD_CV' as DesktopWindowId];
-      set({
-        isPoweredOn: true,
-        isCrtPowered: true,
-        osState: 'DESKTOP',
-        cdLocation: 'INSIDE',
-        isCdTrayOpen: false,
-        isCdInserted: true,
-        cardLocation: 'INSERTED',
-        floppyInserted: true,
-        activeWindow: 'WORDPAD_CV',
-        openWindows: cvWins,
-      });
     }
 
     set({
