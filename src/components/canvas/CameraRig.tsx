@@ -38,12 +38,26 @@ export function CameraRig() {
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
-  // Stationary Camera Look-Around: Lắng nghe chuột toàn màn hình (Window Level)
+  // Stationary Camera Look-Around: Lắng nghe chuột toàn màn hình (Window Level) CHỈ TẠI HOME
   const mouseRef = useRef({ x: 0, y: 0 });
   const smoothedMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      const state = useBuildStore.getState();
+      // CHỈ lắng nghe và xử lý tọa độ chuột khi đang ở màn hình HOME thuần túy
+      if (
+        state.currentStep !== 0 ||
+        state.scrollCurrent > 0.02 ||
+        state.stageTransition !== 'IDLE' ||
+        state.freeCam
+      ) {
+        if (mouseRef.current.x !== 0 || mouseRef.current.y !== 0) {
+          mouseRef.current.x = 0;
+          mouseRef.current.y = 0;
+        }
+        return;
+      }
       // Chuẩn hóa về khoảng [-1, 1] (Trái -> Phải: -1 -> 1, Dưới -> Trên: -1 -> 1)
       mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -57,8 +71,12 @@ export function CameraRig() {
     desiredPos.current.set(...stepData.cameraPos);
     desiredTarget.current.set(...stepData.cameraTarget);
 
-    if (freeCam && controlsRef.current) {
-      controlsRef.current.target.copy(desiredTarget.current);
+    if (freeCam && currentStep >= 10 && controlsRef.current) {
+      controlsRef.current.target.set(
+        0.05 * S.DESK_ITEMS_SCALE,
+        1.65 * S.DESK_ITEMS_SCALE,
+        0.25 * S.DESK_ITEMS_SCALE
+      );
       controlsRef.current.update();
     }
   }, [currentStep, freeCam]);
@@ -83,19 +101,23 @@ export function CameraRig() {
     };
 
     // =========================================================================
-    // CHẾ ĐỘ TƯƠNG TÁC TỰ DO / INSPECT (FREE CAM & ZOOM TO CURSOR)
-    // Ưu tiên cao nhất: Khi bật FreeCam, OrbitControls toàn quyền điều khiển Camera
+    // CHẾ ĐỘ TƯƠNG TÁC TỰ DO / INSPECT (FREE CAM & ZOOM)
+    // CHỈ khả dụng khi đã hoàn tất đóng nắp máy (currentStep >= 10)
+    // Tách độc lập hoàn toàn khỏi hệ thống cuộn timeline và parallax chuột
     // =========================================================================
-    const isInspect = state.freeCam;
+    const isInspect = state.freeCam && state.currentStep >= 10;
 
     if (isInspect) {
       if (!wasInspectRef.current && controlsRef.current) {
-        controlsRef.current.target.copy(smoothedTarget.current);
+        controlsRef.current.target.set(
+          0.05 * S.DESK_ITEMS_SCALE,
+          1.65 * S.DESK_ITEMS_SCALE,
+          0.25 * S.DESK_ITEMS_SCALE
+        );
         controlsRef.current.update();
       }
       wasInspectRef.current = true;
       controlsRef.current?.update();
-      clampCameraInRoom();
       return;
     }
 
@@ -200,39 +222,41 @@ export function CameraRig() {
       }
 
       // Stationary Camera Look-Around:
-      // Tọa độ đứng camera đứng yên tuyệt đối tại homePos.
+      // Tọa độ camera đứng yên tuyệt đối tại homePos.
       // Chỉ xoay góc nhìn (Target) bao quát mặt bàn và căn phòng theo vị trí chuột.
-      // CHỈ kích hoạt khi đang ở Home (Step 00, scrollVal <= 0.05, IDLE).
+      // CHỈ kích hoạt khi đang ở Home (Step 00, scrollVal <= 0.02, IDLE, không freeCam).
       const isPureHome =
         state.currentStep === 0 &&
-        scrollVal <= 0.05 &&
-        state.stageTransition === 'IDLE';
+        scrollVal <= 0.02 &&
+        state.stageTransition === 'IDLE' &&
+        !state.freeCam;
 
-      // Nội suy mượt mà (Damping) tọa độ chuột
-      const mouseLerpSpeed = safeDelta * 5.0;
-      smoothedMouse.current.x = THREE.MathUtils.lerp(
-        smoothedMouse.current.x,
-        isPureHome ? mouseRef.current.x : 0,
-        mouseLerpSpeed
-      );
-      smoothedMouse.current.y = THREE.MathUtils.lerp(
-        smoothedMouse.current.y,
-        isPureHome ? mouseRef.current.y : 0,
-        mouseLerpSpeed
-      );
+      if (!isPureHome) {
+        smoothedMouse.current.x = 0;
+        smoothedMouse.current.y = 0;
+      } else {
+        // Nội suy mượt mà (Damping) tọa độ chuột
+        const mouseLerpSpeed = safeDelta * 5.0;
+        smoothedMouse.current.x = THREE.MathUtils.lerp(
+          smoothedMouse.current.x,
+          mouseRef.current.x,
+          mouseLerpSpeed
+        );
+        smoothedMouse.current.y = THREE.MathUtils.lerp(
+          smoothedMouse.current.y,
+          mouseRef.current.y,
+          mouseLerpSpeed
+        );
 
-      // Trọng số fade mượt theo độ mở portalProgress
-      const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
-      const homeWeight = isPureHome ? THREE.MathUtils.clamp(1 - portalProgress, 0, 1) : 0.0;
+        // Biên độ xoay theo chuột đằm và tinh tế
+        const yawOffset = smoothedMouse.current.x * (1.15 * S.DESK_ITEMS_SCALE);
+        const pitchOffset = smoothedMouse.current.y * (0.65 * S.DESK_ITEMS_SCALE);
+        const depthOffset = -smoothedMouse.current.x * (0.45 * S.DESK_ITEMS_SCALE);
 
-      // Giảm mạnh biên độ xoay theo chuột để góc nhìn đằm và tinh tế
-      const yawOffset = smoothedMouse.current.x * (1.15 * S.DESK_ITEMS_SCALE) * homeWeight;
-      const pitchOffset = smoothedMouse.current.y * (0.65 * S.DESK_ITEMS_SCALE) * homeWeight;
-      const depthOffset = -smoothedMouse.current.x * (0.45 * S.DESK_ITEMS_SCALE) * homeWeight;
-
-      desiredTarget.current.x += yawOffset;
-      desiredTarget.current.y += pitchOffset;
-      desiredTarget.current.z += depthOffset;
+        desiredTarget.current.x += yawOffset;
+        desiredTarget.current.y += pitchOffset;
+        desiredTarget.current.z += depthOffset;
+      }
 
       const isTransitioning = state.stageTransition !== 'IDLE';
 
@@ -375,14 +399,13 @@ export function CameraRig() {
   return (
     <OrbitControls
       ref={controlsRef}
-      enabled={freeCam}
+      enabled={freeCam && currentStep >= 10}
       enableDamping
       dampingFactor={0.08}
       maxPolarAngle={Math.PI / 2 + 0.04}
       minPolarAngle={Math.PI * 0.08}
-      minDistance={0.05}
-      maxDistance={4.2}
-      zoomToCursor={true}
+      minDistance={0.12}
+      maxDistance={2.8}
     />
   );
 }

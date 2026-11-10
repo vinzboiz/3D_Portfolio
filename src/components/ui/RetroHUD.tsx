@@ -177,6 +177,7 @@ export function RetroHUD() {
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
         state.setStep(Math.max(0, state.currentStep - 1));
       } else if (e.key === 'f' || e.key === 'F') {
+        if (state.currentStep < 10) return;
         toggleFreeCam();
       }
     };
@@ -322,17 +323,16 @@ export function RetroHUD() {
       </header>
 
       {/* =======================================================================
-          2. NÚT TRÒN ĐIỀU KHIỂN SCROLL / FREE ZOOM DƯỚI GÓC PHẢI (YÊU CẦU #2)
-          - Đã xóa hoàn toàn nút âm thanh
-          - Ẩn hoàn toàn khi ở Step 00 (HOME)
-          - Chỉ hiện mượt mà khi vào Step 01 (ABOUT) trở đi
+          2. NÚT TRÒN ĐIỀU KHIỂN SCROLL / FREE ZOOM DƯỚI GÓC PHẢI
+          - CHỈ xuất hiện khi ĐÃ LẮP XONG MÁY HOÀN CHỈNH (currentStep >= 10)
+          - Ẩn hoàn toàn trong các bước lắp ráp linh kiện (Step 00 đến Step 09)
           - Nút tròn 44px x 44px kèm SVG Icon và Tooltip
          ======================================================================= */}
       <div
         className={`fixed bottom-6 right-6 sm:right-10 z-30 transition-all duration-500 ${
-          currentStep === 0
-            ? 'opacity-0 pointer-events-none translate-y-4'
-            : 'opacity-100 pointer-events-auto translate-y-0'
+          currentStep >= 10 && !isInsideProjectApp && projectAppTransition === 'IDLE'
+            ? 'opacity-100 pointer-events-auto translate-y-0'
+            : 'opacity-0 pointer-events-none translate-y-4'
         }`}
       >
         <div className="relative flex items-center justify-end group">

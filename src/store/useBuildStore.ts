@@ -410,7 +410,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       }
     }
 
-    if (clamped < 10 && (get().isPoweredOn || get().osState !== 'OFF')) {
+    if (clamped < 10) {
+      if (get().freeCam) {
+        set({ freeCam: false });
+      }
+      if (get().isPoweredOn || get().osState !== 'OFF') {
       if (resetTimer) {
         clearTimeout(resetTimer);
         resetTimer = null;
@@ -435,22 +439,23 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         clearTimeout(shutdownDisassemblyTimer);
         shutdownDisassemblyTimer = null;
       }
-      set({
-        isPoweredOn: false,
-        isResetting: false,
-        osState: 'OFF',
-        bootElapsedTime: 0,
-        cdLocation: 'DESK',
-        isCdTrayOpen: false,
-        isCdInserted: false,
-        cardLocation: 'DESK',
-        floppyInserted: false,
-        activeWindow: null,
-        openWindows: [],
-        isInsideProjectApp: false,
-        projectAppTransition: 'IDLE',
-        crtExpandProgress: 0,
-      });
+        set({
+          isPoweredOn: false,
+          isResetting: false,
+          osState: 'OFF',
+          bootElapsedTime: 0,
+          cdLocation: 'DESK',
+          isCdTrayOpen: false,
+          isCdInserted: false,
+          cardLocation: 'DESK',
+          floppyInserted: false,
+          activeWindow: null,
+          openWindows: [],
+          isInsideProjectApp: false,
+          projectAppTransition: 'IDLE',
+          crtExpandProgress: 0,
+        });
+      }
     }
     set({
       scrollTarget: targetTimeline,
@@ -521,6 +526,9 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     // PHÂN ĐOẠN 1 — ABOUT (Step 01 -> Step 09): Máy chưa đóng nắp -> bắt buộc OFF, đĩa CD và Thẻ nhớ nằm trên bàn
     if (nextStepNum < 10) {
+      if (get().freeCam) {
+        set({ freeCam: false });
+      }
       if (
         get().isPoweredOn ||
         get().osState !== 'OFF' ||
@@ -715,6 +723,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   toggleFreeCam: () => {
+    if (get().currentStep < 10) return;
     const { freeCam, soundEnabled } = get();
     retroSound.playStepTick(soundEnabled);
     set({ freeCam: !freeCam });
@@ -1374,6 +1383,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       });
     }
 
+    if (get().freeCam) {
+      set({ freeCam: false });
+    }
+
     retroSound.playButtonClick(soundEnabled);
 
     if (currentStep === 1) {
@@ -1428,6 +1441,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         projectAppTransition: 'IDLE',
         crtExpandProgress: 0,
       });
+    }
+
+    if (get().freeCam) {
+      set({ freeCam: false });
     }
 
     retroSound.playButtonClick(soundEnabled);
