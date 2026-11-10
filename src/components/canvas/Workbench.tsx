@@ -826,6 +826,7 @@ export function Workbench() {
         radius={0.008}
         smoothness={2}
         position={[0, -S.TABLE.TOP_THICK / 2, 0]}
+        castShadow
         receiveShadow
       >
         <meshStandardMaterial color="#0c0e12" roughness={0.88} metalness={0.06} />
@@ -835,6 +836,7 @@ export function Workbench() {
       <mesh
         position={[0, 0.0005, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
+        castShadow
         receiveShadow
       >
         <planeGeometry args={[S.TABLE.W - 0.015, S.TABLE.D - 0.015]} />

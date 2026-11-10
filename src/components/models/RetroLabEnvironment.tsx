@@ -866,17 +866,6 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
       </mesh>
 
-      {/* 2. Plane phản chiếu ánh sáng màn hình CRT lên mặt sàn bê tông */}
-      <mesh position={[0, S.FLOOR_Y + 0.002, -0.45]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.7, 0.8]} />
-        <meshBasicMaterial
-          color="#38bdf8"
-          transparent
-          opacity={0.08}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
 
       {/* 3. Tường sau (Z = S.ROOM.BACK_WALL_Z = -0.95m, ngay sát sau dãy màn hình) */}
       <mesh position={[0, wallCenterY, S.ROOM.BACK_WALL_Z]} receiveShadow material={wallMat}>
