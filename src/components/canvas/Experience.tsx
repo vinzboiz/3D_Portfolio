@@ -89,7 +89,7 @@ export function Experience() {
       {/* Nguồn sáng mềm bổ trợ từ góc trước-phải rọi vào mặt trước Thùng máy, Màn CRT và Bàn phím */}
       <directionalLight
         position={[1.2, 1.8, 1.8]}
-        intensity={0.65}
+        intensity={0.42}
         color={isTurbo ? '#fff2d6' : '#e6f0fa'}
       />
 

@@ -773,22 +773,10 @@ function CRTVideoWall() {
         frustumCulled={false}
       />
 
-      {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN SÀN VÀ BÀN */}
-      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={1.5} distance={3.6} decay={2} color="#60a5fa" />
-      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.0} decay={2} color="#34d399" />
-      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={1.1} distance={3.0} decay={2} color="#f59e0b" />
-
-      {/* 5. PLANE GLOW ADDITIVE SÁT MẶT KÍNH TẠO QUẦNG SÁNG KHUẾCH TÁN */}
-      <mesh position={[0, 0.45, S.ROOM.WALL_Z + 0.2]}>
-        <planeGeometry args={[2.7, 1.65]} />
-        <meshBasicMaterial
-          color="#38bdf8"
-          transparent
-          opacity={0.08}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* 4. FAKE LIGHT SPILL: ÁNH SÁNG LAN TỎA DỊU TỪ DÀN MÀN HÌNH LÊN BÀN */}
+      <pointLight position={[0, 0.45, S.ROOM.WALL_Z + 0.4]} intensity={0.65} distance={3.0} decay={2} color="#60a5fa" />
+      <pointLight position={[-0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.4} decay={2} color="#34d399" />
+      <pointLight position={[0.8, 0.35, S.ROOM.WALL_Z + 0.4]} intensity={0.5} distance={2.4} decay={2} color="#f59e0b" />
     </group>
   );
 }
@@ -800,9 +788,9 @@ export function RetroLabEnvironment() {
   const { floorMat, wallMat, ceilingMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
-        color: '#111318',
-        roughness: 0.52,
-        metalness: 0.12,
+        color: '#131519',
+        roughness: 0.82,
+        metalness: 0.04,
         side: THREE.DoubleSide,
       }),
       wallMat: new THREE.MeshStandardMaterial({
@@ -866,8 +854,7 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
       </mesh>
 
-
-      {/* 3. Tường sau (Z = S.ROOM.BACK_WALL_Z = -0.95m, ngay sát sau dãy màn hình) */}
+      {/* 2. Tường sau (Z = S.ROOM.BACK_WALL_Z = -0.95m, ngay sát sau dãy màn hình) */}
       <mesh position={[0, wallCenterY, S.ROOM.BACK_WALL_Z]} receiveShadow material={wallMat}>
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
@@ -925,14 +912,28 @@ export function RetroLabEnvironment() {
             <cylinderGeometry args={[0.014, 0.014, 1.25, 12]} />
             <meshStandardMaterial
               color="#ffffff"
-              emissive="#e0f2fe"
-              emissiveIntensity={0.65}
+              emissive="#e2f1fe"
+              emissiveIntensity={1.8}
               roughness={0.25}
             />
           </mesh>
         ))}
-        {/* Nguồn sáng mềm từ trần rọi xuống cả phòng */}
-        <pointLight position={[0, -0.1, 0]} intensity={0.75} distance={3.8} decay={2} color="#f0f6ff" />
+        {/* Nguồn sáng từ trần rọi từ trên xuống chiếu sáng toàn bộ căn phòng */}
+        <pointLight
+          position={[0, -0.15, 0]}
+          intensity={2.6}
+          distance={5.5}
+          decay={1.6}
+          color="#f0f6ff"
+        />
+        <directionalLight
+          position={[0, -0.05, 0]}
+          intensity={1.2}
+          color="#f5f8ff"
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+          shadow-bias={-0.0002}
+        />
       </group>
     </group>
   );
