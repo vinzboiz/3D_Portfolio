@@ -1511,17 +1511,16 @@ export function PcCaseEnlight({
       {/* =======================================================================
           C. NẮP VỎ CHỮ U (CASE U-COVER - BEIGE PLASTIC) & 4 ỐC LƯNG (CHỈ HIỆN Ở STEP 10)
          ======================================================================= */}
-      {uCoverCloseProgress > 0.01 &&
-        (() => {
-          const uSlideT = Math.max(0, Math.min(1, uCoverCloseProgress / 0.72));
-          const uSlideSmooth = uSlideT * uSlideT * (3 - 2 * uSlideT);
-          const uScrewT = Math.max(0, Math.min(1, (uCoverCloseProgress - 0.68) / 0.32));
-          const uScrewSmooth = uScrewT * uScrewT * (3 - 2 * uScrewT);
+      {(() => {
+        const uSlideT = Math.max(0, Math.min(1, uCoverCloseProgress / 0.72));
+        const uSlideSmooth = uSlideT * uSlideT * (3 - 2 * uSlideT);
+        const uScrewT = Math.max(0, Math.min(1, (uCoverCloseProgress - 0.68) / 0.32));
+        const uScrewSmooth = uScrewT * uScrewT * (3 - 2 * uScrewT);
 
-          const coverX = THREE.MathUtils.lerp(-0.45, 0.46, uSlideSmooth);
+        const coverX = THREE.MathUtils.lerp(-0.45, 0.46, uSlideSmooth);
 
-          return (
-            <group name="CaseUCoverGroup">
+        return (
+          <group name="CaseUCoverGroup" visible={uCoverCloseProgress > 0.001}>
               <group position={[coverX, 0.68, -0.27]}>
                 {/* Mặt nắp hông trái (Y_int = +0.66) */}
                 <RoundedBox

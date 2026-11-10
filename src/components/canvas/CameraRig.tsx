@@ -26,6 +26,42 @@ const HOME_BASE_TARGET = new THREE.Vector3(
   -0.6 * S.DESK_ITEMS_SCALE
 );
 
+// Trạm quan sát Step 09 (gần cụm card PCI/ISA):
+const POS_STEP9 = new THREE.Vector3(
+  -4.45 * S.DESK_ITEMS_SCALE,
+  2.45 * S.DESK_ITEMS_SCALE,
+  -2.45 * S.DESK_ITEMS_SCALE
+);
+const TARGET_STEP9 = new THREE.Vector3(
+  0.1 * S.DESK_ITEMS_SCALE,
+  1.35 * S.DESK_ITEMS_SCALE,
+  -0.4 * S.DESK_ITEMS_SCALE
+);
+
+// Trạm quan sát góc ngang thùng máy (khi nắp chữ U trượt đóng vào):
+const POS_CASE_SIDE = new THREE.Vector3(
+  -6.15 * S.DESK_ITEMS_SCALE,
+  2.25 * S.DESK_ITEMS_SCALE,
+  0.05 * S.DESK_ITEMS_SCALE
+);
+const TARGET_CASE_SIDE = new THREE.Vector3(
+  0.1 * S.DESK_ITEMS_SCALE,
+  1.85 * S.DESK_ITEMS_SCALE,
+  -0.15 * S.DESK_ITEMS_SCALE
+);
+
+// Trạm quan sát góc chính diện Step 10 (bàn phím + màn hình CRT + máy tính hoàn chỉnh):
+const POS_STEP10_FRONT = new THREE.Vector3(
+  0.15 * S.DESK_ITEMS_SCALE,
+  3.25 * S.DESK_ITEMS_SCALE,
+  9.45 * S.DESK_ITEMS_SCALE
+);
+const TARGET_STEP10_FRONT = new THREE.Vector3(
+  0.05 * S.DESK_ITEMS_SCALE,
+  1.65 * S.DESK_ITEMS_SCALE,
+  0.25 * S.DESK_ITEMS_SCALE
+);
+
 export function CameraRig() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const freeCam = useBuildStore((s) => s.freeCam);
@@ -86,14 +122,15 @@ export function CameraRig() {
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
-    // Helper giới hạn camera trong khuôn khổ phòng vuông 6 mặt
+    // Helper giới hạn camera CHẶT CHẼ trong khuôn khổ phòng vuông 6 mặt:
+    // Tuyệt đối không được bay ra ngoài phòng, không lọt qua tường CRT sau và không chúi xuống dưới sàn/bàn
     const clampCameraInRoom = () => {
-      const minX = -S.ROOM.SIZE / 2 + 0.15; // -1.275m
-      const maxX = S.ROOM.SIZE / 2 - 0.15;  // +1.275m
-      const minY = S.FLOOR_Y + 0.12;        // -0.63m (trên sàn 12cm)
-      const maxY = S.FLOOR_Y + S.ROOM.HEIGHT - 0.15; // +1.90m (dưới trần 15cm)
-      const minZ = S.ROOM.WALL_Z + 0.18;    // -0.57m (ở phía trước bức tường CRT)
-      const maxZ = S.ROOM.FRONT_Z - 0.15;   // +1.75m (ở phía trong bức tường trước)
+      const minX = -1.25;  // Cách tường trái 17cm (tường trái = -1.425m)
+      const maxX = 1.25;   // Cách tường phải 17cm (tường phải = +1.425m)
+      const minY = 0.08;   // Trên mặt bàn 8cm (mặt bàn = 0.00m, sàn = -0.75m)
+      const maxY = 1.85;   // Dưới trần 20cm (trần = 2.05m)
+      const minZ = -0.42;  // Phía trước bức tường màn hình CRT (màn hình CRT nhô ra tới z = -0.56m)
+      const maxZ = 1.68;   // Cách tường trước 22cm (tường trước = +1.90m)
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -118,6 +155,7 @@ export function CameraRig() {
       }
       wasInspectRef.current = true;
       controlsRef.current?.update();
+      clampCameraInRoom();
       return;
     }
 
@@ -308,18 +346,37 @@ export function CameraRig() {
     } else if (
       !state.isPoweredOn &&
       state.scrollCurrent < 10.95 &&
-      ((stepNum === 9 && stepP >= 0.82) || (stepNum === 10 && stepP < 0.40))
+      (stepNum === 9 || stepNum === 10)
     ) {
-      desiredPos.current.set(
-        -6.15 * S.DESK_ITEMS_SCALE,
-        2.25 * S.DESK_ITEMS_SCALE,
-        0.05 * S.DESK_ITEMS_SCALE
-      );
-      desiredTarget.current.set(
-        0.1 * S.DESK_ITEMS_SCALE,
-        1.85 * S.DESK_ITEMS_SCALE,
-        -0.15 * S.DESK_ITEMS_SCALE
-      );
+      if (stepNum === 9) {
+        if (stepP < 0.65) {
+          desiredPos.current.copy(POS_STEP9);
+          desiredTarget.current.copy(TARGET_STEP9);
+        } else {
+          // Cuối Step 9 (0.65 -> 1.0): Camera lướt mượt mà từ góc trên card PCI sang góc ngang hông thùng máy
+          const t = (stepP - 0.65) / 0.35;
+          const ease = t * t * (3 - 2 * t);
+          desiredPos.current.lerpVectors(POS_STEP9, POS_CASE_SIDE, ease);
+          desiredTarget.current.lerpVectors(TARGET_STEP9, TARGET_CASE_SIDE, ease);
+        }
+      } else {
+        // Step 10:
+        if (stepP <= 0.38) {
+          // Pha 1 (0.00 -> 0.38): Nắp chữ U đóng kín thùng máy, camera giữ góc nhìn hông
+          desiredPos.current.copy(POS_CASE_SIDE);
+          desiredTarget.current.copy(TARGET_CASE_SIDE);
+        } else if (stepP < 0.75) {
+          // Pha 2 (0.38 -> 0.75): Thùng máy dịch sang phải, màn CRT xuất hiện -> Camera lướt mượt sang góc chính diện
+          const t = (stepP - 0.38) / 0.37;
+          const ease = t * t * (3 - 2 * t);
+          desiredPos.current.lerpVectors(POS_CASE_SIDE, POS_STEP10_FRONT, ease);
+          desiredTarget.current.lerpVectors(TARGET_CASE_SIDE, TARGET_STEP10_FRONT, ease);
+        } else {
+          // Pha 3 (0.75 -> 1.0): Cố định ở góc chính diện bao quát bàn làm việc và màn hình POST
+          desiredPos.current.copy(POS_STEP10_FRONT);
+          desiredTarget.current.copy(TARGET_STEP10_FRONT);
+        }
+      }
     } else {
       desiredPos.current.set(...stepData.cameraPos);
       desiredTarget.current.set(...stepData.cameraTarget);
@@ -402,10 +459,12 @@ export function CameraRig() {
       enabled={freeCam && currentStep >= 10}
       enableDamping
       dampingFactor={0.08}
-      maxPolarAngle={Math.PI / 2 + 0.04}
+      maxPolarAngle={Math.PI / 2 - 0.04}
       minPolarAngle={Math.PI * 0.08}
+      minAzimuthAngle={-Math.PI * 0.65}
+      maxAzimuthAngle={Math.PI * 0.65}
       minDistance={0.12}
-      maxDistance={2.8}
+      maxDistance={1.62}
     />
   );
 }

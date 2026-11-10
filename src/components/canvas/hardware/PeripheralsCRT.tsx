@@ -444,6 +444,7 @@ export interface PeripheralsCRTProps {
 }
 
 export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
+  const currentStep = useBuildStore((s) => s.currentStep);
   const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
   const isCrtPowered = useBuildStore((s) => s.isCrtPowered);
   const toggleCrtPower = useBuildStore((s) => s.toggleCrtPower);
@@ -881,6 +882,9 @@ export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
 
   // Điều khiển các tham số Shader của đèn hình CRT trong useFrame
   useFrame((state, delta) => {
+    // Khi chưa tới Step 10, bỏ qua render màn hình CRT để tối ưu GPU và CPU
+    if (currentStep < 10) return;
+
     const dt = Math.min(delta, 0.05);
     const isCrtActive = isPoweredOn && isCrtPowered;
 

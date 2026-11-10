@@ -928,19 +928,25 @@ export function Workbench() {
           />
         )}
 
-        {currentStep >= 6 && !isCaseCoverClosed && (
-          <PowerAndFrontCables
-            powerCableProgress={powerCableProgress}
-            frontPanelProgress={frontPanelProgress}
-          />
+        {currentStep >= 6 && (
+          <group visible={!isCaseCoverClosed}>
+            <PowerAndFrontCables
+              powerCableProgress={powerCableProgress}
+              frontPanelProgress={frontPanelProgress}
+            />
+          </group>
         )}
 
-        {currentStep >= 7 && !isCaseCoverClosed && (
-          <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
+        {currentStep >= 7 && (
+          <group visible={!isCaseCoverClosed}>
+            <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
+          </group>
         )}
 
-        {currentStep >= 9 && !isCaseCoverClosed && (
-          <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
+        {currentStep >= 9 && (
+          <group visible={!isCaseCoverClosed}>
+            <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
+          </group>
         )}
       </group>
 
@@ -950,10 +956,11 @@ export function Workbench() {
         <BenchAssemblyGroup />
       </group>
 
-      {/* 6B. CỤM NGOẠI VI MÀN HÌNH CRT SONY TRINITRON 15" + BÀN PHÍM IBM MODEL M + CHUỘT BI (STEP 10) */}
-      {currentStep >= 10 && (
+      {/* 6B. CỤM NGOẠI VI MÀN HÌNH CRT SONY TRINITRON 15" + BÀN PHÍM IBM MODEL M + CHUỘT BI (STEP 10)
+             Giữ mounted liên tục để nạp sẵn Shader & CanvasTexture vào VRAM, loại bỏ 100% lag giật khi vào Step 10 */}
+      <group visible={currentStep >= 10}>
         <PeripheralsCRT peripheralsProgress={peripheralsProgress} />
-      )}
+      </group>
 
         {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0 VÀ STEP 10) */}
         <group ref={targetRingRef} position={[0, 0.015, 0]} visible={currentStep >= 1 && currentStep < 10}>
