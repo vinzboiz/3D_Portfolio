@@ -15,15 +15,26 @@ const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
 const HOME_FOV = 70.0;
 const WORKBENCH_FOV = 40.0;
 
+const HOME_CAM_POS = new THREE.Vector3(
+  -4.5 * S.DESK_ITEMS_SCALE,
+  6.0 * S.DESK_ITEMS_SCALE,
+  6.8 * S.DESK_ITEMS_SCALE
+);
+const HOME_BASE_TARGET = new THREE.Vector3(
+  0.0 * S.DESK_ITEMS_SCALE,
+  1.35 * S.DESK_ITEMS_SCALE,
+  -0.5 * S.DESK_ITEMS_SCALE
+);
+
 export function CameraRig() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const freeCam = useBuildStore((s) => s.freeCam);
   const { camera } = useThree();
 
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  const desiredPos = useRef(new THREE.Vector3(-0.75, 0.88, 1.48));
-  const desiredTarget = useRef(new THREE.Vector3(0.05, 0.05, -0.25));
-  const smoothedTarget = useRef(new THREE.Vector3(0.05, 0.05, -0.25));
+  const desiredPos = useRef(HOME_CAM_POS.clone());
+  const desiredTarget = useRef(HOME_BASE_TARGET.clone());
+  const smoothedTarget = useRef(HOME_BASE_TARGET.clone());
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
@@ -77,11 +88,11 @@ export function CameraRig() {
 
     // HẠNG MỤC 1: TÍNH TOÁN CAMERA GÓC RỘNG XÉO TỪ GÓC TRÊN BÊN TRÁI PHÒNG Ở HOME
     const aspect = r3fState.size.width / Math.max(1, r3fState.size.height);
-    const homeX = -0.75 * (aspect < 1.0 ? 0.85 : 1.0);
-    const homeY = 0.88 * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
-    const homeZ = Math.min(1.70, 1.48 * (aspect < 1.0 ? 1.08 : 1.0));
+    const homeX = HOME_CAM_POS.x * (aspect < 1.0 ? 0.85 : 1.0);
+    const homeY = HOME_CAM_POS.y * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
+    const homeZ = HOME_CAM_POS.z * (aspect < 1.0 ? 1.08 : 1.0);
     const homePos = new THREE.Vector3(homeX, homeY, homeZ);
-    const homeTarget = new THREE.Vector3(0.05, 0.05, -0.25);
+    const homeTarget = HOME_BASE_TARGET.clone();
 
     const persCam = camera as THREE.PerspectiveCamera;
 
@@ -183,20 +194,18 @@ export function CameraRig() {
         mouseLerpSpeed
       );
 
-      // Trọng số fade mượt khi bắt đầu cuộn vào About Step 1
-      const homeProgress = THREE.MathUtils.clamp(scrollVal / 0.05, 0, 1);
-      const mouseWeight = isPureHome ? 1.0 - homeProgress : 0.0;
+      // Trọng số fade mượt theo độ mở portalProgress
+      const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
+      const homeWeight = isPureHome ? THREE.MathUtils.clamp(1 - portalProgress, 0, 1) : 0.0;
 
-      // Độ lệch mục tiêu nhìn (Look Target Offset)
-      // Chuột trái/phải: xoay bao quát phòng và dãy màn hình
-      // Chuột lên/xuống: ngước nhìn tường / cúi nhìn mặt bàn
-      const lookOffsetX = mouseWeight * smoothedMouse.current.x * 0.45;
-      const lookOffsetY = mouseWeight * smoothedMouse.current.y * 0.28;
-      const lookOffsetZ = mouseWeight * (-smoothedMouse.current.x * 0.22);
+      // Giảm mạnh biên độ xoay theo chuột để góc nhìn đằm và tinh tế
+      const yawOffset = smoothedMouse.current.x * (1.15 * S.DESK_ITEMS_SCALE) * homeWeight;
+      const pitchOffset = smoothedMouse.current.y * (0.65 * S.DESK_ITEMS_SCALE) * homeWeight;
+      const depthOffset = -smoothedMouse.current.x * (0.45 * S.DESK_ITEMS_SCALE) * homeWeight;
 
-      desiredTarget.current.x += lookOffsetX;
-      desiredTarget.current.y += lookOffsetY;
-      desiredTarget.current.z += lookOffsetZ;
+      desiredTarget.current.x += yawOffset;
+      desiredTarget.current.y += pitchOffset;
+      desiredTarget.current.z += depthOffset;
 
       const isTransitioning = state.stageTransition !== 'IDLE';
 
