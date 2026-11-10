@@ -27,6 +27,20 @@ export function CameraRig() {
   const wasInspectRef = useRef(false);
   const prevTransitionRef = useRef<ProjectAppTransition>('IDLE');
 
+  // Stationary Camera Look-Around: Lắng nghe chuột toàn màn hình (Window Level)
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const smoothedMouse = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // Chuẩn hóa về khoảng [-1, 1] (Trái -> Phải: -1 -> 1, Dưới -> Trên: -1 -> 1)
+      mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   useEffect(() => {
     const stepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
     desiredPos.current.set(...stepData.cameraPos);
@@ -147,15 +161,38 @@ export function CameraRig() {
         persCam.updateProjectionMatrix();
       }
 
-      // Hiệu ứng chuột nhìn quanh: CHỈ áp dụng cho riêng HOME (Step 00), tuyệt đối KHÔNG áp dụng cho các trang khác
+      // Stationary Camera Look-Around:
+      // Tọa độ đứng camera đứng yên tuyệt đối tại homePos.
+      // Chỉ xoay góc nhìn (Target) bao quát mặt bàn và căn phòng theo vị trí chuột.
+      // CHỈ kích hoạt khi đang ở Home (Step 00, scrollVal <= 0.05, IDLE).
       const isPureHome =
         state.currentStep === 0 &&
         scrollVal <= 0.05 &&
         state.stageTransition === 'IDLE';
-      const mouseWeight = isPureHome ? 1.0 : 0.0;
-      const lookOffsetX = mouseWeight * r3fState.pointer.x * 0.35;
-      const lookOffsetY = mouseWeight * r3fState.pointer.y * 0.20;
-      const lookOffsetZ = mouseWeight * (-r3fState.pointer.x * 0.15);
+
+      // Nội suy mượt mà (Damping) tọa độ chuột
+      const mouseLerpSpeed = safeDelta * 5.0;
+      smoothedMouse.current.x = THREE.MathUtils.lerp(
+        smoothedMouse.current.x,
+        isPureHome ? mouseRef.current.x : 0,
+        mouseLerpSpeed
+      );
+      smoothedMouse.current.y = THREE.MathUtils.lerp(
+        smoothedMouse.current.y,
+        isPureHome ? mouseRef.current.y : 0,
+        mouseLerpSpeed
+      );
+
+      // Trọng số fade mượt khi bắt đầu cuộn vào About Step 1
+      const homeProgress = THREE.MathUtils.clamp(scrollVal / 0.05, 0, 1);
+      const mouseWeight = isPureHome ? 1.0 - homeProgress : 0.0;
+
+      // Độ lệch mục tiêu nhìn (Look Target Offset)
+      // Chuột trái/phải: xoay bao quát phòng và dãy màn hình
+      // Chuột lên/xuống: ngước nhìn tường / cúi nhìn mặt bàn
+      const lookOffsetX = mouseWeight * smoothedMouse.current.x * 0.45;
+      const lookOffsetY = mouseWeight * smoothedMouse.current.y * 0.28;
+      const lookOffsetZ = mouseWeight * (-smoothedMouse.current.x * 0.22);
 
       desiredTarget.current.x += lookOffsetX;
       desiredTarget.current.y += lookOffsetY;
