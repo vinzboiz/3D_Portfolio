@@ -68,6 +68,45 @@ export function CameraRig() {
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
+    // Helper giới hạn camera trong khuôn khổ phòng vuông 6 mặt
+    const clampCameraInRoom = () => {
+      const minX = -S.ROOM.SIZE / 2 + 0.15; // -1.275m
+      const maxX = S.ROOM.SIZE / 2 - 0.15;  // +1.275m
+      const minY = S.FLOOR_Y + 0.12;        // -0.63m (trên sàn 12cm)
+      const maxY = S.FLOOR_Y + S.ROOM.HEIGHT - 0.15; // +1.90m (dưới trần 15cm)
+      const minZ = S.ROOM.WALL_Z + 0.18;    // -0.57m (ở phía trước bức tường CRT)
+      const maxZ = S.ROOM.FRONT_Z - 0.15;   // +1.75m (ở phía trong bức tường trước)
+
+      camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z, minZ, maxZ);
+    };
+
+    // =========================================================================
+    // CHẾ ĐỘ TƯƠNG TÁC TỰ DO / INSPECT (FREE CAM & ZOOM TO CURSOR)
+    // Ưu tiên cao nhất: Khi bật FreeCam, OrbitControls toàn quyền điều khiển Camera
+    // =========================================================================
+    const isInspect = state.freeCam;
+
+    if (isInspect) {
+      if (!wasInspectRef.current && controlsRef.current) {
+        controlsRef.current.target.copy(smoothedTarget.current);
+        controlsRef.current.update();
+      }
+      wasInspectRef.current = true;
+      controlsRef.current?.update();
+      clampCameraInRoom();
+      return;
+    }
+
+    if (wasInspectRef.current) {
+      wasInspectRef.current = false;
+      desiredPos.current.copy(camera.position);
+      if (controlsRef.current) {
+        smoothedTarget.current.copy(controlsRef.current.target);
+      }
+    }
+
     // Chỉ tự động điều tiết scrollCurrent khi đang ở trạng thái IDLE
     // Khi đang có stageTransition (như HOME_TO_ABOUT, TO_HOME, v.v.), transition đó sẽ tự điều phối tiến trình
     if (state.stageTransition === 'IDLE') {
@@ -97,20 +136,6 @@ export function CameraRig() {
     const homeTarget = HOME_BASE_TARGET.clone();
 
     const persCam = camera as THREE.PerspectiveCamera;
-
-    // Helper giới hạn camera trong khuôn khổ phòng vuông 6 mặt
-    const clampCameraInRoom = () => {
-      const minX = -S.ROOM.SIZE / 2 + 0.15; // -1.275m
-      const maxX = S.ROOM.SIZE / 2 - 0.15;  // +1.275m
-      const minY = S.FLOOR_Y + 0.12;        // -0.63m (trên sàn 12cm)
-      const maxY = S.FLOOR_Y + S.ROOM.HEIGHT - 0.15; // +1.90m (dưới trần 15cm)
-      const minZ = S.ROOM.WALL_Z + 0.18;    // -0.57m (ở phía trước bức tường CRT)
-      const maxZ = S.ROOM.FRONT_Z - 0.15;   // +1.75m (ở phía trong bức tường trước)
-
-      camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
-      camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z, minZ, maxZ);
-    };
 
     // YÊU CẦU #1: KHI CHUYỂN TỪ HOME SANG PROJECTS HOẶC MY CV (HOME_TO_PROJECT / HOME_TO_MY_CV):
     if (state.stageTransition === 'HOME_TO_PROJECT' || state.stageTransition === 'HOME_TO_MY_CV') {
@@ -146,7 +171,7 @@ export function CameraRig() {
 
     // YÊU CẦU #2: KHI TRONG ĐOẠN HOME (0.0) <-> ABOUT STEP 1 (1.0):
     if (
-      scrollVal <= 1.0 &&
+      scrollVal < 1.0 &&
       state.stageTransition !== 'TO_PROJECT' &&
       state.stageTransition !== 'TO_MY_CV'
     ) {
@@ -338,22 +363,6 @@ export function CameraRig() {
 
     prevTransitionRef.current = transition;
 
-    // Chế độ tương tác tự do / Inspect (Free Cam & Zoom to Cursor) được kích hoạt bởi state.freeCam
-    const isInspect = state.freeCam;
-
-    if (isInspect) {
-      if (!wasInspectRef.current && controlsRef.current) {
-        controlsRef.current.target.copy(smoothedTarget.current);
-        controlsRef.current.update();
-      }
-      wasInspectRef.current = true;
-      controlsRef.current?.update();
-      clampCameraInRoom();
-      return;
-    }
-
-    wasInspectRef.current = false;
-
     // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.5
     const camAlpha = Math.min(1, safeDelta * 3.5);
 
@@ -368,11 +377,11 @@ export function CameraRig() {
       ref={controlsRef}
       enabled={freeCam}
       enableDamping
-      dampingFactor={0.07}
+      dampingFactor={0.08}
       maxPolarAngle={Math.PI / 2 + 0.04}
-      minPolarAngle={Math.PI * 0.12}
-      minDistance={0.35}
-      maxDistance={2.1}
+      minPolarAngle={Math.PI * 0.08}
+      minDistance={0.05}
+      maxDistance={4.2}
       zoomToCursor={true}
     />
   );
