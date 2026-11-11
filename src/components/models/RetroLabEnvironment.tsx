@@ -785,6 +785,9 @@ function CRTVideoWall() {
 // 2. TOÀN CẢNH PHÒNG RETRO LAB VUÔNG 1997 (SQUARE LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
+  const ceilingLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const ceilingTargetRef = useRef<THREE.Object3D | null>(null);
+
   const { floorMat, wallMat, ceilingMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
@@ -806,6 +809,13 @@ export function RetroLabEnvironment() {
         side: THREE.DoubleSide,
       }),
     };
+  }, []);
+
+  useEffect(() => {
+    if (ceilingLightRef.current && ceilingTargetRef.current) {
+      ceilingLightRef.current.target = ceilingTargetRef.current;
+      ceilingTargetRef.current.updateMatrixWorld();
+    }
   }, []);
 
   useEffect(() => {
@@ -899,6 +909,9 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
       </mesh>
 
+      {/* Điểm neo đích ngắm của đèn trần (Rọi thẳng vuông góc xuống sàn phòng) */}
+      <object3D ref={ceilingTargetRef} position={[0, S.FLOOR_Y, roomCenterZ]} />
+
       {/* 8. ĐÈN TUÝP HUỲNH QUANG TRẦN PHÒNG LAB (OVERHEAD RETRO FLUORESCENT FIXTURE) */}
       <group position={[0, ceilingY - 0.03, roomCenterZ]}>
         {/* Máng đèn kim loại trắng ngà */}
@@ -921,18 +934,25 @@ export function RetroLabEnvironment() {
         {/* Nguồn sáng từ trần rọi từ trên xuống chiếu sáng toàn bộ căn phòng */}
         <pointLight
           position={[0, -0.15, 0]}
-          intensity={2.6}
-          distance={5.5}
-          decay={1.6}
+          intensity={2.8}
+          distance={6.0}
+          decay={1.5}
           color="#f0f6ff"
         />
         <directionalLight
+          ref={ceilingLightRef}
           position={[0, -0.05, 0]}
-          intensity={1.2}
+          intensity={1.1}
           color="#f5f8ff"
           castShadow
           shadow-mapSize={[1024, 1024]}
-          shadow-bias={-0.0002}
+          shadow-bias={-0.0003}
+          shadow-camera-left={-S.ROOM.SIZE}
+          shadow-camera-right={S.ROOM.SIZE}
+          shadow-camera-top={S.ROOM.SIZE}
+          shadow-camera-bottom={-S.ROOM.SIZE}
+          shadow-camera-near={0.1}
+          shadow-camera-far={4.5}
         />
       </group>
     </group>
