@@ -6,7 +6,10 @@
  * BẮT BUỘC đọc thông số từ file này, không hardcode số riêng.
  */
 
+export const DESK_Z_OFFSET = 2.4; // Khoảng cách đẩy bàn làm việc tiến về phía trước theo trục +Z
+
 export const S = {
+  DESK_Z_OFFSET: 2.4, // Độ lệch trục Z của bàn làm việc, đèn bàn, thảm cắt và linh kiện
   FLOOR_Y: -0.75, // Mặt sàn phòng thí nghiệm; mặt bàn chuẩn ở y = 0.0
 
   TABLE: {
@@ -33,13 +36,13 @@ export const S = {
   DESK_ITEMS_SCALE: 0.305 / 2.8,
 
   /**
-   * Phòng Retro Lab hình vuông & Bức tường màn hình CRT sát tường
+   * Phòng Retro Lab & Bức tường màn hình CRT sát tường sau
    */
   ROOM: {
-    SIZE: 2.85, // Phòng hình vuông: Rộng 2.85m x Sâu 2.85m (vừa khít bề ngang dãy màn hình 2.64m)
+    SIZE: 2.85, // Bề ngang phòng (trục X): 2.85m (vừa khít bề ngang dãy màn hình 2.64m)
     WALL_Z: -0.75, // Tọa độ Z bức tường màn hình (đáy màn hình áp sát tường sau z = -0.95m)
     BACK_WALL_Z: -0.95, // Tường sau của phòng
-    FRONT_Z: 1.9, // Rìa trước phòng (1.90 - (-0.95) = 2.85m)
+    FRONT_Z: 4.8, // Rìa trước phòng: 4.8m (mở rộng về phía trước +Z để chứa bàn +2.4m và camera)
     HEIGHT: 2.8, // Chiều cao phòng
   },
 
@@ -73,13 +76,13 @@ export function validateScaleContract(): { valid: boolean; logs: string[] } {
     logs.push(`PASS: Chiều dài bàn ${S.TABLE.W}m hợp lệ (<= 2.4m)`);
   }
 
-  // 3. Phòng hình vuông: Chiều rộng == Chiều sâu
+  // 3. Chiều sâu phòng đủ không gian cho bàn và camera
   const roomDepth = S.ROOM.FRONT_Z - S.ROOM.BACK_WALL_Z;
-  if (Math.abs(S.ROOM.SIZE - roomDepth) > 0.01) {
+  if (roomDepth < 5.0) {
     valid = false;
-    logs.push(`FAIL: Phòng không vuông: rộng ${S.ROOM.SIZE}m != sâu ${roomDepth}m`);
+    logs.push(`FAIL: Chiều sâu phòng ${roomDepth.toFixed(2)}m chưa đủ chứa bàn offset +2.4m`);
   } else {
-    logs.push(`PASS: Phòng hình vuông hoàn hảo ${S.ROOM.SIZE}m x ${roomDepth.toFixed(2)}m`);
+    logs.push(`PASS: Chiều sâu phòng ${roomDepth.toFixed(2)}m rộng rãi cho bàn và quỹ đạo camera`);
   }
 
   // 4. Dãy màn hình sát tường sau
@@ -91,11 +94,11 @@ export function validateScaleContract(): { valid: boolean; logs: string[] } {
     logs.push(`PASS: Dãy màn hình kê sát tường sau (${wallGap.toFixed(3)}m gap)`);
   }
 
-  // 5. Bàn gần dãy màn hình (khoảng cách mép sau bàn tới mặt trước màn hình <= 0.15m)
-  const tableBackZ = -S.TABLE.D / 2; // -0.475m
+  // 5. Khoảng cách thoáng giữa bàn làm việc và dàn kệ màn hình CRT (2.4m)
+  const tableBackZ = -S.TABLE.D / 2 + S.DESK_Z_OFFSET; // -0.475 + 2.4 = 1.925m
   const monitorFrontZ = S.ROOM.WALL_Z + 0.38 / 2; // -0.56m
   const deskToMonitorGap = Math.abs(tableBackZ - monitorFrontZ);
-  logs.push(`PASS: Khoảng cách sau bàn tới màn hình: ${deskToMonitorGap.toFixed(3)}m`);
+  logs.push(`PASS: Khoảng cách sau bàn tới dàn màn hình: ${deskToMonitorGap.toFixed(3)}m (thoáng đãng ~2.4m)`);
 
   return { valid, logs };
 }

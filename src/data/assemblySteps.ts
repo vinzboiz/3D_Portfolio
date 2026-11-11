@@ -1,4 +1,4 @@
-import { S } from '../constants/scale';
+import { S, DESK_Z_OFFSET } from '../constants/scale';
 
 export interface AssemblyStepSpec {
   label: string;
@@ -32,7 +32,7 @@ export interface AssemblyStepData {
 const dScale = (pos: [number, number, number]): [number, number, number] => [
   Number((pos[0] * S.DESK_ITEMS_SCALE).toFixed(4)),
   Number((pos[1] * S.DESK_ITEMS_SCALE).toFixed(4)),
-  Number((pos[2] * S.DESK_ITEMS_SCALE).toFixed(4)),
+  Number((pos[2] * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET).toFixed(4)),
 ];
 
 export const ASSEMBLY_STEPS: AssemblyStepData[] = [
@@ -73,8 +73,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ASUS // INTEL // COOLER MASTER',
     category: 'STEP 01 // CORE BENCHMARK ASSEMBLY',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-3.2, 4.2, 5.2]),
-    cameraTarget: dScale([-0.4, 0.35, -0.1]),
+    cameraPos: dScale([-2.09, 5.64, 6.35]),
+    cameraTarget: dScale([-0.35, 0.22, -0.1]),
     hardwareSpecs: [
       { label: 'MOTHERBOARD', value: 'ASUS TX97-E REV 1.02 (220x280MM)' },
       { label: 'PROCESSOR', value: 'INTEL PENTIUM® MMX™ 233 MHz (SOCKET 7)' },
@@ -101,8 +101,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'IN WIN DEVELOPMENT INC.',
     category: 'STEP 02 // CHASSIS & MECHANICAL PREP',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-3.0, 4.0, 5.4]),
-    cameraTarget: dScale([0.1, 1.4, 0.1]),
+    cameraPos: dScale([-6.94, 4.52, 8.15]),
+    cameraTarget: dScale([-0.2, 1.75, 0.1]),
     hardwareSpecs: [
       { label: 'CHASSIS MODEL', value: 'INWIN A500 VERTICAL MID-TOWER' },
       { label: 'DRIVE BAYS', value: '4x 5.25" EXT + 2x 3.5" (60% LEFT BAY)' },
@@ -129,8 +129,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SEA SONIC ELECTRONICS CO.',
     category: 'STEP 03 // POWER DELIVERY & AC SWITCHING',
     zoneId: 'ZONE-C04',
-    cameraPos: dScale([-2.8, 4.5, 4.8]),
-    cameraTarget: dScale([0.4, 2.3, 0.0]),
+    cameraPos: dScale([-6.31, 5.13, -5.5]),
+    cameraTarget: dScale([0.0, 2.65, -0.5]),
     hardwareSpecs: [
       { label: 'MAX OUTPUT', value: '200W (+5V 20A / +12V 8A / -5V / -12V)' },
       { label: 'EXHAUST FAN', value: '80MM BLACK FAN + GREEN HUB + WIRE GRILLE' },
@@ -157,8 +157,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ASUS // INWIN INTEGRATION',
     category: 'STEP 04 // SYSTEM INTEGRATION & ALIGNMENT',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-3.2, 4.2, 5.2]),
-    cameraTarget: dScale([0.2, 1.6, 0.15]),
+    cameraPos: dScale([-7.1, 4.27, 5.2]),
+    cameraTarget: dScale([0.15, 1.65, 0.2]),
     hardwareSpecs: [
       { label: 'REAR I/O SHIELD', value: 'DUAL PS/2 + 2x USB + 2x COM + LPT1' },
       { label: 'MOUNTING POINTS', value: '6x BRASS STANDOFFS + 6x M3 SCREWS' },
@@ -185,8 +185,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'CREATIVE // SONY // QUANTUM',
     category: 'STEP 05 // DATA STORAGE & MEDIA BAYS',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([-1.8, 4.0, 5.6]),
-    cameraTarget: dScale([0.1, 1.75, 0.3]),
+    cameraPos: dScale([-4.42, 4.34, 8.46]),
+    cameraTarget: dScale([0.0, 2.15, 0.7]),
     hardwareSpecs: [
       { label: 'OPTICAL 5.25"', value: 'CREATIVE INFRA 24X MX CD-ROM' },
       { label: 'FLOPPY 3.5"', value: 'SONY MPF920 1.44MB + RESUME_CV DISK' },
@@ -213,8 +213,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SEASONIC // AMPHENOL',
     category: 'STEP 06 // POWER DISTRIBUTION HARNESS',
     zoneId: 'ZONE-C04',
-    cameraPos: dScale([-2.4, 4.4, 5.0]),
-    cameraTarget: dScale([0.2, 1.7, 0.1]),
+    cameraPos: dScale([-6.61, 3.08, -4.11]),
+    cameraTarget: dScale([0.35, 2.05, -0.05]),
     hardwareSpecs: [
       { label: 'MAIN POWER', value: 'DUAL 6-PIN P8 & P9 (BLACK-TO-BLACK)' },
       { label: 'DRIVE POWER', value: '2x MOLEX 8981 + 1x BERG 4-PIN FDD' },
@@ -241,8 +241,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'AMPHENOL // ASUS',
     category: 'STEP 07 // HIGH-SPEED DATA BUS ROUTING',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([-2.2, 4.2, 5.0]),
-    cameraTarget: dScale([0.2, 1.6, 0.15]),
+    cameraPos: dScale([-6.46, 2.98, -3.91]),
+    cameraTarget: dScale([0.35, 1.95, 0.15]),
     hardwareSpecs: [
       { label: 'PRIMARY IDE', value: '40-PIN S-CURVE TO QUANTUM 3.2GB HDD' },
       { label: 'SECONDARY IDE', value: '40-PIN RIBBON TO CREATIVE 24X CD-ROM' },
@@ -269,8 +269,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ENLIGHT // ASUS PINOUT',
     category: 'STEP 08 // TELEMETRY & CONTROL BUS',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-2.0, 3.8, 4.8]),
-    cameraTarget: dScale([0.25, 1.25, 0.25]),
+    cameraPos: dScale([-6.32, 2.62, -3.56]),
+    cameraTarget: dScale([0.35, 1.15, 0.35]),
     hardwareSpecs: [
       { label: 'LED WIRES', value: 'RED-WHITE (HDD) + GREEN-WHITE (PWR)' },
       { label: 'SWITCH WIRES', value: 'ORANGE-WHITE (RST) + BLK-YLW (TURBO)' },
@@ -297,8 +297,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'DIAMOND // 3DFX // CREATIVE LABS',
     category: 'STEP 09 // 3D GRAPHICS & WAVETABLE AUDIO',
     zoneId: 'ZONE-B03',
-    cameraPos: dScale([-2.5, 4.2, 5.0]),
-    cameraTarget: dScale([0.15, 1.4, 0.05]),
+    cameraPos: dScale([-6.5, 3.4, -3.37]),
+    cameraTarget: dScale([0.1, 1.35, -0.4]),
     hardwareSpecs: [
       { label: '3D ACCELERATOR', value: '3DFX VOODOO (FBI + TMU + 8x EDO ARC)' },
       { label: 'VGA SLOT', value: 'PCI SLOT 1 + BLUE DB-15 D-SUB BRACKET' },
@@ -325,8 +325,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SONY // IBM // LOGITECH // AWARD',
     category: 'STEP 10 // ENCLOSURE, PERIPHERALS & SYSTEM POST',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([0.0, 3.6, 6.2]),
-    cameraTarget: dScale([0.05, 1.5, 0.25]),
+    cameraPos: dScale([0.2, 4.42, 13.59]),
+    cameraTarget: dScale([0.05, 1.65, 0.25]),
     hardwareSpecs: [
       { label: 'CRT MONITOR', value: 'SONY TRINITRON MULTISCAN 100ES (15")' },
       { label: 'KEYBOARD', value: 'IBM MODEL M 102-KEY ISO BUCKLING SPRING' },
@@ -353,8 +353,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'CREATIVE INFRA // VINZBOIZ 3D STUDIO',
     category: 'STEP 11 // OPTICAL MEDIA & INTERACTIVE PROJECTS',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([0.0, 3.6, 6.2]),
-    cameraTarget: dScale([0.05, 1.5, 0.25]),
+    cameraPos: dScale([0.2, 4.42, 13.59]),
+    cameraTarget: dScale([0.05, 1.65, 0.25]),
     hardwareSpecs: [
       { label: 'OPTICAL DISC', value: 'PORTFOLIO SOURCE CODE (650 MB MASTER)' },
       { label: 'DRIVE UNIT', value: 'CREATIVE INFRA 24X MX (ATAPI SECONDARY MASTER)' },
@@ -381,8 +381,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SONY CORP // MICROSOFT WORDPAD',
     category: 'STEP 12 // REMOVABLE MEDIA & CAREER DOSSIER',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([0.0, 3.6, 6.2]),
-    cameraTarget: dScale([0.05, 1.5, 0.25]),
+    cameraPos: dScale([0.2, 4.42, 13.59]),
+    cameraTarget: dScale([0.05, 1.65, 0.25]),
     hardwareSpecs: [
       { label: 'REMOVABLE MEDIA', value: 'SONY 2HD 3.5" DISKETTE (1.44 MB FORMATTED)' },
       { label: 'DRIVE UNIT', value: 'SONY MPF920 DIRECT DRIVE FLOPPY (A:)' },

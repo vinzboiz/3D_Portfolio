@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBuildStore } from '../../store/useBuildStore';
-import { S } from '../../constants/scale';
+import { S, DESK_Z_OFFSET } from '../../constants/scale';
 
 // =============================================================================
 // HẰNG SỐ KÍCH THƯỚC CHUẨN MÀN HÌNH CRT 17" (HUMAN SCALE: 1 UNIT = 1 MÉT)
@@ -782,7 +782,179 @@ function CRTVideoWall() {
 }
 
 // =============================================================================
-// 2. TOÀN CẢNH PHÒNG RETRO LAB VUÔNG 1997 (SQUARE LAB ENVIRONMENT)
+// 1.5. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (WOODEN ENGINEER CHAIR)
+// - Đặt trước bàn làm việc, dịch chuyển đồng bộ theo DESK_Z_OFFSET
+// - Tại Home: nằm ở [-0.15, S.FLOOR_Y, DESK_Z_OFFSET + 0.65], xoay nhẹ 0.15 rad
+// - Khi cuộn vào phòng (portalProgress 0 -> 1): trượt lùi sang trái [-0.95, S.FLOOR_Y, DESK_Z_OFFSET + 1.05]
+//   để nhường chỗ cho góc nhìn cận cảnh mặt bàn của người dùng!
+// =============================================================================
+function WoodenEngineerChair() {
+  const chairRef = useRef<THREE.Group>(null);
+  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
+
+  const { oakMat, darkSteelMat, chromeMat, casterMat } = useMemo(() => {
+    return {
+      oakMat: new THREE.MeshStandardMaterial({
+        color: '#6e472b',
+        roughness: 0.65,
+        metalness: 0.05,
+      }),
+      darkSteelMat: new THREE.MeshStandardMaterial({
+        color: '#222225',
+        roughness: 0.35,
+        metalness: 0.85,
+      }),
+      chromeMat: new THREE.MeshStandardMaterial({
+        color: '#c8d0d8',
+        roughness: 0.2,
+        metalness: 0.95,
+      }),
+      casterMat: new THREE.MeshStandardMaterial({
+        color: '#141416',
+        roughness: 0.8,
+        metalness: 0.1,
+      }),
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      oakMat.dispose();
+      darkSteelMat.dispose();
+      chromeMat.dispose();
+      casterMat.dispose();
+    };
+  }, [oakMat, darkSteelMat, chromeMat, casterMat]);
+
+  useFrame(() => {
+    if (!chairRef.current) return;
+    const p = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
+
+    const startZ = DESK_Z_OFFSET + 0.65;
+    const endZ = DESK_Z_OFFSET + 1.05;
+
+    const targetX = THREE.MathUtils.lerp(-0.15, -0.95, p);
+    const targetY = S.FLOOR_Y;
+    const targetZ = THREE.MathUtils.lerp(startZ, endZ, p);
+    const targetRotY = THREE.MathUtils.lerp(0.15, 0.75, p);
+
+    chairRef.current.position.set(targetX, targetY, targetZ);
+    chairRef.current.rotation.y = targetRotY;
+  });
+
+  return (
+    <group ref={chairRef} position={[-0.15, S.FLOOR_Y, DESK_Z_OFFSET + 0.65]} rotation={[0, 0.15, 0]}>
+      {/* A. Chân đế sao 5 cánh & Bánh xe nylon chạm sàn */}
+      <group position={[0, 0.045, 0]}>
+        {/* Khối hub trung tâm */}
+        <mesh material={darkSteelMat} position={[0, 0.02, 0]}>
+          <cylinderGeometry args={[0.06, 0.08, 0.05, 16]} />
+        </mesh>
+
+        {/* 5 nhánh chân đế sao */}
+        {[0, 1, 2, 3, 4].map((i) => {
+          const angle = (i * 2 * Math.PI) / 5;
+          const legLen = 0.28;
+          const lx = Math.sin(angle) * (legLen / 2);
+          const lz = Math.cos(angle) * (legLen / 2);
+          const wx = Math.sin(angle) * legLen;
+          const wz = Math.cos(angle) * legLen;
+
+          return (
+            <group key={`chair-leg-${i}`}>
+              <mesh
+                position={[lx, 0.015, lz]}
+                rotation={[0, angle, 0.06]}
+                material={darkSteelMat}
+                castShadow
+              >
+                <boxGeometry args={[0.035, 0.025, legLen]} />
+              </mesh>
+              {/* Bánh xe nylon */}
+              <group position={[wx, -0.015, wz]} rotation={[0, angle, 0]}>
+                <mesh material={casterMat} rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.022, 0.022, 0.018, 12]} />
+                </mesh>
+              </group>
+            </group>
+          );
+        })}
+      </group>
+
+      {/* B. Trụ nâng hơi Piston thủy lực */}
+      <group position={[0, 0.18, 0]}>
+        <mesh material={chromeMat}>
+          <cylinderGeometry args={[0.025, 0.025, 0.24, 16]} />
+        </mesh>
+        <mesh material={darkSteelMat} position={[0, -0.06, 0]}>
+          <cylinderGeometry args={[0.035, 0.038, 0.12, 16]} />
+        </mesh>
+      </group>
+
+      {/* C. Mặt đệm ngồi bằng Gỗ sồi cong nhẹ ở độ cao 0.45m so với sàn */}
+      <group position={[0, 0.42, 0]}>
+        <mesh material={darkSteelMat} position={[0, -0.03, 0]}>
+          <boxGeometry args={[0.22, 0.04, 0.24]} />
+        </mesh>
+        <RoundedBox
+          args={[0.42, 0.032, 0.40]}
+          radius={0.015}
+          smoothness={2}
+          position={[0, 0, 0]}
+          castShadow
+          receiveShadow
+          material={oakMat}
+        />
+      </group>
+
+      {/* D. Khung tựa lưng & Các nan gỗ sồi cổ điển */}
+      <group position={[0, 0.46, -0.18]}>
+        <mesh material={darkSteelMat} position={[0, 0.15, -0.02]} rotation={[-0.12, 0, 0]}>
+          <boxGeometry args={[0.05, 0.32, 0.02]} />
+        </mesh>
+        <RoundedBox
+          args={[0.38, 0.12, 0.028]}
+          radius={0.012}
+          smoothness={2}
+          position={[0, 0.28, 0]}
+          rotation={[-0.14, 0, 0]}
+          castShadow
+          material={oakMat}
+        />
+        {[-0.11, 0, 0.11].map((nanX, idx) => (
+          <mesh
+            key={`back-nan-${idx}`}
+            material={oakMat}
+            position={[nanX, 0.12, -0.01]}
+            rotation={[-0.12, 0, 0]}
+          >
+            <cylinderGeometry args={[0.009, 0.009, 0.22, 12]} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* E. Hai bên tay vịn Gỗ & Khung thép (Armrests) */}
+      {[-0.23, 0.23].map((sideX, idx) => (
+        <group key={`chair-arm-${idx}`} position={[sideX, 0.52, 0]}>
+          <mesh material={darkSteelMat} position={[0, -0.06, 0]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.16, 12]} />
+          </mesh>
+          <RoundedBox
+            args={[0.055, 0.022, 0.26]}
+            radius={0.008}
+            smoothness={2}
+            position={[0, 0.02, 0.02]}
+            castShadow
+            material={oakMat}
+          />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// =============================================================================
+// 2. TOÀN CẢNH PHÒNG RETRO LAB 1997 (RETRO LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
   const ceilingLightRef = useRef<THREE.DirectionalLight | null>(null);
@@ -826,8 +998,9 @@ export function RetroLabEnvironment() {
     };
   }, [floorMat, wallMat, ceilingMat]);
 
-  // Tâm Z của phòng hình vuông: giữa tường sau (BACK_WALL_Z = -0.95m) và rìa trước (FRONT_Z = 1.90m)
-  const roomCenterZ = (S.ROOM.BACK_WALL_Z + S.ROOM.FRONT_Z) / 2; // 0.475m
+  // Tâm Z & chiều sâu phòng mở rộng về phía trước để chứa bàn offset +2.4m và camera
+  const roomDepth = S.ROOM.FRONT_Z - S.ROOM.BACK_WALL_Z;
+  const roomCenterZ = (S.ROOM.BACK_WALL_Z + S.ROOM.FRONT_Z) / 2;
   const halfWall = S.ROOM.SIZE / 2; // 1.425m
   const wallCenterY = S.FLOOR_Y + S.ROOM.HEIGHT / 2; // -0.75 + 1.4 = 0.65m
   const ceilingY = S.FLOOR_Y + S.ROOM.HEIGHT; // 2.05m
@@ -835,33 +1008,33 @@ export function RetroLabEnvironment() {
   return (
     <group>
       {/* =======================================================================
-          A. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - KÊ SÁT TƯỜNG SAU & BÀN GẦN HƠN)
-          - Luôn mounted và luôn visible = true ở mọi thời điểm
-          - frustumCulled = false trên cả 2 InstancedMesh
+          A. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (KÊ SÁT TƯỜNG SAU, 100% HIỂN THỊ RÕ)
          ======================================================================= */}
       <CRTVideoWall />
 
       {/* =======================================================================
-          B. PHÒNG RETRO LAB HÌNH VUÔNG KÍN 6 MẶT (CHỐNG BUNG VIEW / CHỐNG LỌT CAMERA)
-          - Rộng 2.85m x Cao 2.80m x Sâu 2.85m
-          - Gồm đầy đủ 6 mặt: Sàn, Trần, Tường Sau, Tường Trước, Tường Trái, Tường Phải
-          - Kèm hộp bao bảo vệ (Enclosing Shell) BackSide chống hở góc
+          A2. CHIẾC GHẾ GỖ KỸ SƯ CỔ ĐIỂN (Đặt trước bàn, tự trượt lùi sang trái)
+         ======================================================================= */}
+      <WoodenEngineerChair />
+
+      {/* =======================================================================
+          B. PHÒNG RETRO LAB KÍN 6 MẶT (MỞ RỘNG SÀN VÀ CHIỀU SÂU VỀ PHÍA TRƯỚC +Z)
          ======================================================================= */}
 
       {/* 0. HỘP BAO BẢO VỆ TOÀN PHÒNG (INVERTED ENCLOSING SHELL - CHỐNG LỘ VOID TỪ MỌI GÓC) */}
       <mesh position={[0, wallCenterY, roomCenterZ]}>
-        <boxGeometry args={[S.ROOM.SIZE + 0.04, S.ROOM.HEIGHT + 0.04, S.ROOM.SIZE + 0.04]} />
+        <boxGeometry args={[S.ROOM.SIZE + 0.04, S.ROOM.HEIGHT + 0.04, roomDepth + 0.04]} />
         <meshBasicMaterial color="#040608" side={THREE.BackSide} />
       </mesh>
 
-      {/* 1. Sàn xưởng hình vuông (Y = S.FLOOR_Y = -0.75m) */}
+      {/* 1. Sàn xưởng hình chữ nhật mở rộng về phía trước (Y = S.FLOOR_Y = -0.75m) */}
       <mesh
         position={[0, S.FLOOR_Y, roomCenterZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         material={floorMat}
       >
-        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
+        <planeGeometry args={[S.ROOM.SIZE, roomDepth]} />
       </mesh>
 
       {/* 2. Tường sau (Z = S.ROOM.BACK_WALL_Z = -0.95m, ngay sát sau dãy màn hình) */}
@@ -869,7 +1042,7 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 4. Tường trước (Z = S.ROOM.FRONT_Z = 1.90m, khép kín hoàn toàn phòng phía trước) */}
+      {/* 4. Tường trước (Z = S.ROOM.FRONT_Z, khép kín hoàn toàn phòng phía trước) */}
       <mesh
         position={[0, wallCenterY, S.ROOM.FRONT_Z]}
         rotation={[0, Math.PI, 0]}
@@ -879,24 +1052,24 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 5. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 5. Tường trái (X = -1.425m) */}
       <mesh
         position={[-halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, Math.PI / 2, 0]}
         receiveShadow
         material={wallMat}
       >
-        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
+        <planeGeometry args={[roomDepth, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 6. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 6. Tường phải (X = +1.425m) */}
       <mesh
         position={[halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, -Math.PI / 2, 0]}
         receiveShadow
         material={wallMat}
       >
-        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
+        <planeGeometry args={[roomDepth, S.ROOM.HEIGHT]} />
       </mesh>
 
       {/* 7. Trần xưởng kín (Y = 2.05m) */}
@@ -906,14 +1079,14 @@ export function RetroLabEnvironment() {
         receiveShadow
         material={ceilingMat}
       >
-        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.SIZE]} />
+        <planeGeometry args={[S.ROOM.SIZE, roomDepth]} />
       </mesh>
 
-      {/* Điểm neo đích ngắm của đèn trần (Rọi thẳng vuông góc xuống sàn phòng) */}
-      <object3D ref={ceilingTargetRef} position={[0, S.FLOOR_Y, roomCenterZ]} />
+      {/* Điểm neo đích ngắm của đèn trần (Rọi thẳng xuống trung tâm khu vực bàn làm việc) */}
+      <object3D ref={ceilingTargetRef} position={[0, S.FLOOR_Y, DESK_Z_OFFSET]} />
 
       {/* 8. ĐÈN TUÝP HUỲNH QUANG TRẦN PHÒNG LAB (OVERHEAD RETRO FLUORESCENT FIXTURE) */}
-      <group position={[0, ceilingY - 0.03, roomCenterZ]}>
+      <group position={[0, ceilingY - 0.03, DESK_Z_OFFSET * 0.75]}>
         {/* Máng đèn kim loại trắng ngà */}
         <mesh position={[0, 0.015, 0]}>
           <boxGeometry args={[1.4, 0.035, 0.22]} />
@@ -935,7 +1108,7 @@ export function RetroLabEnvironment() {
         <pointLight
           position={[0, -0.15, 0]}
           intensity={2.8}
-          distance={6.0}
+          distance={6.5}
           decay={1.5}
           color="#f0f6ff"
         />
@@ -949,10 +1122,10 @@ export function RetroLabEnvironment() {
           shadow-bias={-0.0003}
           shadow-camera-left={-S.ROOM.SIZE}
           shadow-camera-right={S.ROOM.SIZE}
-          shadow-camera-top={S.ROOM.SIZE}
-          shadow-camera-bottom={-S.ROOM.SIZE}
+          shadow-camera-top={roomDepth / 2 + 0.5}
+          shadow-camera-bottom={-(roomDepth / 2 + 0.5)}
           shadow-camera-near={0.1}
-          shadow-camera-far={4.5}
+          shadow-camera-far={5.5}
         />
       </group>
     </group>

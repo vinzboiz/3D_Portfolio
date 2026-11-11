@@ -5,12 +5,12 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useBuildStore, type ProjectAppTransition } from '../../store/useBuildStore';
 import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
-import { S } from '../../constants/scale';
+import { S, DESK_Z_OFFSET } from '../../constants/scale';
 
 const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
   -0.85 * S.DESK_ITEMS_SCALE,
   1.786 * S.DESK_ITEMS_SCALE,
-  1.013 * S.DESK_ITEMS_SCALE
+  1.013 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
 );
 const HOME_FOV = 70.0;
 const WORKBENCH_FOV = 40.0;
@@ -26,12 +26,12 @@ const WORKBENCH_FOV = 40.0;
 const HOME_CAM_POS = new THREE.Vector3(
   -6.2 * S.DESK_ITEMS_SCALE,
   7.2 * S.DESK_ITEMS_SCALE,
-  9.2 * S.DESK_ITEMS_SCALE
+  9.2 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
 );
 const HOME_BASE_TARGET = new THREE.Vector3(
   0.0 * S.DESK_ITEMS_SCALE,
   1.4 * S.DESK_ITEMS_SCALE,
-  -0.6 * S.DESK_ITEMS_SCALE
+  -0.6 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
 );
 
 /**
@@ -61,11 +61,19 @@ function computeFramedStepTargetAndPos(scrollVal: number) {
   // Vector chỉ hướng Phải (Right) tương đối trong không gian ống kính
   const camRight = new THREE.Vector3().crossVectors(forward, worldUp).normalize();
 
-  // Dịch khung hình theo hướng ống kính để nhường chỗ trống bên trái cho text theo công thức chuẩn
-  const finalTarget = baseTarget.clone().addScaledVector(camRight, -1.25 * S.DESK_ITEMS_SCALE);
-  const finalCamPos = basePos.clone().addScaledVector(camRight, -0.45 * S.DESK_ITEMS_SCALE);
+  // Ở Step 10 (CRT toàn cảnh), giảm nhẹ offset để màn hình và chuột phím cân xứng
+  const rightShiftFactor = THREE.MathUtils.lerp(
+    1.75,
+    1.30,
+    THREE.MathUtils.clamp(clamped - 9.0, 0, 1)
+  );
+  const offsetDist = rightShiftFactor * S.DESK_ITEMS_SCALE;
 
-  return { finalPos: finalCamPos, finalTarget };
+  // Dịch cả target lẫn pos theo -camRight để linh kiện xuất hiện bên phải khung nhìn
+  const finalTarget = baseTarget.clone().addScaledVector(camRight, -offsetDist);
+  const finalPos = basePos.clone().addScaledVector(camRight, -offsetDist);
+
+  return { finalPos, finalTarget };
 }
 
 export function CameraRig() {
@@ -119,7 +127,7 @@ export function CameraRig() {
       const minY = 0.08;
       const maxY = 1.95;
       const minZ = -0.80;
-      const maxZ = 1.75;
+      const maxZ = 4.65;
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -283,9 +291,9 @@ export function CameraRig() {
 
     prevTransitionRef.current = transition;
 
-    // Chuyển góc máy: cực kỳ đằm, lướt êm ái, chậm rãi và chuẩn xác
+    // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.8
     const isTransitioning = state.stageTransition !== 'IDLE';
-    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 3.2 : 2.5));
+    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 4.5 : 3.8));
 
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);

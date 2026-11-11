@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
-import { S, validateScaleContract } from '../../constants/scale';
+import { S, DESK_Z_OFFSET, validateScaleContract } from '../../constants/scale';
 import {
   retroMaterials,
   RETRO_PBR_PARAMS,
@@ -23,7 +23,6 @@ import { ExpansionCards } from './hardware/ExpansionCards';
 import { PowerAndFrontCables } from './hardware/PowerAndFrontCables';
 import { RibbonCables } from './hardware/RibbonCables';
 import { PeripheralsCRT } from './hardware/PeripheralsCRT';
-import { DeskSpatialText } from '../models/DeskSpatialText';
 import { useBuildStore } from '../../store/useBuildStore';
 import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
 import { retroSound } from '../../utils/retroSound';
@@ -471,8 +470,6 @@ export function Workbench() {
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const stageTransition = useBuildStore((s) => s.stageTransition);
 
-  const [caseOpacity, setCaseOpacity] = useState(1.0);
-
   const targetRingRef = useRef<THREE.Group | null>(null);
   const caseWrapperRef = useRef<THREE.Group | null>(null);
   const componentsStageGroupRef = useRef<THREE.Group | null>(null);
@@ -497,21 +494,8 @@ export function Workbench() {
     };
   }, [technicalBlackboardTex]);
 
-  useFrame((r3fState, delta) => {
+  useFrame((_, delta) => {
     const state = useBuildStore.getState();
-
-    // Giảm nhẹ opacity của vỏ thùng máy khi camera tiến quá gần (dist < 2.2)
-    const towerWorldPos = new THREE.Vector3(
-      TOWER_BUILD_X * S.DESK_ITEMS_SCALE,
-      TOWER_BASE_Y * S.DESK_ITEMS_SCALE,
-      TOWER_CENTER_Z * S.DESK_ITEMS_SCALE
-    );
-    const distToCase = r3fState.camera.position.distanceTo(towerWorldPos) / S.DESK_ITEMS_SCALE;
-    const targetOpacity = distToCase < 2.2 ? 0.2 : 1.0;
-    if (Math.abs(caseOpacity - targetOpacity) > 0.05) {
-      setCaseOpacity(targetOpacity);
-    }
-
     const prevP = prevStepProgRef.current;
     const curP = state.benchProgress;
 
@@ -835,7 +819,7 @@ export function Workbench() {
   const upperRailY = -S.TABLE.TOP_THICK - S.TABLE.RAIL_H / 2; // -0.10m
 
   return (
-    <group position={[0, 0, 0]} visible={!isInsideProjectApp}>
+    <group position={[0, 0, DESK_Z_OFFSET]} visible={!isInsideProjectApp}>
       {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC (CHUẨN TỈ LỆ S.TABLE) */}
       <RoundedBox
         args={[S.TABLE.W, S.TABLE.TOP_THICK, S.TABLE.D]}
@@ -918,10 +902,7 @@ export function Workbench() {
         ref={componentsStageGroupRef}
         scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
       >
-        {/* CHỮ NỔI 3D TRÊN MẶT BÀN BÊN TRÁI THẢM CẮT (DESK SPATIAL 3D TEXT) */}
-        <DeskSpatialText />
-
-        {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
+      {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
              Xoay hướng thẳng mặt trước về phía Camera chính (+Z_world) */}
       <group
         ref={caseWrapperRef}
@@ -934,7 +915,6 @@ export function Workbench() {
           casePrepProgress={casePrepProgress}
           moboScrewsProgress={moboScrewsProgress}
           uCoverCloseProgress={uCoverCloseProgress}
-          caseOpacity={caseOpacity}
         />
 
         {currentStep >= 3 && (

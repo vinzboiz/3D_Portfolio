@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useBuildStore } from '../../store/useBuildStore';
+import { AboutEditorialScroller } from './AboutEditorialScroller';
 import { EditorialProjectsSection } from './EditorialProjectsSection';
 import { EditorialCvSection } from './EditorialCvSection';
 
@@ -82,7 +83,11 @@ export function HomePortalOverlay() {
       }`}
       style={{ zIndex: 10 }}
     >
-      {/* Chữ nổi 3D (DeskSpatialText) đã được đưa trực tiếp vào không gian 3D trên mặt bàn bên trong Workbench */}
+      {/* =======================================================================
+          CỘT CHỮ GIỚI THIỆU BẢN THÂN CUỘN DỌC BÊN TRÁI (ABOUT EDITORIAL SCROLLER)
+          Hiển thị cố định ở nửa bên trái màn hình khi đang ở trong ABOUT (Step 01 -> 10)
+         ======================================================================= */}
+      <AboutEditorialScroller />
 
       {/* =======================================================================
           TẦNG 1: #home-section (100vh) - SPLIT-TEXT PORTAL MASK & RETRO LAB VIEW

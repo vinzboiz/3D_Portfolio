@@ -128,10 +128,10 @@ export function AboutEditorialScroller() {
         const stepDelta = stepIndex - smoothScrollProgress;
 
         // delta < 0 khi đã cuộn qua (chữ trôi lên trên), delta > 0 khi bước sắp tới (chữ ở phía dưới)
-        const translateY = stepDelta * 160; // Khoảng dịch chuyển dọc êm ái, chậm rãi
-        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.25, 0, 1);
-        const scale = THREE.MathUtils.lerp(0.96, 1.0, opacity);
-        const blur = Math.max(0, (1 - opacity) * 3);
+        const translateY = stepDelta * 210; // Khoảng dịch chuyển dọc (px)
+        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.45, 0, 1);
+        const scale = THREE.MathUtils.lerp(0.94, 1.0, opacity);
+        const blur = Math.max(0, (1 - opacity) * 4);
 
         const el = itemRefs.current[i];
         if (el) {
