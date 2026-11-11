@@ -613,9 +613,9 @@ export function Workbench() {
       const t = transitionTimeRef.current;
 
       // XỬ LÝ TO_HOME_STEP1 (Khi click Home từ Step 01):
-      // Tween mượt smoothScrollProgress từ 1.0 về 0.0 trong 1.2s với easePower3InOut
+      // Tween mượt smoothScrollProgress từ 1.0 về 0.0 trong 1.5s với easePower3InOut
       if (stageTransition === 'TO_HOME_STEP1') {
-        const duration = 1.2;
+        const duration = 1.5;
         const p = Math.min(1, t / duration);
         // power3.inOut
         const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
@@ -632,9 +632,9 @@ export function Workbench() {
       }
 
       // XỬ LÝ HOME_TO_ABOUT (Khi click About từ Step 00 - Home):
-      // Pha A (0.0s -> 0.85s): Zoom bung ô cửa sổ bo góc ra toàn màn hình và camera lao vào bàn Step 01
+      // Pha A (0.0s -> 1.35s): Zoom bung ô cửa sổ bo góc ra toàn màn hình và camera từ tốn lao vào bàn Step 01
       if (stageTransition === 'HOME_TO_ABOUT') {
-        const duration = 0.85;
+        const duration = 1.35;
         const p = Math.min(1, t / duration);
         const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
         const curScroll = THREE.MathUtils.lerp(0.0, 1.0, ease);
@@ -655,9 +655,9 @@ export function Workbench() {
       }
 
       // XỬ LÝ HOME_TO_PROJECT & HOME_TO_MY_CV (Khi click Projects hoặc My CV từ Step 00 - Home):
-      // Pha A (0.0s -> 0.85s): Bung ô cửa sổ ra toàn màn hình, đồng thời bộ máy hoàn chỉnh trượt từ x = -18 vào giữa bàn x = 0
+      // Pha A (0.0s -> 1.35s): Bung ô cửa sổ ra toàn màn hình, đồng thời bộ máy hoàn chỉnh trượt từ x = -18 vào giữa bàn x = 0
       if (stageTransition === 'HOME_TO_PROJECT' || stageTransition === 'HOME_TO_MY_CV') {
-        const duration = 0.85;
+        const duration = 1.35;
         const p = Math.min(1, t / duration);
         const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
 
@@ -692,11 +692,11 @@ export function Workbench() {
       }
 
       // XỬ LÝ TO_HOME (Khi click Home từ Step >= 2):
-      // Pha 1 (0.0s -> 0.6s): Đẩy mượt cụm máy sang phải x = +18 với power2.in
-      // Pha 2 (0.6s -> 1.5s, duration 0.9s): Reset bàn x = 0, tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
+      // Pha 1 (0.0s -> 0.85s): Đẩy mượt cụm máy sang phải x = +18 với power2.in
+      // Pha 2 (0.85s -> 2.05s, duration 1.20s): Reset bàn x = 0, tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
       if (stageTransition === 'TO_HOME') {
-        const exitDuration = 0.60;
-        const enterDuration = 0.90;
+        const exitDuration = 0.85;
+        const enterDuration = 1.20;
 
         if (transitionPhaseRef.current === 'EXIT') {
           const p1 = Math.min(1, t / exitDuration);
@@ -709,14 +709,14 @@ export function Workbench() {
           if (p1 >= 1) {
             transitionPhaseRef.current = 'ENTER';
             transitionTimeRef.current = 0;
-            // Bước B (mốc 0.6s): Reset ngầm về Step 00, đưa bàn thiết kế về lại x = 0, đặt scrollCurrent = 1.0
+            // Bước B: Reset ngầm về Step 00, đưa bàn thiết kế về lại x = 0, đặt scrollCurrent = 1.0
             useBuildStore.getState().applyHomeResetState();
             if (componentsStageGroupRef.current) {
               componentsStageGroupRef.current.position.x = 0;
             }
           }
         } else {
-          // Pha ENTER (0.9s): Tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
+          // Pha ENTER (1.20s): Tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
           const p2 = Math.min(1, t / enterDuration);
           const easeOut = 1 - Math.pow(1 - p2, 3); // power3.out
           const curScroll = THREE.MathUtils.lerp(1.0, 0.0, easeOut);
@@ -738,8 +738,8 @@ export function Workbench() {
       }
 
       // XỬ LÝ CÁC CHUYỂN CẢNH KHÁC (TO_ABOUT, TO_PROJECT, TO_MY_CV):
-      const exitDuration = stageTransition === 'TO_ABOUT' ? 0.75 : 0.70;
-      const enterDuration = 0.85;
+      const exitDuration = stageTransition === 'TO_ABOUT' ? 0.95 : 0.85;
+      const enterDuration = 1.15;
 
       if (transitionPhaseRef.current === 'EXIT') {
         const p1 = Math.min(1, t / exitDuration);

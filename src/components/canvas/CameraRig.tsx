@@ -163,11 +163,12 @@ export function CameraRig() {
       }
     }
 
-    // Điều tiết scrollCurrent khi IDLE
+    // Điều tiết scrollCurrent khi IDLE: Lerp đằm và thư thái (hệ số -3.2 thay vì -8.5)
+    // giúp toàn bộ tiến trình lắp ráp linh kiện và chuyển động camera diễn ra chậm rãi (~1.2s), chi tiết và rõ nét
     if (state.stageTransition === 'IDLE') {
       const diff = state.scrollTarget - state.scrollCurrent;
       if (Math.abs(diff) > 0.0002) {
-        const alpha = 1 - Math.exp(-8.5 * safeDelta);
+        const alpha = 1 - Math.exp(-3.2 * safeDelta);
         const nextScroll = THREE.MathUtils.lerp(state.scrollCurrent, state.scrollTarget, alpha);
         state.syncScrollCurrent(nextScroll);
       } else if (state.scrollCurrent !== state.scrollTarget) {
@@ -342,9 +343,9 @@ export function CameraRig() {
 
     prevTransitionRef.current = transition;
 
-    // Chuyển góc máy: cực kỳ đằm, lướt êm ái theo safeDelta * 3.8
+    // Chuyển góc máy: cực kỳ đằm, lướt êm ái thư thái theo safeDelta * 2.2 (chậm lại chuẩn cinematic)
     const isTransitioning = state.stageTransition !== 'IDLE';
-    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 4.5 : 3.8));
+    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 2.8 : 2.2));
 
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);

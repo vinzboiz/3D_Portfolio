@@ -150,7 +150,8 @@ export function RetroHUD() {
       }
 
       // Cuộn xuôi (dir > 0): GIỚI HẠN TỐI ĐA STEP 10
-      if (now - lastScrollTime < 650) return;
+      // Tăng cooldown lên 1050ms để đồng bộ với animation lắp ráp linh kiện chậm rãi, thư thái
+      if (now - lastScrollTime < 1050) return;
       lastScrollTime = now;
 
       if (state.currentStep >= 10) {
@@ -200,7 +201,7 @@ export function RetroHUD() {
         return;
       }
 
-      if (now - lastScrollTime < 650) return;
+      if (now - lastScrollTime < 1050) return;
       lastScrollTime = now;
       touchStartYRef.current = currentY;
 
