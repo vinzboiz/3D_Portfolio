@@ -9,6 +9,7 @@ export function HomePortalOverlay() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const stageTransition = useBuildStore((s) => s.stageTransition);
   const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
+  const editorialPageMode = useBuildStore((s) => s.editorialPageMode);
   const jumpToAbout = useBuildStore((s) => s.jumpToAbout);
 
   // Timecode động định dạng HH:MM:SS:FF chuẩn màn hình Viewfinder máy quay
@@ -33,9 +34,10 @@ export function HomePortalOverlay() {
   const portalProgress = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
   const isInside3D = currentStep >= 1 && portalProgress >= 0.5;
 
-  // Khóa cuộn trang dọc khi đang ở trong không gian 3D About
+  // Khóa cuộn trang dọc khi đang ở chế độ PORTAL_3D (ở Home hoặc trong không gian 3D About)
+  // Chỉ mở cuộn trang khi chuyển sang chế độ EDITORIAL_2D (Projects / My CV / Liên hệ)
   useEffect(() => {
-    if (isInside3D) {
+    if (editorialPageMode === 'PORTAL_3D' || isInside3D) {
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
@@ -46,7 +48,7 @@ export function HomePortalOverlay() {
       document.documentElement.style.overflow = 'auto';
       document.body.style.overflow = 'auto';
     };
-  }, [isInside3D]);
+  }, [editorialPageMode, isInside3D]);
 
   // Click vào ô cửa sổ trung tâm hoặc nút CTA để bung màn hình vào bàn lắp máy 3D
   const handleEnterWorkbench = () => {
@@ -75,7 +77,12 @@ export function HomePortalOverlay() {
   const isTransitioningHome = stageTransition === 'TO_HOME' || stageTransition === 'TO_HOME_STEP1';
 
   return (
-    <div className="relative w-full text-white selection:bg-[#e05a47] selection:text-white" style={{ zIndex: 10 }}>
+    <div
+      className={`relative w-full text-white selection:bg-[#e05a47] selection:text-white ${
+        editorialPageMode === 'PORTAL_3D' ? 'h-screen overflow-hidden' : 'overflow-visible'
+      }`}
+      style={{ zIndex: 10 }}
+    >
       {/* =======================================================================
           CỘT CHỮ GIỚI THIỆU BẢN THÂN CUỘN DỌC BÊN TRÁI (ABOUT EDITORIAL SCROLLER)
           Hiển thị cố định ở nửa bên trái màn hình khi đang ở trong ABOUT (Step 01 -> 10)
@@ -282,9 +289,14 @@ export function HomePortalOverlay() {
             <span className="font-mono text-xs text-[#e05a47]">↗</span>
           </button>
 
-          {/* Mũi tên gợi ý cuộn xuống */}
+          {/* Mũi tên gợi ý cuộn xuống xem Projects & CV */}
           <div
-            onClick={() => document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => {
+              useBuildStore.getState().setEditorialPageMode('EDITORIAL_2D');
+              setTimeout(() => {
+                document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
+              }, 60);
+            }}
             className="flex items-center gap-1.5 text-[11px] font-mono text-[#8e8e93] hover:text-white cursor-pointer transition-colors"
           >
             <span>Cuộn xuống xem Projects & My CV</span>
@@ -294,16 +306,15 @@ export function HomePortalOverlay() {
       </section>
 
       {/* =======================================================================
-          TẦNG 2: #projects-section (SELECTED PROJECTS - EDITORIAL TABLE LIST)
-          Chỉ hiển thị đầy đủ khi ở ngoài không gian 3D
+          TẦNG 2 & 3: EDITORIAL PROJECTS & MY CV SECTION
+          Chỉ kích hoạt hiển thị khi người dùng chuyển sang chế độ EDITORIAL_2D
          ======================================================================= */}
-      {(!isInside3D || isTransitioningHome) && <EditorialProjectsSection />}
-
-      {/* =======================================================================
-          TẦNG 3: #cv-section (MY CV / RESUME - EDITORIAL PROFILE & TIMELINE)
-          Chỉ hiển thị đầy đủ khi ở ngoài không gian 3D
-         ======================================================================= */}
-      {(!isInside3D || isTransitioningHome) && <EditorialCvSection />}
+      {(editorialPageMode === 'EDITORIAL_2D' || isTransitioningHome) && (
+        <>
+          <EditorialProjectsSection />
+          <EditorialCvSection />
+        </>
+      )}
     </div>
   );
 }

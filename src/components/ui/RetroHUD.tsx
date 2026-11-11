@@ -36,6 +36,11 @@ export function RetroHUD() {
         setActiveSection('projects');
       } else {
         setActiveSection('home');
+        // Khi người dùng cuộn ngược về đỉnh #home-section (scrollTop <= 10):
+        const state = useBuildStore.getState();
+        if (state.editorialPageMode === 'EDITORIAL_2D' && scrollY <= 10 && state.currentStep === 0) {
+          state.setEditorialPageMode('PORTAL_3D');
+        }
       }
     };
 
@@ -47,14 +52,14 @@ export function RetroHUD() {
   // Luồng điều hướng thông minh khi nhấn nút Home
   const handleNavHome = () => {
     const state = useBuildStore.getState();
+    state.setEditorialPageMode('PORTAL_3D');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     if (state.stageTransition !== 'IDLE') return;
     const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.05;
 
     if (inside) {
       state.jumpToHome();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -62,42 +67,43 @@ export function RetroHUD() {
   const handleNavAbout = () => {
     const state = useBuildStore.getState();
     if (state.stageTransition !== 'IDLE') return;
+
+    state.setEditorialPageMode('PORTAL_3D');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     const inside = state.currentStep > 0 && state.homeTransitionProgress > 0.5;
 
     if (!inside) {
-      window.scrollTo({ top: 0, behavior: 'instant' });
       state.jumpToAbout();
-    } else {
-      if (state.currentStep !== 1) {
-        state.setStep(1);
-      }
+    } else if (state.currentStep !== 1) {
+      state.setStep(1);
     }
   };
 
   // Luồng điều hướng thông minh khi nhấn nút Projects
   const handleNavProjects = () => {
     const state = useBuildStore.getState();
+    state.setEditorialPageMode('EDITORIAL_2D');
     if (state.stageTransition !== 'IDLE') return;
     const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1;
 
     if (!inside) {
-      // Trường hợp 1 — Đang ở ngoài 3D (Home/Projects/CV):
-      // Tuyệt đối KHÔNG chuyển qua About, KHÔNG lắp máy 3D. Cuộn mượt xuống mục #projects-section!
+      // Trường hợp 1 — Đang ở ngoài 3D (Home/Projects/CV): Cuộn mượt xuống mục #projects-section
       document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
     } else {
       // Trường hợp 2 — Đang ở trong không gian 3D About:
-      // Pha 1 (0.0s -> 0.9s): Zoom out trả về Home
+      // Thu khung đen Zoom Out về lại Home trong 0.8s rồi cuộn mượt xuống #projects-section
       state.jumpToHome();
-      // Pha 2 (0.9s -> 1.6s): Cuộn mượt xuống #projects-section
       setTimeout(() => {
         document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 900);
+      }, 800);
     }
   };
 
   // Luồng điều hướng thông minh khi nhấn nút My CV
   const handleNavCv = () => {
     const state = useBuildStore.getState();
+    state.setEditorialPageMode('EDITORIAL_2D');
     if (state.stageTransition !== 'IDLE') return;
     const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1;
 
@@ -105,13 +111,29 @@ export function RetroHUD() {
       // Trường hợp 1 — Đang ở ngoài 3D: Cuộn mượt xuống mục #cv-section!
       document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
     } else {
-      // Trường hợp 2 — Đang ở trong 3D:
-      // Pha 1: Zoom out về Home
+      // Trường hợp 2 — Đang ở trong 3D: Zoom out về Home rồi cuộn mượt xuống #cv-section
       state.jumpToHome();
-      // Pha 2: Cuộn mượt xuống #cv-section
       setTimeout(() => {
         document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 900);
+      }, 800);
+    }
+  };
+
+  // Luồng điều hướng khi nhấn nút Liên hệ
+  const handleNavContact = () => {
+    const state = useBuildStore.getState();
+    state.setEditorialPageMode('EDITORIAL_2D');
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1;
+
+    const targetElem = document.getElementById('contact-section') || document.getElementById('cv-section');
+    if (!inside) {
+      targetElem?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      state.jumpToHome();
+      setTimeout(() => {
+        targetElem?.scrollIntoView({ behavior: 'smooth' });
+      }, 800);
     }
   };
 
@@ -131,25 +153,54 @@ export function RetroHUD() {
       }
       if (Math.abs(e.deltaY) <= 15) return;
 
-      // Khi đang ở ngoài 3D (currentStep === 0): Cho phép trang cuộn dọc tự nhiên xuống Projects và CV
-      if (state.currentStep === 0) {
+      // KHI ĐANG Ở CHẾ ĐỘ 2D (EDITORIAL_2D):
+      if (state.editorialPageMode === 'EDITORIAL_2D') {
+        // Cho phép cuộn dọc tự nhiên trang HTML giữa Home, Projects, CV!
+        // Nếu đã cuộn ngược lên sát đỉnh Home (scrollY <= 10) và tiếp tục lăn lên:
+        if (window.scrollY <= 10 && e.deltaY < 0) {
+          state.setEditorialPageMode('PORTAL_3D');
+        }
         return;
+      }
+
+      // KHI ĐANG Ở CHẾ ĐỘ MẶC ĐỊNH 'PORTAL_3D':
+      // Khóa hoàn toàn cuộn native của trang web để không tự trôi xuống Projects/CV
+      if (e.cancelable) {
+        e.preventDefault();
       }
 
       const dir = e.deltaY > 0 ? 1 : -1;
       const now = performance.now();
 
-      // Cuộn ngược (dir < 0): Phản hồi tức thì 0ms delay trong 3D
+      // TRƯỜNG HỢP 1: Tại HOME (currentStep === 0)
+      // CHỈ CẦN LĂN CHUỘT XUỐNG là tự động bung khung cửa sổ Portal vào thẳng View lắp đặt 3D (ABOUT Step 01)
+      if (state.currentStep === 0) {
+        if (dir > 0) {
+          state.jumpToAbout();
+        }
+        return;
+      }
+
+      // TRƯỜNG HỢP 2: Tại Step 01 và lăn chuột ngược lên (dir < 0)
+      // Thu mượt portalProgress từ 1.0 về 0.0, khép khung nền đen về lại Home
+      if (state.currentStep === 1 && dir < 0) {
+        state.jumpToHome();
+        return;
+      }
+
+      // TRƯỜNG HỢP 3: Trong các bước lắp ráp 3D (Step 2 -> 10)
       if (dir < 0) {
         lastScrollTime = now;
-        const targetStep = Math.max(1, state.currentStep - 1);
-        if (targetStep !== state.currentStep) {
+        const targetStep = Math.max(0, state.currentStep - 1);
+        if (targetStep === 0) {
+          state.jumpToHome();
+        } else if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
         return;
       }
 
-      // Cuộn xuôi (dir > 0): GIỚI HẠN TỐI ĐA STEP 10
+      // Cuộn xuôi trong 3D: Cooldown 650ms, dừng ở Step 10
       if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
 
@@ -181,7 +232,17 @@ export function RetroHUD() {
       ) {
         return;
       }
-      if (state.currentStep === 0) return;
+
+      if (state.editorialPageMode === 'EDITORIAL_2D') {
+        if (window.scrollY <= 10 && touchStartYRef.current - e.touches[0].clientY < -30) {
+          state.setEditorialPageMode('PORTAL_3D');
+        }
+        return;
+      }
+
+      if (e.cancelable) {
+        e.preventDefault();
+      }
 
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartYRef.current - currentY;
@@ -190,11 +251,29 @@ export function RetroHUD() {
       const dir = deltaY > 0 ? 1 : -1;
       const now = performance.now();
 
+      // Tại Home: vuốt lên (dir > 0) -> bung vào About Step 01
+      if (state.currentStep === 0) {
+        if (dir > 0) {
+          touchStartYRef.current = currentY;
+          state.jumpToAbout();
+        }
+        return;
+      }
+
+      // Tại Step 01: vuốt xuống (dir < 0) -> thu về Home
+      if (state.currentStep === 1 && dir < 0) {
+        touchStartYRef.current = currentY;
+        state.jumpToHome();
+        return;
+      }
+
       if (dir < 0) {
         lastScrollTime = now;
         touchStartYRef.current = currentY;
-        const targetStep = Math.max(1, state.currentStep - 1);
-        if (targetStep !== state.currentStep) {
+        const targetStep = Math.max(0, state.currentStep - 1);
+        if (targetStep === 0) {
+          state.jumpToHome();
+        } else if (targetStep !== state.currentStep) {
           state.setStep(targetStep);
         }
         return;
@@ -220,22 +299,31 @@ export function RetroHUD() {
       ) {
         return;
       }
-      if (state.currentStep === 0) return;
+      if (state.currentStep === 0) {
+        if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+          state.jumpToAbout();
+        }
+        return;
+      }
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
         if (state.currentStep >= 10) return;
         state.setStep(Math.min(10, state.currentStep + 1));
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        state.setStep(Math.max(1, state.currentStep - 1));
+        if (state.currentStep === 1) {
+          state.jumpToHome();
+        } else {
+          state.setStep(Math.max(1, state.currentStep - 1));
+        }
       } else if (e.key === 'f' || e.key === 'F') {
         if (state.currentStep < 10) return;
         toggleFreeCam();
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('wheel', handleWheel);
@@ -362,7 +450,7 @@ export function RetroHUD() {
           {/* Nút Pill Button [ Liên hệ ] */}
           <button
             type="button"
-            onClick={handleNavCv}
+            onClick={handleNavContact}
             className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-4 sm:px-[22px] py-1.5 sm:py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none whitespace-nowrap"
           >
             Liên hệ

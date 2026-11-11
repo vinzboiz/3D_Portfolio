@@ -280,7 +280,7 @@ export function EditorialCvSection() {
             </div>
 
             {/* Hộp Thông tin liên hệ nhanh */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/15 space-y-5">
+            <div id="contact-section" className="p-7 sm:p-9 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/15 space-y-5">
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs uppercase tracking-widest text-[#f4a261]">
                   LIÊN HỆ & KẾT NỐI

@@ -218,6 +218,42 @@ export function AboutEditorialScroller() {
               ))}
             </div>
 
+            {/* Nút điều hướng sang Projects & CV khi đã hoàn tất máy tính ở Step 10 */}
+            {idx === 9 && (
+              <div className="mt-7 flex items-center gap-3 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const state = useBuildStore.getState();
+                    state.setEditorialPageMode('EDITORIAL_2D');
+                    state.jumpToHome();
+                    setTimeout(() => {
+                      document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 800);
+                  }}
+                  className="px-4 py-2.5 rounded-lg bg-[#e05a47] hover:bg-[#ff6b57] text-white font-mono text-xs font-semibold tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer uppercase flex items-center gap-2"
+                >
+                  <span>Xem Projects</span>
+                  <span>↗</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const state = useBuildStore.getState();
+                    state.setEditorialPageMode('EDITORIAL_2D');
+                    state.jumpToHome();
+                    setTimeout(() => {
+                      document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 800);
+                  }}
+                  className="px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 font-mono text-xs font-semibold tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer uppercase flex items-center gap-2"
+                >
+                  <span>Xem My CV</span>
+                  <span>↗</span>
+                </button>
+              </div>
+            )}
+
             {/* Đường chỉ vạch kỹ thuật retro nhỏ bên dưới */}
             <div className="mt-8 flex items-center gap-2 opacity-40">
               <span className="w-8 h-[1px] bg-white/40" />
