@@ -61,10 +61,11 @@ function computeFramedStepTargetAndPos(scrollVal: number) {
   // Vector chỉ hướng Phải (Right) tương đối trong không gian ống kính
   const camRight = new THREE.Vector3().crossVectors(forward, worldUp).normalize();
 
-  // Ở Step 10 (CRT toàn cảnh), giảm nhẹ offset để màn hình và chuột phím cân xứng
+  // Giảm nhẹ offset dịch ngang: -0.35 cho Step 01 -> 09, giảm về -0.10 ở Step 10
+  // để mô hình nằm cân đối, gần ống kính và rõ nét, chừa không gian thoáng cho cột chữ
   const rightShiftFactor = THREE.MathUtils.lerp(
-    1.75,
-    1.30,
+    0.35,
+    0.10,
     THREE.MathUtils.clamp(clamped - 9.0, 0, 1)
   );
   const offsetDist = rightShiftFactor * S.DESK_ITEMS_SCALE;
@@ -72,12 +73,6 @@ function computeFramedStepTargetAndPos(scrollVal: number) {
   // Dịch cả target lẫn pos theo -camRight để linh kiện xuất hiện bên phải khung nhìn
   const finalTarget = baseTarget.clone().addScaledVector(camRight, -offsetDist);
   const finalPos = basePos.clone().addScaledVector(camRight, -offsetDist);
-
-  // Khóa vùng an toàn (Camera Safe Bounding Box Clamp) ngay trên finalPos:
-  // Luôn giữ Camera trong khoảng không gian mở phía trước mặt bàn, không bao giờ lùi ra sau tường CRT
-  finalPos.x = THREE.MathUtils.clamp(finalPos.x, -3.2 * S.DESK_ITEMS_SCALE, 2.6 * S.DESK_ITEMS_SCALE);
-  finalPos.y = THREE.MathUtils.clamp(finalPos.y, 2.3 * S.DESK_ITEMS_SCALE, 5.2 * S.DESK_ITEMS_SCALE);
-  finalPos.z = THREE.MathUtils.clamp(finalPos.z, 2.6 * S.DESK_ITEMS_SCALE, 6.2 * S.DESK_ITEMS_SCALE);
 
   return { finalPos, finalTarget };
 }
@@ -128,19 +123,17 @@ export function CameraRig() {
 
     // Helper giới hạn camera chặt chẽ trong không gian căn phòng
     const clampCameraInRoom = () => {
-      // Khi đang trong các bước About (scrollVal >= 0.95) và không ở chế độ Project App / FreeCam:
-      // Khóa chặt Z luôn ở phía trước bàn (Z >= 2.5 * S.DESK_ITEMS_SCALE), tuyệt đối không bao giờ lọt ra sau tường CRT
-      const minZBound =
-        state.scrollCurrent >= 0.95 && !state.isInsideProjectApp && !state.freeCam
-          ? 2.5 * S.DESK_ITEMS_SCALE
-          : -0.80;
+      // Khi đang chuyển cảnh vào CRT hoặc trong Project App: cho phép camera tự do tiến sát vào mặt kính
+      if (state.isInsideProjectApp || state.projectAppTransition !== 'IDLE') {
+        return;
+      }
 
-      const minX = -1.30;
-      const maxX = 1.30;
+      const minX = -1.35;
+      const maxX = 1.35;
       const minY = 0.08;
-      const maxY = 1.95;
-      const minZ = minZBound;
-      const maxZ = 1.75;
+      const maxY = 2.05;
+      const minZ = -0.85;
+      const maxZ = 1.80;
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -244,30 +237,11 @@ export function CameraRig() {
         desiredTarget.current.z += depthOffset;
       }
     } else {
-      // 2. Step 01 -> Step 10: Xoay chuyển đa hướng mượt mà theo từng bước,
+      // 2. Step 01 -> Step 10: Xoay chuyển đa hướng mượt mà, cận cảnh rõ nét từng bước,
       // tự động tính Screen-Space Camera Right Offset để phần cứng luôn nằm bên phải
       const { finalPos, finalTarget } = computeFramedStepTargetAndPos(scrollVal);
       desiredPos.current.copy(finalPos);
       desiredTarget.current.copy(finalTarget);
-
-      // Camera Safe Bounding Box Clamp: Khóa cứng vùng an toàn của Camera luôn nằm ở không gian phía trước mặt bàn
-      if (scrollVal >= 1.0 && !state.isInsideProjectApp) {
-        desiredPos.current.x = THREE.MathUtils.clamp(
-          desiredPos.current.x,
-          -3.2 * S.DESK_ITEMS_SCALE,
-          2.6 * S.DESK_ITEMS_SCALE
-        );
-        desiredPos.current.y = THREE.MathUtils.clamp(
-          desiredPos.current.y,
-          2.3 * S.DESK_ITEMS_SCALE,
-          5.2 * S.DESK_ITEMS_SCALE
-        );
-        desiredPos.current.z = THREE.MathUtils.clamp(
-          desiredPos.current.z,
-          2.6 * S.DESK_ITEMS_SCALE,
-          6.2 * S.DESK_ITEMS_SCALE
-        ); // Luôn giữ Z >= 2.6 * S.DESK_ITEMS_SCALE ở phía trước bàn
-      }
 
       if (Math.abs(persCam.fov - WORKBENCH_FOV) > 0.05) {
         persCam.fov = WORKBENCH_FOV;
