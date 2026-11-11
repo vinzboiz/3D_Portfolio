@@ -790,14 +790,14 @@ export function RetroLabEnvironment() {
   useFrame(() => {
     const state = useBuildStore.getState();
     const smoothScrollProgress = state.scrollCurrent;
-    const isVisible = smoothScrollProgress >= 9.05;
+    const isVisible = smoothScrollProgress >= 8.95;
 
     if (roomGroupRef.current) {
       roomGroupRef.current.visible = isVisible;
       if (isVisible) {
-        const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
-        // Tường và phòng lướt từ z = -4.0 về 0.0 đón chào khi lắp ráp hoàn thiện máy
-        const roomZ = (1.0 - landFactor) * -4.0;
+        const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
+        // Tường và phòng lướt nhẹ nhàng đón chào khi hoàn thiện máy (trượt êm từ z = -1.6 về 0.0)
+        const roomZ = (1.0 - landFactor) * -1.6;
         roomGroupRef.current.position.z = roomZ;
       }
     }

@@ -146,10 +146,14 @@ export function BenchAssemblyGroup() {
         );
       } else if (currentStep >= 10) {
         // Step 10+: Dịch chuyển đồng bộ cùng Thùng máy đứng sang bên phải màn hình CRT (X_world = +1.85) sau khi đậy nắp chữ U
-        const isPowered = useBuildStore.getState().isPoweredOn;
-        const shiftT = currentStep > 10 || isPowered ? 1 : remap(stepP, 0.40, 0.70);
+        const state = useBuildStore.getState();
+        const isPowered = state.isPoweredOn;
+        const shiftT = currentStep > 10 || isPowered ? 1 : THREE.MathUtils.smoothstep(state.scrollCurrent, 9.15, 9.85);
         const curX = THREE.MathUtils.lerp(seatedMoboX, step10MoboX, shiftT);
-        rootGroupRef.current.position.set(curX, TOWER_BASE_Y, TOWER_CENTER_Z);
+        const alpha = Math.min(1, delta * 8);
+        rootGroupRef.current.position.x = THREE.MathUtils.lerp(rootGroupRef.current.position.x, curX, alpha);
+        rootGroupRef.current.position.y = TOWER_BASE_Y;
+        rootGroupRef.current.position.z = TOWER_CENTER_Z;
         rootGroupRef.current.rotation.set(Math.PI / 2, 0, Math.PI / 2);
         rootGroupRef.current.scale.set(...TOWER_SCALE);
       } else {

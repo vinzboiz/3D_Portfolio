@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import { useControls } from 'leva';
 import * as THREE from 'three';
@@ -29,17 +29,30 @@ export function Experience() {
     { collapsed: false }
   );
 
+  const { gl, scene, camera } = useThree();
+
   useEffect(() => {
     if (spotLightRef.current && spotTargetRef.current) {
       spotLightRef.current.target = spotTargetRef.current;
       spotTargetRef.current.updateMatrixWorld();
     }
-  }, []);
+
+    // GPU Shader Warm-Up: Biên dịch trước toàn bộ shaders trên GPU ngay từ lúc tải trang
+    // Triệt tiêu hiện tượng lag giật do biên dịch shader đột ngột ở Step 09 -> 10
+    const timeout = setTimeout(() => {
+      try {
+        gl.compile(scene, camera);
+      } catch {
+        // Fallback an toàn nếu context chưa sẵn sàng
+      }
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [gl, scene, camera]);
 
   useFrame(() => {
     const state = useBuildStore.getState();
     const smoothScrollProgress = state.scrollCurrent;
-    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
 
     // Đèn bàn chỉ sáng dần khi chiếc bàn trượt lên ở Step 10
     if (spotLightRef.current) {
@@ -48,13 +61,10 @@ export function Experience() {
     if (bulbLightRef.current) {
       bulbLightRef.current.intensity = isLampOn ? bulbGlowIntensity * landFactor : 0;
     }
-    // Đổ bóng tiếp xúc chỉ xuất hiện và nâng lên cùng mặt bàn ở Step 10
+    // Đổ bóng tiếp xúc chỉ bật khi bàn và máy đã hạ cánh vững chắc (Step >= 9.6) để tối ưu 60 FPS
     if (contactShadowsGroupRef.current) {
-      const isDeskVisible = smoothScrollProgress >= 9.05;
-      contactShadowsGroupRef.current.visible = isDeskVisible;
-      if (isDeskVisible) {
-        contactShadowsGroupRef.current.position.y = (1.0 - landFactor) * -2.5 + 0.002;
-      }
+      const isLanded = smoothScrollProgress >= 9.6;
+      contactShadowsGroupRef.current.visible = isLanded;
     }
   });
 
@@ -155,14 +165,14 @@ export function Experience() {
       />
 
       {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy khi đáp xuống bàn */}
-      <group ref={contactShadowsGroupRef} visible={false}>
+      <group ref={contactShadowsGroupRef} position={[0, 0.002, 0]} visible={false}>
         <ContactShadows
           position={[0, 0, 0]}
           opacity={0.65}
           scale={2.2}
-          blur={1.6}
+          blur={1.4}
           far={1.5}
-          resolution={512}
+          resolution={256}
           color="#040608"
         />
       </group>

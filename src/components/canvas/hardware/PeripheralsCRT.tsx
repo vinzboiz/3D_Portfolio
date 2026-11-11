@@ -880,6 +880,9 @@ export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
     }
   };
 
+  const lastCanvasDrawTimeRef = useRef(0);
+  const wasCrtActiveRef = useRef(false);
+
   // Điều khiển các tham số Shader của đèn hình CRT trong useFrame
   useFrame((state, delta) => {
     // Khi chưa tới Step 10, bỏ qua render màn hình CRT để tối ưu GPU và CPU
@@ -888,8 +891,10 @@ export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
     const dt = Math.min(delta, 0.05);
     const isCrtActive = isPoweredOn && isCrtPowered;
 
-    // Tiến trình boot của thùng PC chạy liên tục trong nền (không bị ảnh hưởng khi tắt/bật CRT)
-    tickOsTimeline(performance.now());
+    // Tiến trình boot của thùng PC chạy liên tục trong nền khi máy đã bật
+    if (isPoweredOn) {
+      tickOsTimeline(performance.now());
+    }
 
     // Hiệu ứng Sập nguồn CRT: co tia sáng khi tắt (uCollapse: 0 -> 1) và giãn mở khi bật (uCollapse: 1 -> 0)
     const targetCollapse = isCrtActive ? 0 : 1;
@@ -912,32 +917,71 @@ export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
       crtShaderMat.uniforms.uDegauss.value = 0.0;
     }
 
-    // Vẽ lại canvas động CRT OS mỗi frame
-    drawCrtScreen(crtCanvasObj.ctx, {
-      isPoweredOn,
-      isCrtPowered,
-      osState,
-      bootElapsedTime,
-      isResetting,
-      cdLocation,
-      cardLocation,
-      isCdInserted,
-      floppyInserted,
-      osDialogAlert,
-      activeWindow,
-      openWindows,
-      crtOsdOpen,
-      crtOsdFlash,
-      crtBrightness,
-      crtContrast,
-      crtScale,
-      crtHOffset,
-      crtVOffset,
-      hoveredCanvasPos: hoveredCanvasPosRef.current,
-      projectAppTransition,
-      crtExpandProgress,
-    });
-    crtCanvasObj.texture.needsUpdate = true;
+    // TỐI ƯU HIỆU NĂNG VẼ CANVAS CRT:
+    // 1. Khi màn hình CRT đang TẮT (Step 9 -> 9.85): Chỉ vẽ màn hình tối 1 lần duy nhất, KHÔNG upload texture liên tục mỗi frame
+    // 2. Khi màn hình CRT BẬT: Giới hạn tần số vẽ tối đa 30 FPS (~33ms) giúp giải phóng băng thông GPU và triệt tiêu 100% giật lag
+    const now = performance.now();
+    if (!isCrtActive) {
+      if (wasCrtActiveRef.current) {
+        drawCrtScreen(crtCanvasObj.ctx, {
+          isPoweredOn: false,
+          isCrtPowered: false,
+          osState: 'OFF',
+          bootElapsedTime: 0,
+          isResetting: false,
+          cdLocation,
+          cardLocation,
+          isCdInserted: false,
+          floppyInserted: false,
+          osDialogAlert: null,
+          activeWindow: null,
+          openWindows: [],
+          crtOsdOpen: false,
+          crtOsdFlash,
+          crtBrightness,
+          crtContrast,
+          crtScale,
+          crtHOffset,
+          crtVOffset,
+          hoveredCanvasPos: null,
+          projectAppTransition: 'IDLE',
+          crtExpandProgress: 0,
+        });
+        crtCanvasObj.texture.needsUpdate = true;
+        wasCrtActiveRef.current = false;
+      }
+      return;
+    }
+
+    wasCrtActiveRef.current = true;
+    if (now - lastCanvasDrawTimeRef.current >= 33) {
+      lastCanvasDrawTimeRef.current = now;
+      drawCrtScreen(crtCanvasObj.ctx, {
+        isPoweredOn,
+        isCrtPowered,
+        osState,
+        bootElapsedTime,
+        isResetting,
+        cdLocation,
+        cardLocation,
+        isCdInserted,
+        floppyInserted,
+        osDialogAlert,
+        activeWindow,
+        openWindows,
+        crtOsdOpen,
+        crtOsdFlash,
+        crtBrightness,
+        crtContrast,
+        crtScale,
+        crtHOffset,
+        crtVOffset,
+        hoveredCanvasPos: hoveredCanvasPosRef.current,
+        projectAppTransition,
+        crtExpandProgress,
+      });
+      crtCanvasObj.texture.needsUpdate = true;
+    }
   });
 
   useEffect(() => {

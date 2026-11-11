@@ -553,7 +553,7 @@ export function Workbench() {
         state.currentStep > 10 || (state.currentStep === 10 && state.isPoweredOn)
           ? 1.0
           : state.currentStep === 10
-            ? remap(curP, 0.40, 0.70)
+            ? THREE.MathUtils.smoothstep(smoothScrollVal, 9.15, 9.85)
             : 0.0;
       const step10ShiftX =
         state.currentStep >= 10
@@ -562,17 +562,14 @@ export function Workbench() {
       const targetX = state.currentStep >= 2 ? step10ShiftX : 4.2;
       const alpha = Math.min(1, delta * 8);
 
-      caseWrapperRef.current.position.x =
-        state.currentStep >= 10
-          ? targetX
-          : THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
+      caseWrapperRef.current.position.x = THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
       caseWrapperRef.current.position.y = TOWER_BASE_Y;
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
     }
 
     // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG SCALE 1.0X, STEP 10 HẠ CÁNH):
     const smoothScrollProgress = state.scrollCurrent;
-    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
     const floatWeight = 1.0 - landFactor;
     const floatScale = 1.0;
 
@@ -588,21 +585,21 @@ export function Workbench() {
       assemblyFloatingGroupRef.current.scale.setScalar(floatScale);
     }
 
-    // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -2.5 -> 0 đón thùng máy hạ cánh)
+    // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -1.8 -> 0 đón thùng máy hạ cánh êm ái)
     if (deskGroupRef.current) {
-      const isDeskVisible = smoothScrollProgress >= 9.05;
+      const isDeskVisible = smoothScrollProgress >= 8.95;
       deskGroupRef.current.visible = isDeskVisible;
       if (isDeskVisible) {
-        deskGroupRef.current.position.y = (1.0 - landFactor) * -2.5;
+        deskGroupRef.current.position.y = (1.0 - landFactor) * -1.8;
       }
     }
 
-    // Triệu hồi Màn CRT, Bàn phím, Chuột (Đáp nhẹ từ trên xuống y = 1.8 -> 0)
+    // Triệu hồi Màn CRT, Bàn phím, Chuột (Đáp nhẹ từ trên xuống y = 1.2 -> 0)
     if (peripheralsGroupRef.current) {
-      const isPeriphVisible = smoothScrollProgress >= 9.05;
+      const isPeriphVisible = smoothScrollProgress >= 8.95;
       peripheralsGroupRef.current.visible = isPeriphVisible;
       if (isPeriphVisible) {
-        peripheralsGroupRef.current.position.y = (1.0 - landFactor) * 1.8;
+        peripheralsGroupRef.current.position.y = (1.0 - landFactor) * 1.2;
       }
     }
 

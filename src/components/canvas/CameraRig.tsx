@@ -278,12 +278,15 @@ export function CameraRig() {
         interpPos.y += floatYWorld;
         interpRawTarget.y += floatYWorld;
 
-        // Lùi camera xa thêm 28% để bao quát trọn vẹn toàn bộ chiều cao thùng máy từ đỉnh đến đáy, không bị quá to
+        // Tiến trình tổng thể từ Step 01 -> Step 10 (0.0 -> 1.0)
+        const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
+
+        // Lùi camera xa (0.28 -> 0.18) nội suy mượt mà, triệt tiêu hoàn toàn cú giật góc nhìn khi chạm ngưỡng Step 10
+        const camPullBack = THREE.MathUtils.lerp(0.28, 0.18, progress1to10);
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
-        interpPos.addScaledVector(toCam, 0.28);
+        interpPos.addScaledVector(toCam, camPullBack);
 
         // Đẩy mô hình sang nửa phải màn hình rõ rệt (3.55 -> 1.55) tạo khoảng thở thoáng đãng với khối text bên trái
-        const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
         const offsetAmount = THREE.MathUtils.lerp(3.55, 1.55, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
