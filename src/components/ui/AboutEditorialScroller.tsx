@@ -170,8 +170,8 @@ export function AboutEditorialScroller() {
         position: 'fixed',
         left: '5vw',
         top: '80px',
-        width: '34vw',
-        maxWidth: '470px',
+        width: '32vw',
+        maxWidth: '430px',
         height: 'calc(100vh - 80px)',
         pointerEvents: 'none',
         zIndex: 30,
@@ -219,12 +219,12 @@ export function AboutEditorialScroller() {
               {step.content}
             </p>
 
-            {/* Tags kỹ năng thực tế - 3 thẻ luôn nằm trọn trên 1 hàng ngang */}
-            <div className="flex flex-nowrap gap-[10px] items-center">
+            {/* Tags kỹ năng thực tế - bố cục gọn gàng, không bị tràn viền */}
+            <div className="flex flex-wrap gap-[8px] items-center">
               {step.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-[14px] py-[7px] rounded-md text-[0.82rem] font-mono font-medium bg-white/[0.06] text-[#e5e5ea] border border-white/10 backdrop-blur-sm whitespace-nowrap shrink-0"
+                  className="px-[11px] py-[5px] rounded-md text-[0.78rem] font-mono font-medium bg-white/[0.06] text-[#e5e5ea] border border-white/10 backdrop-blur-sm whitespace-nowrap"
                 >
                   {tag}
                 </span>
