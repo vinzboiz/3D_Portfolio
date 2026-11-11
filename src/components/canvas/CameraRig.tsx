@@ -97,7 +97,7 @@ export function CameraRig() {
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 1.25 : 2.0) * S.DESK_ITEMS_SCALE;
+      const offset = (currentStep >= 10 ? 2.05 : 2.85) * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -197,7 +197,12 @@ export function CameraRig() {
       const step1 = ASSEMBLY_STEPS[1];
       const step1Pos = new THREE.Vector3(...step1.cameraPos);
       const step1RawTarget = new THREE.Vector3(...step1.cameraTarget);
-      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 1.85 * S.DESK_ITEMS_SCALE);
+
+      // Lùi xa camera thêm 10% để khoảng cách tổng thể thoáng đãng
+      const toCam1 = new THREE.Vector3().subVectors(step1Pos, step1RawTarget);
+      step1Pos.addScaledVector(toCam1, 0.10);
+
+      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 2.85 * S.DESK_ITEMS_SCALE);
 
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
       desiredTarget.current.lerpVectors(homeTarget, step1FramedTarget, ease);
@@ -273,9 +278,14 @@ export function CameraRig() {
         interpPos.y += floatYWorld;
         interpRawTarget.y += floatYWorld;
 
-        // Đẩy thông minh mô hình sang nửa phải màn hình theo vector ngang của góc quay hiện tại
+        // Lùi nhẹ 10% khoảng cách từ target tới camera để khung cảnh thoáng đãng
+        const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
+        interpPos.addScaledVector(toCam, 0.10);
+
+        // Đẩy mạnh mô hình sang nửa phải màn hình theo vector right (2.85 -> 2.05)
+        // tạo khoảng không gian đen thoáng đãng (Center Breathing Gap 14vw - 18vw) ngăn cách Chữ và Máy
         const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
-        const offsetAmount = THREE.MathUtils.lerp(2.0, 1.25, progress1to10) * S.DESK_ITEMS_SCALE;
+        const offsetAmount = THREE.MathUtils.lerp(2.85, 2.05, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 
@@ -286,7 +296,11 @@ export function CameraRig() {
         const step10 = ASSEMBLY_STEPS[10];
         const step10Pos = new THREE.Vector3(...step10.cameraPos);
         const step10RawTarget = new THREE.Vector3(...step10.cameraTarget);
-        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 1.25 * S.DESK_ITEMS_SCALE);
+
+        const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
+        step10Pos.addScaledVector(toCam10, 0.10);
+
+        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 2.05 * S.DESK_ITEMS_SCALE);
 
         desiredPos.current.copy(step10Pos);
         desiredTarget.current.copy(framedTarget);
@@ -350,7 +364,9 @@ export function CameraRig() {
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
     camera.lookAt(smoothedTarget.current);
-    clampCameraInRoom();
+    if (scrollVal >= 0.95) {
+      clampCameraInRoom();
+    }
   });
 
   return (

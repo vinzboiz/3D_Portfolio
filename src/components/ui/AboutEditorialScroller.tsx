@@ -13,85 +13,94 @@ interface EditorialStepItem {
 
 const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
   {
-    code: '01 / 09 — CORE BENCH · ASUS TX97-E & INTEL PENTIUM MMX',
-    titleBold1: 'Nền tảng',
-    titleItalic: 'Kỹ thuật',
-    titleBold2: 'Vững chắc',
+    code: '01 / 10 — MOTHERBOARD · ASUS TX97-E',
+    titleBold1: 'NỀN TẢNG',
+    titleItalic: 'kỹ thuật',
+    titleBold2: 'VỮNG CHẮC',
     content:
-      'Xin chào, tôi là Nguyễn Xuân Vinh (Vinzboiz) — Kỹ sư Phần mềm tốt nghiệp ĐH Công nghệ TP.HCM (HUTECH) với GPA 3.43/4.0 và danh hiệu Sinh viên Xuất sắc. Giống như bo mạch chủ Socket 7 và vi xử lý Pentium MMX 233MHz kết nối mọi thành phần cốt lõi, tôi xây dựng sản phẩm từ tư duy kiến trúc hệ thống bài bản và hiệu năng cao.',
-    tags: ['Full-Stack Architect', 'GPA 3.43 / 4.0', 'C# .NET Core', 'Java Spring Boot'],
+      'Nguyễn Xuân Vinh (Vinzboiz) — Kỹ sư Phần mềm tốt nghiệp ĐH HUTECH (GPA 3.43/4.0, Sinh viên Xuất sắc), luôn khởi đầu sản phẩm từ kiến trúc hệ thống bài bản.',
+    tags: ['Software Engineering', 'GPA 3.43 / 4.0', 'System Design'],
   },
   {
-    code: '02 / 09 — CHASSIS PREP · INWIN A500 MID-TOWER',
-    titleBold1: 'Khung gầm',
-    titleItalic: 'Hệ thống',
-    titleBold2: 'Chuẩn mực',
+    code: '02 / 10 — PROCESSOR · PENTIUM MMX 233MHz',
+    titleBold1: 'TRÁI TIM',
+    titleItalic: 'xử lý',
+    titleBold2: 'FULL-STACK',
     content:
-      'Chuẩn bị khung gầm vững chắc cho các dự án phức tạp: Thiết lập kiến trúc modular monorepo, quy chuẩn Clean Architecture, định vị chính xác các điểm neo kỹ thuật và quy trình CI/CD tự động hóa giúp hệ thống sẵn sàng mở rộng bền bỉ.',
-    tags: ['System Architecture', 'Modular Monorepo', 'TypeScript Strict', 'CI/CD Pipelines'],
+      'Phát triển hệ thống Backend & RESTful API hiệu năng cao với C# .NET Core, Java Spring Boot và Node.js, đảm bảo luồng nghiệp vụ vận hành chuẩn xác.',
+    tags: ['C# .NET Core', 'Spring Boot', 'Node.js'],
   },
   {
-    code: '03 / 09 — POWER SUPPLY · SEASONIC SSG-200G 200W AT',
-    titleBold1: 'Trái tim',
-    titleItalic: 'Năng lượng',
-    titleBold2: 'Backend Bền bỉ',
+    code: '03 / 10 — COOLING · COOLER MASTER FAN',
+    titleBold1: 'KỶ LUẬT &',
+    titleItalic: 'bền bỉ',
+    titleBold2: 'DƯỚI ÁP LỰC',
     content:
-      'Đảm bảo nguồn năng lượng ổn định và chịu tải cao cho toàn bộ luồng nghiệp vụ doanh nghiệp bằng Backend hiệu năng cao: RESTful API, Microservices, xử lý đa luồng trên C# .NET Core, Node.js và Java Spring Boot với cơ chế tự bảo vệ quá tải.',
-    tags: ['High-Load Backend', 'RESTful API', 'Microservices', 'Node.js / Express'],
+      'Rèn luyện kỷ luật từ 4:45 sáng cùng bóng đá và võ thuật — giữ sự ổn định tuyệt đối khi xử lý sự cố production và chinh chiến tại HDBank Hackathon.',
+    tags: ['High Endurance', 'Hackathon', 'Problem Solver'],
   },
   {
-    code: '04 / 09 — MOBO MOUNTING · ASUS TX97-E SLIDE-OUT TRAY',
-    titleBold1: 'Tích hợp',
-    titleItalic: 'Đa tầng',
-    titleBold2: 'Chuẩn xác',
+    code: '04 / 10 — MEMORY · 32MB SDRAM DIMM',
+    titleBold1: 'TRUY XUẤT',
+    titleItalic: 'phản hồi',
+    titleBold2: 'TỨC THỜI',
     content:
-      'Full-Stack Developer tại Pungkook Saigon II — tích hợp liền mạch giữa tầng giao diện người dùng và cơ sở dữ liệu doanh nghiệp trong các hệ thống cốt lõi: PLMV2, PK PLM, MES Home, SCADA UI, QA Dashboard & Efficiency Summary.',
-    tags: ['Pungkook Saigon II', 'Enterprise PLM', 'MES / SCADA UI', 'Full-Stack Integration'],
+      'Quản lý State thời gian thực mượt mà trên Frontend với Angular, React 19 và TypeScript, mang lại trải nghiệm tương tác không độ trễ.',
+    tags: ['Angular', 'React 19', 'TypeScript'],
   },
   {
-    code: '05 / 09 — STORAGE DRIVES · CREATIVE 24X, SONY FDD & QUANTUM HDD',
-    titleBold1: 'Lưu trữ',
-    titleItalic: 'Dữ liệu',
-    titleBold2: 'Đa tầng',
+    code: '05 / 10 — CHASSIS & PSU · ENLIGHT AT TOWER',
+    titleBold1: 'HỆ THỐNG',
+    titleItalic: 'doanh nghiệp',
+    titleBold2: 'THỰC CHIẾN',
     content:
-      'Thiết kế kiến trúc lưu trữ và tối ưu hóa truy vấn cơ sở dữ liệu quan hệ lớn trên PostgreSQL, MySQL, SQL Server, Supabase; kết hợp kinh nghiệm xử lý dữ liệu Computer Vision độ chính xác cao và luồng xuất dữ liệu lớn tại Alchera.',
-    tags: ['PostgreSQL', 'SQL Server', 'Database Indexing', 'Computer Vision Data'],
+      'Full-Stack Developer tại Pungkook Saigon II — trực tiếp xây dựng và tối ưu các phân hệ cốt lõi: PLMV2, MES Home, SCADA UI & QA Dashboard.',
+    tags: ['Pungkook Saigon II', 'MES / SCADA', 'Enterprise PLM'],
   },
   {
-    code: '06 / 09 — POWER CABLING · AT P8/P9 & MOLEX 4-PIN',
-    titleBold1: 'Hạ tầng',
-    titleItalic: 'Phân phối',
-    titleBold2: 'An toàn Tuyệt đối',
+    code: '06 / 10 — STORAGE · CREATIVE CD, FDD & QUANTUM HDD',
+    titleBold1: 'LƯU TRỮ',
+    titleItalic: 'dữ liệu',
+    titleBold2: 'ĐA TẦNG',
     content:
-      'Tuân thủ nghiêm ngặt quy tắc an toàn hạ tầng và bảo mật hệ thống: Thiết lập Docker container, cơ chế Fail-Safe, phân quyền RBAC chặt chẽ và giám sát liên tục để dịch vụ vận hành thông suốt 99.99% không gián đoạn.',
-    tags: ['Docker & DevOps', 'Fail-Safe Pipelines', 'Security & RBAC', 'Cloud Infrastructure'],
+      'Tối ưu hóa cơ sở dữ liệu PostgreSQL, SQL Server, Supabase kết hợp kinh nghiệm xử lý dữ liệu Computer Vision độ chính xác cao tại Alchera.',
+    tags: ['PostgreSQL', 'SQL Server', 'Computer Vision'],
   },
   {
-    code: '07 / 09 — RIBBON CABLES · 40-PIN IDE & 34-PIN FLOPPY BUS',
-    titleBold1: 'Kết nối',
-    titleItalic: 'Băng thông',
-    titleBold2: 'Truyền dẫn Cao tốc',
-    content:
-      'Tối ưu hóa luồng truyền tải dữ liệu thời gian thực và giao tiếp đa nền tảng: WebSocket, gRPC, RESTful API và quản lý state mượt mà với Zustand, Redux Toolkit trên nền tảng React 19 và Angular hiện đại.',
-    tags: ['Real-Time Streaming', 'WebSockets', 'Zustand State', 'React 19 & Angular'],
-  },
-  {
-    code: '08 / 09 — FRONT PANEL I/O · TWISTED-PAIR LED & SWITCH WIRES',
-    titleBold1: 'Giao diện',
-    titleItalic: 'Quan sát',
-    titleBold2: 'Đồng đội & Phản hồi',
-    content:
-      'Cầu nối trực quan và mạch lạc giữa thiết kế UI/UX (Figma), đội ngũ phát triển và người dùng cuối. Tinh thần kỷ luật thép thức dậy từ 4:45 sáng mỗi ngày, rèn luyện võ thuật/bóng đá cùng năng lực giao tiếp và phối hợp đa văn hóa.',
-    tags: ['UI/UX Consistency', 'Figma to Code', 'High Discipline (4:45 AM)', 'Team Collaboration'],
-  },
-  {
-    code: '09 / 09 — EXPANSION CARDS · 3DFX VOODOO & SOUND BLASTER 16',
-    titleBold1: 'Không gian',
+    code: '07 / 10 — GRAPHICS · 3DFX VOODOO & SOUND BLASTER',
+    titleBold1: 'KHÔNG GIAN',
     titleItalic: '3D WebGL',
-    titleBold2: 'Đồ họa Đỉnh cao',
+    titleBold2: 'SỐNG ĐỘNG',
     content:
-      'Đưa nhà máy công nghiệp và sản phẩm sáng tạo lên trình duyệt với Three.js, React Three Fiber, Custom GLSL Shaders và Autodesk Platform Services (APS Forge). Kết hợp kỹ thuật tối ưu hóa Frustum/Occlusion Culling và âm thanh tương tác Howler.',
-    tags: ['Three.js / R3F', 'GLSL Shaders', 'Autodesk APS Forge', '3D Digital Twin'],
+      'Trực quan hóa nhà máy 3D Digital Twin trên trình duyệt bằng Three.js, WebGL, APS Forge và Blender — tối ưu thuật toán Culling đạt chuẩn 60 FPS.',
+    tags: ['Three.js / WebGL', 'APS Forge', '3D Digital Twin'],
+  },
+  {
+    code: '08 / 10 — INTERCONNECT · IDE RIBBON CABLES',
+    titleBold1: 'KẾT NỐI',
+    titleItalic: 'đa chiều',
+    titleBold2: 'MẠCH LẠC',
+    content:
+      'Cầu nối chặt chẽ giữa thiết kế UI/UX (Figma), kiến trúc Backend và nghiệp vụ thực tế thông qua kỹ năng giao tiếp và phối hợp nhóm hiệu quả.',
+    tags: ['UI/UX to Code', 'Figma', 'Teamwork'],
+  },
+  {
+    code: '09 / 10 — ENCLOSURE · STEEL U-COVER',
+    titleBold1: 'CHỈN CHU',
+    titleItalic: 'từng',
+    titleBold2: 'ĐIỂM CHẠM',
+    content:
+      'Đề cao Clean Code, hiệu năng tải trang và trau chuốt từng micro-interaction từ giao diện điều khiển công nghiệp đến ứng dụng nội bộ.',
+    tags: ['Clean Code', 'Tailwind / SCSS', 'Optimization'],
+  },
+  {
+    code: '10 / 10 — WORKSTATION · SONY TRINITRON CRT',
+    titleBold1: 'HỆ THỐNG',
+    titleItalic: 'sẵn sàng',
+    titleBold2: 'KHỞI CHẠY',
+    content:
+      'Bộ máy 1997 đã hạ cánh xuống bàn làm việc và bật nguồn! Hãy tương tác trực tiếp với màn hình CRT bên phải hoặc khám phá danh mục Projects & CV.',
+    tags: ['Interactive OS', 'Explore Projects', 'View CV'],
   },
 ];
 
@@ -104,12 +113,15 @@ export function AboutEditorialScroller() {
 
     const updateScroller = () => {
       const state = useBuildStore.getState();
-      const currentStep = state.currentStep; // 0 -> 12
+      const smoothScrollProgress = state.scrollCurrent; // 0.0 -> 12.0 liên tục
       const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
 
-      // CHỈ hiển thị khối text giới thiệu từ Step 01 -> Step 09.
-      // Khi ở Step 00 (Home) hoặc hoàn thiện máy (Step 10 trở đi / Projects / CV): ẩn hoàn toàn!
-      const isAboutActive = currentStep >= 1 && currentStep <= 9 && portalProgress >= 0.75;
+      // CHỈ hiển thị khối text giới thiệu trong phân đoạn ABOUT (Step 01 -> Step 10)
+      // Khi ở Step 00 (Home) hoặc mở hẳn Projects/CV: ẩn hoàn toàn
+      const isAboutActive =
+        portalProgress >= 0.75 &&
+        smoothScrollProgress >= 0.85 &&
+        smoothScrollProgress <= 10.6;
 
       if (containerRef.current) {
         containerRef.current.style.opacity = isAboutActive ? '1' : '0';
@@ -117,25 +129,35 @@ export function AboutEditorialScroller() {
         containerRef.current.style.pointerEvents = 'none';
       }
 
-      // Mỗi step hiển thị DUY NHẤT 1 card giới thiệu tương ứng 1:1.
-      // TEXT LUÔN LUÔN HIỆN ĐẦY ĐỦ 100%, TUYỆT ĐỐI KHÔNG TỰ TẮT.
-      // Chỉ khi người dùng chuyển sang step khác thì text cũ biến mất và text mới xuất hiện!
+      // Cơ chế Băng chuyền cuộn dọc từ từ (Smooth Vertical Reel Scroll):
+      // Duyệt qua 10 phần tử, tính vị trí translateY và opacity liên tục theo smoothScrollProgress
       for (let i = 0; i < ABOUT_EDITORIAL_STEPS.length; i++) {
-        const stepNum = i + 1; // 1..9
+        const stepIndex = i + 1; // 1..10
         const el = itemRefs.current[i];
         if (!el) continue;
 
-        if (isAboutActive && stepNum === currentStep) {
-          // Thẻ của step hiện tại: LUÔN CỐ ĐỊNH RÕ NÉT 100%
-          el.style.display = 'block';
-          el.style.opacity = '1';
-          el.style.transform = 'translate3d(0, 0, 0)';
-          el.style.filter = 'none';
-        } else {
-          // Thẻ của các step khác: ẩn hoàn toàn chống đè chữ
+        if (!isAboutActive) {
           el.style.display = 'none';
-          el.style.opacity = '0';
-          el.style.transform = 'translate3d(0, 20px, 0)';
+          continue;
+        }
+
+        // stepDelta = stepIndex - smoothScrollProgress
+        // - Step hiện tại có stepDelta ~ 0 => translateY ~ 0px
+        // - Khi cuộn sang step sau: Step cũ có stepDelta đi từ 0 -> -1 => translateY đi lên -340px
+        // - Step mới có stepDelta đi từ +1 -> 0 => translateY từ +340px trôi lên 0px
+        const stepDelta = stepIndex - smoothScrollProgress;
+        const translateY = stepDelta * 340;
+
+        // Giữ opacity hiển thị lâu hơn trên đường trượt để mắt nhìn rõ hiệu ứng cuộn lên/xuống
+        const opacity = THREE.MathUtils.clamp(1.15 - Math.abs(stepDelta) * 1.15, 0, 1);
+
+        if (Math.abs(stepDelta) > 1.05 || opacity <= 0.01) {
+          el.style.display = 'none';
+        } else {
+          el.style.display = 'block';
+          el.style.opacity = opacity.toFixed(3);
+          el.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0)`;
+          el.style.filter = 'none';
         }
       }
 
@@ -151,14 +173,16 @@ export function AboutEditorialScroller() {
       ref={containerRef}
       style={{
         position: 'fixed',
-        left: '5.5vw',
+        left: '4.5vw',
         top: '80px',
-        width: '38vw',
-        maxWidth: '520px',
+        width: '27vw',
+        maxWidth: '370px',
         height: 'calc(100vh - 80px)',
         pointerEvents: 'none',
         zIndex: 30,
         transition: 'opacity 0.4s ease-out',
+        maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
       }}
       className="hidden md:flex items-center justify-start select-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
     >
@@ -173,7 +197,6 @@ export function AboutEditorialScroller() {
             style={{
               display: 'none',
               transformOrigin: 'left center',
-              transition: 'opacity 0.25s ease-out, transform 0.25s ease-out',
             }}
           >
             {/* Nhãn linh kiện tương ứng */}
@@ -185,7 +208,7 @@ export function AboutEditorialScroller() {
             </div>
 
             {/* Tiêu đề 2 dòng: Bold Sans trắng + Italic Serif đỏ cam */}
-            <h2 className="font-sans font-black text-white text-[clamp(2rem,3.2vw,3.2rem)] tracking-tight leading-[1.04] uppercase mb-4">
+            <h2 className="font-sans font-black text-white text-[clamp(1.65rem,2.3vw,2.3rem)] tracking-tight leading-[1.08] uppercase mb-3">
               <span>{step.titleBold1} </span>
               <span
                 className="italic font-normal text-[#e05a47] lowercase"
