@@ -473,6 +473,9 @@ export function Workbench() {
   const targetRingRef = useRef<THREE.Group | null>(null);
   const caseWrapperRef = useRef<THREE.Group | null>(null);
   const componentsStageGroupRef = useRef<THREE.Group | null>(null);
+  const deskGroupRef = useRef<THREE.Group | null>(null);
+  const assemblyFloatingGroupRef = useRef<THREE.Group | null>(null);
+  const peripheralsGroupRef = useRef<THREE.Group | null>(null);
   const prevStepProgRef = useRef<number>(0);
   const transitionTimeRef = useRef<number>(0);
   const transitionPhaseRef = useRef<'EXIT' | 'WAIT' | 'ENTER'>('EXIT');
@@ -494,7 +497,7 @@ export function Workbench() {
     };
   }, [technicalBlackboardTex]);
 
-  useFrame((_, delta) => {
+  useFrame((r3fState, delta) => {
     const state = useBuildStore.getState();
     const prevP = prevStepProgRef.current;
     const curP = state.benchProgress;
@@ -565,6 +568,40 @@ export function Workbench() {
           : THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
       caseWrapperRef.current.position.y = TOWER_BASE_Y;
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
+    }
+
+    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG, STEP 10 HẠ CÁNH):
+    const smoothScrollProgress = state.scrollCurrent;
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
+    const floatWeight = 1.0 - landFactor;
+
+    const t = r3fState.clock.elapsedTime;
+    const floatY = (1.25 + Math.sin(t * 1.4) * 0.08) * floatWeight;
+    const floatRotX = Math.sin(t * 0.9) * 0.035 * floatWeight;
+    const floatRotZ = Math.cos(t * 1.1) * 0.03 * floatWeight;
+
+    if (assemblyFloatingGroupRef.current) {
+      assemblyFloatingGroupRef.current.position.y = floatY;
+      assemblyFloatingGroupRef.current.rotation.x = floatRotX;
+      assemblyFloatingGroupRef.current.rotation.z = floatRotZ;
+    }
+
+    // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -2.5 -> 0 đón thùng máy hạ cánh)
+    if (deskGroupRef.current) {
+      const isDeskVisible = smoothScrollProgress >= 9.05;
+      deskGroupRef.current.visible = isDeskVisible;
+      if (isDeskVisible) {
+        deskGroupRef.current.position.y = (1.0 - landFactor) * -2.5;
+      }
+    }
+
+    // Triệu hồi Màn CRT, Bàn phím, Chuột (Đáp nhẹ từ trên xuống y = 1.8 -> 0)
+    if (peripheralsGroupRef.current) {
+      const isPeriphVisible = smoothScrollProgress >= 9.05;
+      peripheralsGroupRef.current.visible = isPeriphVisible;
+      if (isPeriphVisible) {
+        peripheralsGroupRef.current.position.y = (1.0 - landFactor) * 1.8;
+      }
     }
 
     // Diễn hoạt chuyển cảnh giữa các phân đoạn (ABOUT / PROJECT / MY CV) mượt mà tuyệt đối (YÊU CẦU #3 & #4):
@@ -820,169 +857,187 @@ export function Workbench() {
 
   return (
     <group position={[0, 0, 0]} visible={!isInsideProjectApp}>
-      {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC (CHUẨN TỈ LỆ S.TABLE) */}
-      <RoundedBox
-        args={[S.TABLE.W, S.TABLE.TOP_THICK, S.TABLE.D]}
-        radius={0.008}
-        smoothness={2}
-        position={[0, -S.TABLE.TOP_THICK / 2, 0]}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial color="#0c0e12" roughness={0.88} metalness={0.06} />
-      </RoundedBox>
+      {/* =======================================================================
+          A. KHỐI BÀN LÀM VIỆC & ĐÈN BÀN CRÔM (DESK & LAMP WORKSTATION GROUP)
+          - Ẩn hoàn toàn (visible = false) ở Step 00 -> 09 để lắp ráp lơ lửng trên nền đen
+          - Khi cuộn sang Step 10: trượt êm từ dưới lên (y = -2.5 -> 0.0) đón thùng máy hạ cánh
+         ======================================================================= */}
+      <group ref={deskGroupRef} visible={false}>
+        {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC (CHUẨN TỈ LỆ S.TABLE) */}
+        <RoundedBox
+          args={[S.TABLE.W, S.TABLE.TOP_THICK, S.TABLE.D]}
+          radius={0.008}
+          smoothness={2}
+          position={[0, -S.TABLE.TOP_THICK / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#0c0e12" roughness={0.88} metalness={0.06} />
+        </RoundedBox>
 
-      {/* MẶT BẢNG ĐEN BẢN VẼ KỸ THUẬT (TECHNICAL BLUEPRINT BLACKBOARD DESK SURFACE) */}
-      <mesh
-        position={[0, 0.0005, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        castShadow
-        receiveShadow
-      >
-        <planeGeometry args={[S.TABLE.W - 0.015, S.TABLE.D - 0.015]} />
-        <meshStandardMaterial
-          map={technicalBlackboardTex}
-          roughness={0.78}
-          metalness={0.08}
-        />
-      </mesh>
+        {/* MẶT BẢNG ĐEN BẢN VẼ KỸ THUẬT (TECHNICAL BLUEPRINT BLACKBOARD DESK SURFACE) */}
+        <mesh
+          position={[0, 0.0005, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          castShadow
+          receiveShadow
+        >
+          <planeGeometry args={[S.TABLE.W - 0.015, S.TABLE.D - 0.015]} />
+          <meshStandardMaterial
+            map={technicalBlackboardTex}
+            roughness={0.78}
+            metalness={0.08}
+          />
+        </mesh>
 
-      {/* 4 Chân bàn thép hộp vuông chịu lực (0.07m x 0.07m) nối từ đáy mặt bàn (y = -0.05) xuống sàn (y = -0.75) */}
-      {[-tableLegX, tableLegX].map((lx) =>
-        [-tableLegZ, tableLegZ].map((lz) => (
-          <group key={`table-leg-${lx}-${lz}`} position={[lx, tableLegY, lz]}>
-            {/* Thân chân thép hộp */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[S.TABLE.LEG, legHeight, S.TABLE.LEG]} />
-              <meshStandardMaterial color="#1a1c22" roughness={0.45} metalness={0.8} />
-            </mesh>
-            {/* Đệm chân ren kim loại chạm sàn */}
-            <mesh position={[0, -legHeight / 2 + 0.0075, 0]}>
-              <cylinderGeometry args={[0.042, 0.048, 0.015, 16]} />
-              <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.85} />
-            </mesh>
-          </group>
-        ))
-      )}
+        {/* 4 Chân bàn thép hộp vuông chịu lực (0.07m x 0.07m) nối từ đáy mặt bàn (y = -0.05) xuống sàn (y = -0.75) */}
+        {[-tableLegX, tableLegX].map((lx) =>
+          [-tableLegZ, tableLegZ].map((lz) => (
+            <group key={`table-leg-${lx}-${lz}`} position={[lx, tableLegY, lz]}>
+              {/* Thân chân thép hộp */}
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[S.TABLE.LEG, legHeight, S.TABLE.LEG]} />
+                <meshStandardMaterial color="#1a1c22" roughness={0.45} metalness={0.8} />
+              </mesh>
+              {/* Đệm chân ren kim loại chạm sàn */}
+              <mesh position={[0, -legHeight / 2 + 0.0075, 0]}>
+                <cylinderGeometry args={[0.042, 0.048, 0.015, 16]} />
+                <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.85} />
+              </mesh>
+            </group>
+          ))
+        )}
 
-      {/* Thanh giằng ngang trên (Apron/Rails) dưới mặt bàn: RAIL_H = 0.10m, Y = -0.10m */}
-      <mesh position={[0, upperRailY, -tableLegZ]} castShadow>
-        <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
-      <mesh position={[0, upperRailY, tableLegZ]} castShadow>
-        <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
-      <mesh position={[-tableLegX, upperRailY, 0]} castShadow>
-        <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
-      <mesh position={[tableLegX, upperRailY, 0]} castShadow>
-        <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
+        {/* Thanh giằng ngang trên (Apron/Rails) dưới mặt bàn: RAIL_H = 0.10m, Y = -0.10m */}
+        <mesh position={[0, upperRailY, -tableLegZ]} castShadow>
+          <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
+        <mesh position={[0, upperRailY, tableLegZ]} castShadow>
+          <boxGeometry args={[tableSpanX, S.TABLE.RAIL_H, 0.025]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
+        <mesh position={[-tableLegX, upperRailY, 0]} castShadow>
+          <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
+        <mesh position={[tableLegX, upperRailY, 0]} castShadow>
+          <boxGeometry args={[0.025, S.TABLE.RAIL_H, tableSpanZ]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
 
-      {/* Thanh giằng thấp nối các chân (LOWER_BRACE_Y = -0.55m): thanh sau và 2 thanh bên hông (chừa gầm trước) */}
-      <mesh position={[0, S.TABLE.LOWER_BRACE_Y, -tableLegZ]} castShadow>
-        <boxGeometry args={[tableSpanX, 0.035, 0.035]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
-      <mesh position={[-tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
-        <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
-      <mesh position={[tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
-        <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
-        <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
-      </mesh>
+        {/* Thanh giằng thấp nối các chân (LOWER_BRACE_Y = -0.55m): thanh sau và 2 thanh bên hông (chừa gầm trước) */}
+        <mesh position={[0, S.TABLE.LOWER_BRACE_Y, -tableLegZ]} castShadow>
+          <boxGeometry args={[tableSpanX, 0.035, 0.035]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
+        <mesh position={[-tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
+          <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
+        <mesh position={[tableLegX, S.TABLE.LOWER_BRACE_Y, 0]} castShadow>
+          <boxGeometry args={[0.035, 0.035, tableSpanZ]} />
+          <meshStandardMaterial color="#181a20" roughness={0.5} metalness={0.75} />
+        </mesh>
 
-      {/* CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH TRÊN MẶT BÀN (ĐẶT TRỰC TIẾP TRÊN BẢNG ĐEN BẢN VẼ KỸ THUẬT) */}
+        {/* 8. ĐÈN BÀN LÒ XO MẠ CRÔM CỐ ĐỊNH TRÊN MẶT BÀN (CHROME ARCHITECT DESK LAMP - QUY ĐỔI S) */}
+        <group scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}>
+          <ChromeArchitectDeskLamp />
+        </group>
+
+        {/* 9. DEBUG SCALE REFERENCE: Người mẫu 1.70m đứng cạnh bàn (bật bằng flag S.DEBUG_SCALE_REF) */}
+        {S.DEBUG_SCALE_REF && <HumanScaleDummy />}
+      </group>
+
+      {/* =======================================================================
+          B. CỤM TOÀN BỘ LINH KIỆN MÁY TÍNH (COMPONENTS STAGE GROUP)
+         ======================================================================= */}
       <group
         ref={componentsStageGroupRef}
         scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
       >
-      {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
-             Xoay hướng thẳng mặt trước về phía Camera chính (+Z_world) */}
-      <group
-        ref={caseWrapperRef}
-        position={[TOWER_BUILD_X, TOWER_BASE_Y, TOWER_CENTER_Z]}
-        rotation={[Math.PI / 2, 0, Math.PI / 2]}
-        scale={TOWER_SCALE}
-        visible={currentStep >= 2}
-      >
-        <PcCaseEnlight
-          casePrepProgress={casePrepProgress}
-          moboScrewsProgress={moboScrewsProgress}
-          uCoverCloseProgress={uCoverCloseProgress}
-        />
-
-        {currentStep >= 3 && (
-          <PsuSeasonicAT psuInstallProgress={psuInstallProgress} />
-        )}
-
-        {currentStep >= 5 && (
-          <StorageDrives
-            driveInstallProgress={driveInstallProgress}
-            isCaseCoverClosed={isCaseCoverClosed}
-          />
-        )}
-
-        {currentStep >= 6 && (
-          <group visible={!isCaseCoverClosed}>
-            <PowerAndFrontCables
-              powerCableProgress={powerCableProgress}
-              frontPanelProgress={frontPanelProgress}
+        {/* =====================================================================
+            1. CỤM LINH KIỆN LƠ LỬNG KHÔNG TRỌNG LỰC (ZERO-GRAVITY LEVITATION GROUP)
+            - Nâng lên y = 1.25 ở Step 00 -> 09, lơ lửng êm ái theo sin/cos
+            - Hạ cánh êm xuống mặt bàn y = 0.0 khi cuộn sang Step 10
+           ===================================================================== */}
+        <group ref={assemblyFloatingGroupRef}>
+          {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
+                 Xoay hướng thẳng mặt trước về phía Camera chính (+Z_world) */}
+          <group
+            ref={caseWrapperRef}
+            position={[TOWER_BUILD_X, TOWER_BASE_Y, TOWER_CENTER_Z]}
+            rotation={[Math.PI / 2, 0, Math.PI / 2]}
+            scale={TOWER_SCALE}
+            visible={currentStep >= 2}
+          >
+            <PcCaseEnlight
+              casePrepProgress={casePrepProgress}
+              moboScrewsProgress={moboScrewsProgress}
+              uCoverCloseProgress={uCoverCloseProgress}
             />
-          </group>
-        )}
 
-        {currentStep >= 7 && (
+            {currentStep >= 3 && (
+              <PsuSeasonicAT psuInstallProgress={psuInstallProgress} />
+            )}
+
+            {currentStep >= 5 && (
+              <StorageDrives
+                driveInstallProgress={driveInstallProgress}
+                isCaseCoverClosed={isCaseCoverClosed}
+              />
+            )}
+
+            {currentStep >= 6 && (
+              <group visible={!isCaseCoverClosed}>
+                <PowerAndFrontCables
+                  powerCableProgress={powerCableProgress}
+                  frontPanelProgress={frontPanelProgress}
+                />
+              </group>
+            )}
+
+            {currentStep >= 7 && (
+              <group visible={!isCaseCoverClosed}>
+                <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
+              </group>
+            )}
+
+            {currentStep >= 9 && (
+              <group visible={!isCaseCoverClosed}>
+                <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
+              </group>
+            )}
+          </group>
+
+          {/* 6. CỤM LINH KIỆN BO MẠCH CHỦ (STEP 01 TRÊN BÀN -> STEP 04 DỰNG ĐỨNG VÀO LÒNG CASE)
+                 Ẩn hoàn toàn khi nắp vỏ thùng máy đã đóng kín để loại bỏ 100% lỗi lộ bo mạch xanh */}
           <group visible={!isCaseCoverClosed}>
-            <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
+            <BenchAssemblyGroup />
           </group>
-        )}
 
-        {currentStep >= 9 && (
-          <group visible={!isCaseCoverClosed}>
-            <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
+          {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0 VÀ STEP 10) */}
+          <group ref={targetRingRef} position={[0, -0.05, 0]} visible={currentStep >= 1 && currentStep < 10}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.38, 0.41, 32]} />
+              <meshBasicMaterial
+                color={isTurbo ? '#ff2a2a' : '#33ff33'}
+                side={THREE.DoubleSide}
+                transparent
+                opacity={0.65}
+              />
+            </mesh>
           </group>
-        )}
-      </group>
+        </group>
 
-      {/* 6. CỤM LINH KIỆN BO MẠCH CHỦ (STEP 01 TRÊN BÀN -> STEP 04 DỰNG ĐỨNG VÀO LÒNG CASE)
-             Ẩn hoàn toàn khi nắp vỏ thùng máy đã đóng kín để loại bỏ 100% lỗi lộ bo mạch xanh */}
-      <group visible={!isCaseCoverClosed}>
-        <BenchAssemblyGroup />
-      </group>
-
-      {/* 6B. CỤM NGOẠI VI MÀN HÌNH CRT SONY TRINITRON 15" + BÀN PHÍM IBM MODEL M + CHUỘT BI (STEP 10)
-             Giữ mounted liên tục để nạp sẵn Shader & CanvasTexture vào VRAM, loại bỏ 100% lag giật khi vào Step 10 */}
-      <group visible={currentStep >= 10}>
-        <PeripheralsCRT peripheralsProgress={peripheralsProgress} />
-      </group>
-
-        {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0 VÀ STEP 10) */}
-        <group ref={targetRingRef} position={[0, 0.015, 0]} visible={currentStep >= 1 && currentStep < 10}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.38, 0.41, 32]} />
-            <meshBasicMaterial
-              color={isTurbo ? '#ff2a2a' : '#33ff33'}
-              side={THREE.DoubleSide}
-              transparent
-              opacity={0.65}
-            />
-          </mesh>
+        {/* =====================================================================
+            2. CỤM NGOẠI VI MÀN HÌNH CRT SONY TRINITRON 15" + BÀN PHÍM IBM MODEL M + CHUỘT BI (STEP 10)
+            - Ẩn ở Step 00 -> 09; khi sang Step 10: đáp nhẹ từ trên cao xuống mặt bàn (y = 1.8 -> 0)
+           ===================================================================== */}
+        <group ref={peripheralsGroupRef} visible={false}>
+          <PeripheralsCRT peripheralsProgress={peripheralsProgress} />
         </group>
       </group>
-
-      {/* 8. ĐÈN BÀN LÒ XO MẠ CRÔM CỐ ĐỊNH TRÊN MẶT BÀN (CHROME ARCHITECT DESK LAMP - QUY ĐỔI S) */}
-      <group scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}>
-        <ChromeArchitectDeskLamp />
-      </group>
-
-      {/* 9. DEBUG SCALE REFERENCE: Người mẫu 1.70m đứng cạnh bàn (bật bằng flag S.DEBUG_SCALE_REF) */}
-      {S.DEBUG_SCALE_REF && <HumanScaleDummy />}
     </group>
   );
 }

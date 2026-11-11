@@ -785,6 +785,24 @@ function CRTVideoWall() {
 // 2. TOÀN CẢNH PHÒNG RETRO LAB VUÔNG 1997 (SQUARE LAB ENVIRONMENT)
 // =============================================================================
 export function RetroLabEnvironment() {
+  const roomGroupRef = useRef<THREE.Group | null>(null);
+
+  useFrame(() => {
+    const state = useBuildStore.getState();
+    const smoothScrollProgress = state.scrollCurrent;
+    const isVisible = smoothScrollProgress >= 9.05;
+
+    if (roomGroupRef.current) {
+      roomGroupRef.current.visible = isVisible;
+      if (isVisible) {
+        const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
+        // Tường và phòng lướt từ z = -4.0 về 0.0 đón chào khi lắp ráp hoàn thiện máy
+        const roomZ = (1.0 - landFactor) * -4.0;
+        roomGroupRef.current.position.z = roomZ;
+      }
+    }
+  });
+
   const { floorMat, wallMat, ceilingMat } = useMemo(() => {
     return {
       floorMat: new THREE.MeshStandardMaterial({
@@ -823,7 +841,7 @@ export function RetroLabEnvironment() {
   const ceilingY = S.FLOOR_Y + S.ROOM.HEIGHT; // 2.05m
 
   return (
-    <group>
+    <group ref={roomGroupRef} visible={false}>
       {/* =======================================================================
           A. BỨC TƯỜNG MÀN HÌNH CRT PHẲNG (CRTVideowall - KÊ SÁT TƯỜNG SAU & BÀN GẦN HƠN)
           - Luôn mounted và luôn visible = true ở mọi thời điểm

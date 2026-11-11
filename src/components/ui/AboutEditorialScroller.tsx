@@ -134,19 +134,19 @@ export function AboutEditorialScroller() {
 
         // delta > 0 khi bước sắp tới (chữ trôi từ dưới lên), delta < 0 khi đã cuộn qua (chữ trôi lên trên)
         const translateY = -stepDelta * 220; // Khoảng dịch chuyển dọc (px)
-        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.35, 0, 1);
-        const scale = THREE.MathUtils.lerp(0.94, 1.0, opacity);
-        const blur = Math.max(0, (1 - opacity) * 4);
+        // Tight Opacity Falloff (x2.2): chữ chuyển bước dứt khoát, hoàn toàn không chồng bóng mờ
+        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 2.2, 0, 1);
+        const scale = THREE.MathUtils.lerp(0.96, 1.0, opacity);
 
         const el = itemRefs.current[i];
         if (el) {
-          if (opacity <= 0.005 || !isAbout) {
+          if (opacity <= 0.02 || !isAbout) {
             el.style.display = 'none';
           } else {
             el.style.display = 'block';
             el.style.opacity = `${opacity}`;
             el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-            el.style.filter = blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : 'none';
+            el.style.filter = 'none'; // Xóa bỏ hoàn toàn blur, chữ luôn sắc nét 100%
           }
         }
       }

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import { useControls } from 'leva';
 import * as THREE from 'three';
@@ -13,7 +14,9 @@ export function Experience() {
   const isTurbo = useBuildStore((s) => s.isTurbo);
 
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
+  const bulbLightRef = useRef<THREE.PointLight | null>(null);
   const spotTargetRef = useRef<THREE.Object3D | null>(null);
+  const contactShadowsGroupRef = useRef<THREE.Group | null>(null);
 
   const { spotIntensity, ambientIntensity, bulbGlowIntensity, lampWarmth } = useControls(
     'Workbench Lighting',
@@ -33,16 +36,50 @@ export function Experience() {
     }
   }, []);
 
+  useFrame(() => {
+    const state = useBuildStore.getState();
+    const smoothScrollProgress = state.scrollCurrent;
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
+
+    // Đèn bàn chỉ sáng dần khi chiếc bàn trượt lên ở Step 10
+    if (spotLightRef.current) {
+      spotLightRef.current.intensity = isLampOn ? spotIntensity * landFactor : 0;
+    }
+    if (bulbLightRef.current) {
+      bulbLightRef.current.intensity = isLampOn ? bulbGlowIntensity * landFactor : 0;
+    }
+    // Đổ bóng tiếp xúc chỉ xuất hiện và nâng lên cùng mặt bàn ở Step 10
+    if (contactShadowsGroupRef.current) {
+      const isDeskVisible = smoothScrollProgress >= 9.05;
+      contactShadowsGroupRef.current.visible = isDeskVisible;
+      if (isDeskVisible) {
+        contactShadowsGroupRef.current.position.y = (1.0 - landFactor) * -2.5 + 0.002;
+      }
+    }
+  });
+
   return (
     <>
-      <color attach="background" args={['#0e1014']} />
-      <fog attach="fog" args={['#0e1014', 12, 28]} />
+      <color attach="background" args={['#0a0a0c']} />
+      <fog attach="fog" args={['#0a0a0c', 12, 28]} />
 
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
 
       {/* Ánh sáng môi trường cân bằng rõ nét */}
       <ambientLight intensity={ambientIntensity} color="#cdd9e6" />
+
+      {/* Nguồn sáng Studio Key & Rim Light chiếu nổi khối linh kiện đang lơ lửng trong không gian tối (Step 00 -> 09) */}
+      <directionalLight
+        position={[2.0, 3.5, 3.0]}
+        intensity={1.25}
+        color="#f8fafc"
+      />
+      <directionalLight
+        position={[-3.0, 2.2, -2.0]}
+        intensity={0.85}
+        color="#60a5fa"
+      />
 
       {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm mặt bàn và bo mạch chủ) */}
       <object3D
@@ -66,7 +103,7 @@ export function Experience() {
         penumbra={0.65}
         distance={3.8}
         decay={1.5}
-        intensity={isLampOn ? spotIntensity : 0}
+        intensity={0}
         color={lampWarmth}
         castShadow
         shadow-mapSize={[1024, 1024]}
@@ -75,12 +112,13 @@ export function Experience() {
 
       {/* Quầng sáng tỏa dịu (Fill Glow) ngay tại bóng đèn bên trong chao đèn crôm */}
       <pointLight
+        ref={bulbLightRef}
         position={[
           -5.48 * S.DESK_ITEMS_SCALE,
           4.60 * S.DESK_ITEMS_SCALE,
           0.86 * S.DESK_ITEMS_SCALE,
         ]}
-        intensity={isLampOn ? bulbGlowIntensity : 0}
+        intensity={0}
         distance={1.6}
         decay={1.8}
         color="#ffe6b5"
@@ -93,16 +131,18 @@ export function Experience() {
         color={isTurbo ? '#fff2d6' : '#e6f0fa'}
       />
 
-      {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy */}
-      <ContactShadows
-        position={[0, 0.002, 0]}
-        opacity={0.65}
-        scale={2.2}
-        blur={1.6}
-        far={1.5}
-        resolution={512}
-        color="#040608"
-      />
+      {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy khi đáp xuống bàn */}
+      <group ref={contactShadowsGroupRef} visible={false}>
+        <ContactShadows
+          position={[0, 0, 0]}
+          opacity={0.65}
+          scale={2.2}
+          blur={1.6}
+          far={1.5}
+          resolution={512}
+          color="#040608"
+        />
+      </group>
 
       {/* Mặt bàn Cutting Mat, Khay linh kiện & Đèn bàn Crôm */}
       <Workbench />

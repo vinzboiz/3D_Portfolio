@@ -86,10 +86,18 @@ export function CameraRig() {
     const stepData = ASSEMBLY_STEPS[currentStep] ?? ASSEMBLY_STEPS[0];
     const pos = new THREE.Vector3(...stepData.cameraPos);
     const rawTarget = new THREE.Vector3(...stepData.cameraTarget);
+
+    const landFactor = THREE.MathUtils.smoothstep(currentStep, 9.1, 9.85);
+    const floatWeight = 1.0 - landFactor;
+    const floatYWorld = (1.25 * floatWeight) * S.DESK_ITEMS_SCALE;
+
+    pos.y += floatYWorld;
+    rawTarget.y += floatYWorld;
+
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 1.25 : 1.85) * S.DESK_ITEMS_SCALE;
+      const offset = (currentStep >= 10 ? 1.25 : 2.0) * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -256,9 +264,17 @@ export function CameraRig() {
         const interpPos = new THREE.Vector3().lerpVectors(posA, posB, ease);
         const interpRawTarget = new THREE.Vector3().lerpVectors(targetA, targetB, ease);
 
+        // Theo dõi độ nâng lơ lửng của cụm linh kiện ở Step 00 -> 09
+        const landFactor = THREE.MathUtils.smoothstep(scrollVal, 9.1, 9.85);
+        const floatWeight = 1.0 - landFactor;
+        const floatYWorld = (1.25 * floatWeight) * S.DESK_ITEMS_SCALE;
+
+        interpPos.y += floatYWorld;
+        interpRawTarget.y += floatYWorld;
+
         // Đẩy thông minh mô hình sang nửa phải màn hình theo vector ngang của góc quay hiện tại
         const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
-        const offsetAmount = THREE.MathUtils.lerp(1.85, 1.25, progress1to10) * S.DESK_ITEMS_SCALE;
+        const offsetAmount = THREE.MathUtils.lerp(2.0, 1.25, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 
