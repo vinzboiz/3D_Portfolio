@@ -587,7 +587,7 @@ export function Workbench() {
 
     // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -1.8 -> 0 đón thùng máy hạ cánh êm ái)
     if (deskGroupRef.current) {
-      const isDeskVisible = smoothScrollProgress >= 8.95;
+      const isDeskVisible = smoothScrollProgress >= 8.5;
       deskGroupRef.current.visible = isDeskVisible;
       if (isDeskVisible) {
         deskGroupRef.current.position.y = (1.0 - landFactor) * -1.8;
@@ -596,7 +596,7 @@ export function Workbench() {
 
     // Triệu hồi Màn CRT, Bàn phím, Chuột (Đáp nhẹ từ trên xuống y = 1.2 -> 0)
     if (peripheralsGroupRef.current) {
-      const isPeriphVisible = smoothScrollProgress >= 8.95;
+      const isPeriphVisible = smoothScrollProgress >= 8.5;
       peripheralsGroupRef.current.visible = isPeriphVisible;
       if (isPeriphVisible) {
         peripheralsGroupRef.current.position.y = (1.0 - landFactor) * 1.2;

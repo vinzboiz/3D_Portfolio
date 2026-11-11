@@ -97,7 +97,7 @@ export function CameraRig() {
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 1.55 : 3.55) * S.DESK_ITEMS_SCALE;
+      const offset = (currentStep >= 10 ? 0.55 : 1.35) * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -202,7 +202,7 @@ export function CameraRig() {
       const toCam1 = new THREE.Vector3().subVectors(step1Pos, step1RawTarget);
       step1Pos.addScaledVector(toCam1, 0.24);
 
-      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 3.55 * S.DESK_ITEMS_SCALE);
+      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 1.35 * S.DESK_ITEMS_SCALE);
 
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
       desiredTarget.current.lerpVectors(homeTarget, step1FramedTarget, ease);
@@ -286,8 +286,8 @@ export function CameraRig() {
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
         interpPos.addScaledVector(toCam, camPullBack);
 
-        // Đẩy mô hình sang nửa phải màn hình rõ rệt (3.55 -> 1.55) tạo khoảng thở thoáng đãng với khối text bên trái
-        const offsetAmount = THREE.MathUtils.lerp(3.55, 1.55, progress1to10) * S.DESK_ITEMS_SCALE;
+        // Đẩy mô hình sang nửa phải màn hình vừa vặn (1.35 -> 0.55), tuyệt đối không để văng khỏi mép phải
+        const offsetAmount = THREE.MathUtils.lerp(1.35, 0.55, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 
@@ -303,7 +303,7 @@ export function CameraRig() {
         const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
         step10Pos.addScaledVector(toCam10, 0.18);
 
-        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 1.55 * S.DESK_ITEMS_SCALE);
+        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 0.55 * S.DESK_ITEMS_SCALE);
 
         desiredPos.current.copy(step10Pos);
         desiredTarget.current.copy(framedTarget);

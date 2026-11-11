@@ -379,7 +379,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       }
       const wasPowered = get().isPoweredOn;
       if (wasPowered) {
-        // BƯỚC A: Tắt nguồn máy & Màn hình CRT sập nguồn (CRT Power-Off Collapse) ngay lập tức
+        // Tắt nguồn máy & Màn hình CRT sập nguồn tức thì khi lướt về Step 09, phản hồi ngay lập tức 0ms lag
         retroSound.playTurboClick(get().soundEnabled);
         set({
           isPoweredOn: false,
@@ -393,18 +393,6 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
           activeWindow: null,
           openWindows: [],
         });
-        get().showHudWarning('SHUTTING DOWN SYSTEM SAFELY BEFORE DISASSEMBLY...', 1800);
-
-        // BƯỚC B: Trễ 0.5s sau khi CRT sập nguồn và đèn tắt an toàn mới mở nắp thùng máy lùi về Step 09
-        shutdownDisassemblyTimer = setTimeout(() => {
-          set({
-            currentStep: clamped,
-            scrollTarget: targetTimeline,
-            benchScrubbing: true,
-          });
-          shutdownDisassemblyTimer = null;
-        }, 500);
-        return;
       }
     }
 

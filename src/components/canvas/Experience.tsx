@@ -66,6 +66,15 @@ export function Experience() {
       const isLanded = smoothScrollProgress >= 9.6;
       contactShadowsGroupRef.current.visible = isLanded;
     }
+
+    // Điều chỉnh độ mở của Fog động:
+    // - Step 00 -> 09: Fog thu hẹp (near=3.5, far=7.5) giữ nền không gian đen tuyền #0a0a0c
+    // - Step 10: Fog mở rộng (near=12, far=28) căn phòng Retro Lab hiện ra mượt mà không bị giật lag
+    if (scene.fog && 'near' in scene.fog) {
+      const fogExp = scene.fog as THREE.Fog;
+      fogExp.near = THREE.MathUtils.lerp(3.5, 12, landFactor);
+      fogExp.far = THREE.MathUtils.lerp(7.5, 28, landFactor);
+    }
   });
 
   return (

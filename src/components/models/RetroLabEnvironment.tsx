@@ -790,7 +790,7 @@ export function RetroLabEnvironment() {
   useFrame(() => {
     const state = useBuildStore.getState();
     const smoothScrollProgress = state.scrollCurrent;
-    const isVisible = smoothScrollProgress >= 8.95;
+    const isVisible = smoothScrollProgress >= 8.5;
 
     if (roomGroupRef.current) {
       roomGroupRef.current.visible = isVisible;
