@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
-import { S, DESK_Z_OFFSET, validateScaleContract } from '../../constants/scale';
+import { S, validateScaleContract } from '../../constants/scale';
 import {
   retroMaterials,
   RETRO_PBR_PARAMS,
@@ -819,7 +819,7 @@ export function Workbench() {
   const upperRailY = -S.TABLE.TOP_THICK - S.TABLE.RAIL_H / 2; // -0.10m
 
   return (
-    <group position={[0, 0, DESK_Z_OFFSET]} visible={!isInsideProjectApp}>
+    <group position={[0, 0, 0]} visible={!isInsideProjectApp}>
       {/* 1. MẶT BÀN GỖ KỸ THUẬT NỀN DƯỚI (WORKBENCH DESK SLAB) & 4 CHÂN BÀN THÉP CHỊU LỰC (CHUẨN TỈ LỆ S.TABLE) */}
       <RoundedBox
         args={[S.TABLE.W, S.TABLE.TOP_THICK, S.TABLE.D]}

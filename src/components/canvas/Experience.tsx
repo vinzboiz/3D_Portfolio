@@ -6,7 +6,7 @@ import { CameraRig } from './CameraRig';
 import { Workbench } from './Workbench';
 import { RetroLabEnvironment } from '../models/RetroLabEnvironment';
 import { useBuildStore } from '../../store/useBuildStore';
-import { S, DESK_Z_OFFSET } from '../../constants/scale';
+import { S } from '../../constants/scale';
 
 export function Experience() {
   const isLampOn = useBuildStore((s) => s.isLampOn);
@@ -50,7 +50,7 @@ export function Experience() {
         position={[
           0.25 * S.DESK_ITEMS_SCALE,
           1.15 * S.DESK_ITEMS_SCALE,
-          0.55 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET,
+          0.55 * S.DESK_ITEMS_SCALE,
         ]}
       />
 
@@ -60,7 +60,7 @@ export function Experience() {
         position={[
           -5.51 * S.DESK_ITEMS_SCALE,
           4.66 * S.DESK_ITEMS_SCALE,
-          0.85 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET,
+          0.85 * S.DESK_ITEMS_SCALE,
         ]}
         angle={1.05}
         penumbra={0.65}
@@ -78,7 +78,7 @@ export function Experience() {
         position={[
           -5.48 * S.DESK_ITEMS_SCALE,
           4.60 * S.DESK_ITEMS_SCALE,
-          0.86 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET,
+          0.86 * S.DESK_ITEMS_SCALE,
         ]}
         intensity={isLampOn ? bulbGlowIntensity : 0}
         distance={1.6}
@@ -88,14 +88,14 @@ export function Experience() {
 
       {/* Nguồn sáng mềm bổ trợ từ góc trước-phải rọi vào mặt trước Thùng máy, Màn CRT và Bàn phím */}
       <directionalLight
-        position={[1.2, 1.8, 1.8 + DESK_Z_OFFSET]}
+        position={[1.2, 1.8, 1.8]}
         intensity={0.42}
         color={isTurbo ? '#fff2d6' : '#e6f0fa'}
       />
 
       {/* Đổ bóng tiếp xúc mềm dưới đáy linh kiện và khung máy */}
       <ContactShadows
-        position={[0, 0.002, DESK_Z_OFFSET]}
+        position={[0, 0.002, 0]}
         opacity={0.65}
         scale={2.2}
         blur={1.6}

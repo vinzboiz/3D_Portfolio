@@ -5,12 +5,12 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useBuildStore, type ProjectAppTransition } from '../../store/useBuildStore';
 import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
-import { S, DESK_Z_OFFSET } from '../../constants/scale';
+import { S } from '../../constants/scale';
 
 const CRT_SCREEN_CENTER_POS = new THREE.Vector3(
   -0.85 * S.DESK_ITEMS_SCALE,
   1.786 * S.DESK_ITEMS_SCALE,
-  1.013 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
+  1.013 * S.DESK_ITEMS_SCALE
 );
 const HOME_FOV = 70.0;
 const WORKBENCH_FOV = 40.0;
@@ -26,12 +26,12 @@ const WORKBENCH_FOV = 40.0;
 const HOME_CAM_POS = new THREE.Vector3(
   -6.2 * S.DESK_ITEMS_SCALE,
   7.2 * S.DESK_ITEMS_SCALE,
-  9.2 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
+  9.2 * S.DESK_ITEMS_SCALE
 );
 const HOME_BASE_TARGET = new THREE.Vector3(
   0.0 * S.DESK_ITEMS_SCALE,
   1.4 * S.DESK_ITEMS_SCALE,
-  -0.6 * S.DESK_ITEMS_SCALE + DESK_Z_OFFSET
+  -0.6 * S.DESK_ITEMS_SCALE
 );
 
 /**
@@ -72,6 +72,12 @@ function computeFramedStepTargetAndPos(scrollVal: number) {
   // Dịch cả target lẫn pos theo -camRight để linh kiện xuất hiện bên phải khung nhìn
   const finalTarget = baseTarget.clone().addScaledVector(camRight, -offsetDist);
   const finalPos = basePos.clone().addScaledVector(camRight, -offsetDist);
+
+  // Khóa vùng an toàn (Camera Safe Bounding Box Clamp) ngay trên finalPos:
+  // Luôn giữ Camera trong khoảng không gian mở phía trước mặt bàn, không bao giờ lùi ra sau tường CRT
+  finalPos.x = THREE.MathUtils.clamp(finalPos.x, -3.2 * S.DESK_ITEMS_SCALE, 2.6 * S.DESK_ITEMS_SCALE);
+  finalPos.y = THREE.MathUtils.clamp(finalPos.y, 2.3 * S.DESK_ITEMS_SCALE, 5.2 * S.DESK_ITEMS_SCALE);
+  finalPos.z = THREE.MathUtils.clamp(finalPos.z, 2.6 * S.DESK_ITEMS_SCALE, 6.2 * S.DESK_ITEMS_SCALE);
 
   return { finalPos, finalTarget };
 }
@@ -122,12 +128,19 @@ export function CameraRig() {
 
     // Helper giới hạn camera chặt chẽ trong không gian căn phòng
     const clampCameraInRoom = () => {
+      // Khi đang trong các bước About (scrollVal >= 0.95) và không ở chế độ Project App / FreeCam:
+      // Khóa chặt Z luôn ở phía trước bàn (Z >= 2.5 * S.DESK_ITEMS_SCALE), tuyệt đối không bao giờ lọt ra sau tường CRT
+      const minZBound =
+        state.scrollCurrent >= 0.95 && !state.isInsideProjectApp && !state.freeCam
+          ? 2.5 * S.DESK_ITEMS_SCALE
+          : -0.80;
+
       const minX = -1.30;
       const maxX = 1.30;
       const minY = 0.08;
       const maxY = 1.95;
-      const minZ = -0.80;
-      const maxZ = 4.65;
+      const minZ = minZBound;
+      const maxZ = 1.75;
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -236,6 +249,25 @@ export function CameraRig() {
       const { finalPos, finalTarget } = computeFramedStepTargetAndPos(scrollVal);
       desiredPos.current.copy(finalPos);
       desiredTarget.current.copy(finalTarget);
+
+      // Camera Safe Bounding Box Clamp: Khóa cứng vùng an toàn của Camera luôn nằm ở không gian phía trước mặt bàn
+      if (scrollVal >= 1.0 && !state.isInsideProjectApp) {
+        desiredPos.current.x = THREE.MathUtils.clamp(
+          desiredPos.current.x,
+          -3.2 * S.DESK_ITEMS_SCALE,
+          2.6 * S.DESK_ITEMS_SCALE
+        );
+        desiredPos.current.y = THREE.MathUtils.clamp(
+          desiredPos.current.y,
+          2.3 * S.DESK_ITEMS_SCALE,
+          5.2 * S.DESK_ITEMS_SCALE
+        );
+        desiredPos.current.z = THREE.MathUtils.clamp(
+          desiredPos.current.z,
+          2.6 * S.DESK_ITEMS_SCALE,
+          6.2 * S.DESK_ITEMS_SCALE
+        ); // Luôn giữ Z >= 2.6 * S.DESK_ITEMS_SCALE ở phía trước bàn
+      }
 
       if (Math.abs(persCam.fov - WORKBENCH_FOV) > 0.05) {
         persCam.fov = WORKBENCH_FOV;
