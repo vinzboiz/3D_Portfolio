@@ -304,12 +304,15 @@ export interface PcCaseEnlightProps {
   moboScrewsProgress: number;
   /** Tiến trình đóng nắp vỏ chữ U (Step 10, mặc định 0 = tách rời để nhìn rõ nội thất) */
   uCoverCloseProgress?: number;
+  /** Độ mờ nắp vỏ ngoài khi camera đến gần */
+  caseOpacity?: number;
 }
 
 export function PcCaseEnlight({
   casePrepProgress,
   moboScrewsProgress,
   uCoverCloseProgress = 0,
+  caseOpacity = 1.0,
 }: PcCaseEnlightProps) {
   const currentStep = useBuildStore((s) => s.currentStep);
   const isPoweredOn = useBuildStore((s) => s.isPoweredOn);
@@ -1518,6 +1521,7 @@ export function PcCaseEnlight({
         const uScrewSmooth = uScrewT * uScrewT * (3 - 2 * uScrewT);
 
         const coverX = THREE.MathUtils.lerp(-0.45, 0.46, uSlideSmooth);
+        const isCaseTransparent = caseOpacity < 0.99;
 
         return (
           <group name="CaseUCoverGroup" visible={uCoverCloseProgress > 0.001}>
@@ -1530,8 +1534,16 @@ export function PcCaseEnlight({
                   position={[0, 0.66, 0]}
                   castShadow
                   receiveShadow
-                  material={retroMaterials.beigePlastic}
-                />
+                >
+                  <meshStandardMaterial
+                    color="#d8d2c5"
+                    roughness={0.65}
+                    metalness={0.05}
+                    transparent={isCaseTransparent}
+                    opacity={caseOpacity}
+                    depthWrite={!isCaseTransparent}
+                  />
+                </RoundedBox>
 
                 {/* Vách nóc trên cùng của thùng máy đứng (Z_int = -1.75) */}
                 <RoundedBox
@@ -1541,8 +1553,16 @@ export function PcCaseEnlight({
                   position={[0, 0, -1.75]}
                   castShadow
                   receiveShadow
-                  material={retroMaterials.beigePlastic}
-                />
+                >
+                  <meshStandardMaterial
+                    color="#d8d2c5"
+                    roughness={0.65}
+                    metalness={0.05}
+                    transparent={isCaseTransparent}
+                    opacity={caseOpacity}
+                    depthWrite={!isCaseTransparent}
+                  />
+                </RoundedBox>
 
                 {/* Mặt nắp hông phải (Y_int = -0.66) */}
                 <RoundedBox
@@ -1552,8 +1572,16 @@ export function PcCaseEnlight({
                   position={[0, -0.66, 0]}
                   castShadow
                   receiveShadow
-                  material={retroMaterials.beigePlastic}
-                />
+                >
+                  <meshStandardMaterial
+                    color="#d8d2c5"
+                    roughness={0.65}
+                    metalness={0.05}
+                    transparent={isCaseTransparent}
+                    opacity={caseOpacity}
+                    depthWrite={!isCaseTransparent}
+                  />
+                </RoundedBox>
               </group>
 
               {/* 4 Ốc vít mặt lưng siết chặt nắp vỏ chữ U ở Step 10 */}

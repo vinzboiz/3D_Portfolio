@@ -470,6 +470,8 @@ export function Workbench() {
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const stageTransition = useBuildStore((s) => s.stageTransition);
 
+  const [caseOpacity, setCaseOpacity] = useState(1.0);
+
   const targetRingRef = useRef<THREE.Group | null>(null);
   const caseWrapperRef = useRef<THREE.Group | null>(null);
   const componentsStageGroupRef = useRef<THREE.Group | null>(null);
@@ -494,8 +496,21 @@ export function Workbench() {
     };
   }, [technicalBlackboardTex]);
 
-  useFrame((_, delta) => {
+  useFrame((r3fState, delta) => {
     const state = useBuildStore.getState();
+
+    // Giảm nhẹ opacity của vỏ thùng máy khi camera tiến quá gần (dist < 2.2)
+    const towerWorldPos = new THREE.Vector3(
+      TOWER_BUILD_X * S.DESK_ITEMS_SCALE,
+      TOWER_BASE_Y * S.DESK_ITEMS_SCALE,
+      TOWER_CENTER_Z * S.DESK_ITEMS_SCALE
+    );
+    const distToCase = r3fState.camera.position.distanceTo(towerWorldPos) / S.DESK_ITEMS_SCALE;
+    const targetOpacity = distToCase < 2.2 ? 0.2 : 1.0;
+    if (Math.abs(caseOpacity - targetOpacity) > 0.05) {
+      setCaseOpacity(targetOpacity);
+    }
+
     const prevP = prevStepProgRef.current;
     const curP = state.benchProgress;
 
@@ -915,6 +930,7 @@ export function Workbench() {
           casePrepProgress={casePrepProgress}
           moboScrewsProgress={moboScrewsProgress}
           uCoverCloseProgress={uCoverCloseProgress}
+          caseOpacity={caseOpacity}
         />
 
         {currentStep >= 3 && (
