@@ -97,7 +97,8 @@ export function CameraRig() {
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 0.65 : 2.10) * S.DESK_ITEMS_SCALE;
+      const stepOffset = currentStep >= 10 ? 0.65 : currentStep === 9 ? 1.85 : 2.85;
+      const offset = stepOffset * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -202,7 +203,7 @@ export function CameraRig() {
       const toCam1 = new THREE.Vector3().subVectors(step1Pos, step1RawTarget);
       step1Pos.addScaledVector(toCam1, 0.24);
 
-      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 2.10 * S.DESK_ITEMS_SCALE);
+      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 2.85 * S.DESK_ITEMS_SCALE);
 
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
       desiredTarget.current.lerpVectors(homeTarget, step1FramedTarget, ease);
@@ -286,8 +287,16 @@ export function CameraRig() {
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
         interpPos.addScaledVector(toCam, camPullBack);
 
-        // Đẩy mô hình sang nửa phải màn hình vừa vặn (2.10 -> 0.65), tạo khoảng thở thoáng đãng với khối text bên trái
-        const offsetAmount = THREE.MathUtils.lerp(2.10, 0.65, progress1to10) * S.DESK_ITEMS_SCALE;
+        // Đẩy toàn bộ cụm linh kiện 3D sang nửa phải màn hình bắt đầu từ mép ~60% chiều rộng màn hình
+        let baseOffset = 2.85;
+        if (scrollVal > 8.0 && scrollVal <= 9.0) {
+          const t = scrollVal - 8.0;
+          baseOffset = THREE.MathUtils.lerp(2.85, 1.85, t);
+        } else if (scrollVal > 9.0) {
+          const t = THREE.MathUtils.clamp(scrollVal - 9.0, 0, 1);
+          baseOffset = THREE.MathUtils.lerp(1.85, 0.65, t);
+        }
+        const offsetAmount = baseOffset * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 

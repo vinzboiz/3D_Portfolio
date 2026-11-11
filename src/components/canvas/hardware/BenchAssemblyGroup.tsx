@@ -114,20 +114,20 @@ export function BenchAssemblyGroup() {
         rootGroupRef.current.rotation.set(0, 0, 0);
         rootGroupRef.current.scale.set(1, 1, 1);
       } else if (currentStep === 2 || currentStep === 3) {
-        // Step 02 & 03: Tạm đặt chờ sát hông trái thùng máy [-0.55, 1.25, 0.15],
-        // tạo khoảng cách thở rộng rãi với cột text bên trái, không bị đè lên chữ
+        // Step 02 & 03: Tạm đặt chờ sát hông trái thùng máy [-0.25, 1.25, 0.15],
+        // cụm linh kiện bắt đầu từ mép ~60% chiều rộng màn hình, hoàn toàn không bị đè lên text
         const alpha = Math.min(1, delta * 8);
-        rootGroupRef.current.position.lerp(new THREE.Vector3(-0.55, 1.25, 0.15), alpha);
+        rootGroupRef.current.position.lerp(new THREE.Vector3(-0.25, 1.25, 0.15), alpha);
         rootGroupRef.current.rotation.set(-0.10, 0.08, 0);
         rootGroupRef.current.scale.set(1, 1, 1);
       } else if (currentStep === 4) {
-        // Step 04: Nâng cụm BenchAssemblyGroup từ vị trí chờ sát hông [-0.55, 1.25, 0.15],
+        // Step 04: Nâng cụm BenchAssemblyGroup từ vị trí chờ sát hông [-0.25, 1.25, 0.15],
         // xoay dựng đứng [Math.PI/2, 0, Math.PI/2] song song với vách Motherboard Tray,
         // đưa vào lòng Thùng máy đứng qua cửa hông trái và khóa lên 6 chân ốc đồng!
         const liftAndRotate = remap(stepP, 0.0, 0.52);
         const seatOnStandoffs = remap(stepP, 0.52, 0.74);
 
-        const hoverX = THREE.MathUtils.lerp(-0.55, -0.35, liftAndRotate);
+        const hoverX = THREE.MathUtils.lerp(-0.25, -0.35, liftAndRotate);
         const targetX = THREE.MathUtils.lerp(hoverX, seatedMoboX, seatOnStandoffs);
         const targetY = THREE.MathUtils.lerp(1.25, TOWER_BASE_Y, liftAndRotate);
         const hoverZ = THREE.MathUtils.lerp(0.15, TOWER_CENTER_Z + 0.08, liftAndRotate);
