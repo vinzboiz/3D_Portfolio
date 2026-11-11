@@ -129,38 +129,18 @@ export function RetroHUD() {
       ) {
         return;
       }
-      if (Math.abs(e.deltaY) <= 15) return;
+      if (Math.abs(e.deltaY) < 12) return; // Bỏ qua nhiễu cực nhỏ
 
-      // Khi đang ở ngoài 3D (currentStep === 0): Cho phép trang cuộn dọc tự nhiên xuống Projects và CV
-      if (state.currentStep === 0) {
-        return;
-      }
-
-      const dir = e.deltaY > 0 ? 1 : -1;
       const now = performance.now();
-
-      // Cuộn ngược (dir < 0): Phản hồi tức thì 0ms delay trong 3D
-      if (dir < 0) {
-        lastScrollTime = now;
-        const targetStep = Math.max(1, state.currentStep - 1);
-        if (targetStep !== state.currentStep) {
-          state.setStep(targetStep);
-        }
-        return;
-      }
-
-      // Cuộn xuôi (dir > 0): GIỚI HẠN TỐI ĐA STEP 10
-      // Tăng cooldown lên 1050ms để đồng bộ với animation lắp ráp linh kiện chậm rãi, thư thái
-      if (now - lastScrollTime < 1050) return;
+      // Cooldown 650ms chỉ để chống trôi quán tính của trackpad, nhưng phát lăn đầu tiên luôn ăn ngay 100%
+      if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
 
-      if (state.currentStep >= 10) {
-        // Dừng tại Step 10, không tự động nhét CD hay thẻ khi lăn chuột tiếp!
-        return;
-      }
-      const targetStep = Math.min(10, state.currentStep + 1);
-      if (targetStep !== state.currentStep) {
-        state.setStep(targetStep);
+      const direction = e.deltaY > 0 ? 1 : -1;
+      const nextStep = Math.max(0, Math.min(10, state.currentStep + direction));
+
+      if (nextStep !== state.currentStep) {
+        state.setStep(nextStep);
       }
     };
 
@@ -182,33 +162,21 @@ export function RetroHUD() {
       ) {
         return;
       }
-      if (state.currentStep === 0) return;
 
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartYRef.current - currentY;
-      if (Math.abs(deltaY) < 30) return;
+      if (Math.abs(deltaY) < 25) return;
 
-      const dir = deltaY > 0 ? 1 : -1;
       const now = performance.now();
-
-      if (dir < 0) {
-        lastScrollTime = now;
-        touchStartYRef.current = currentY;
-        const targetStep = Math.max(1, state.currentStep - 1);
-        if (targetStep !== state.currentStep) {
-          state.setStep(targetStep);
-        }
-        return;
-      }
-
-      if (now - lastScrollTime < 1050) return;
+      if (now - lastScrollTime < 650) return;
       lastScrollTime = now;
       touchStartYRef.current = currentY;
 
-      if (state.currentStep >= 10) return;
-      const targetStep = Math.min(10, state.currentStep + 1);
-      if (targetStep !== state.currentStep) {
-        state.setStep(targetStep);
+      const direction = deltaY > 0 ? 1 : -1;
+      const nextStep = Math.max(0, Math.min(10, state.currentStep + direction));
+
+      if (nextStep !== state.currentStep) {
+        state.setStep(nextStep);
       }
     };
 

@@ -173,10 +173,10 @@ export function AboutEditorialScroller() {
       ref={containerRef}
       style={{
         position: 'fixed',
-        left: '4.5vw',
+        left: '5vw',
         top: '80px',
-        width: '27vw',
-        maxWidth: '370px',
+        width: '34vw',
+        maxWidth: '470px',
         height: 'calc(100vh - 80px)',
         pointerEvents: 'none',
         zIndex: 30,
@@ -193,7 +193,7 @@ export function AboutEditorialScroller() {
             ref={(el) => {
               itemRefs.current[idx] = el;
             }}
-            className="absolute left-0 right-0 max-w-lg will-change-transform"
+            className="absolute left-0 right-0 will-change-transform"
             style={{
               display: 'none',
               transformOrigin: 'left center',
@@ -201,14 +201,14 @@ export function AboutEditorialScroller() {
           >
             {/* Nhãn linh kiện tương ứng */}
             <div className="flex items-center gap-2.5 mb-3.5">
-              <span className="w-2 h-2 rounded-full bg-[#e05a47] shadow-[0_0_8px_#e05a47]" />
-              <span className="font-mono text-xs uppercase tracking-[0.16em] text-[#e05a47] font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#e05a47] shadow-[0_0_8px_#e05a47]" />
+              <span className="font-mono text-[0.82rem] uppercase tracking-[0.15em] text-[#e05a47] font-semibold">
                 {step.code}
               </span>
             </div>
 
             {/* Tiêu đề 2 dòng: Bold Sans trắng + Italic Serif đỏ cam */}
-            <h2 className="font-sans font-black text-white text-[clamp(1.65rem,2.3vw,2.3rem)] tracking-tight leading-[1.08] uppercase mb-3">
+            <h2 className="font-sans font-black text-white text-[clamp(2.15rem,3.1vw,3.05rem)] tracking-tight leading-[1.08] uppercase mb-[18px]">
               <span>{step.titleBold1} </span>
               <span
                 className="italic font-normal text-[#e05a47] lowercase"
@@ -220,16 +220,16 @@ export function AboutEditorialScroller() {
             </h2>
 
             {/* Đoạn văn giới thiệu bản thân */}
-            <p className="font-sans text-sm sm:text-[0.96rem] text-[#d1d1d6] leading-relaxed mb-6 font-normal">
+            <p className="font-sans text-[1.06rem] text-[#b4b4bb] leading-[1.65] mb-6 font-normal">
               {step.content}
             </p>
 
-            {/* Tags kỹ năng thực tế */}
-            <div className="flex flex-wrap gap-2">
+            {/* Tags kỹ năng thực tế - 3 thẻ luôn nằm trọn trên 1 hàng ngang */}
+            <div className="flex flex-nowrap gap-[10px] items-center">
               {step.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 rounded-md text-xs font-mono font-medium bg-white/[0.06] text-[#e5e5ea] border border-white/10 backdrop-blur-sm"
+                  className="px-[14px] py-[7px] rounded-md text-[0.82rem] font-mono font-medium bg-white/[0.06] text-[#e5e5ea] border border-white/10 backdrop-blur-sm whitespace-nowrap shrink-0"
                 >
                   {tag}
                 </span>

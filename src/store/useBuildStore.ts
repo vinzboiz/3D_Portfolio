@@ -369,11 +369,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       }
     }
 
-    // 3. KHI CUỘN NGƯỢC TỪ STEP 10 VỀ STEP 09 TRỞ XUỐNG (ABOUT STEP 10 -> STEP 09 THÁO MÁY):
-    // BẮT BUỘC TẮT MÁY AN TOÀN TRƯỚC KHI THÁO LINH KIỆN
-    // Step 10 & 11 cần scroll đến cuối phân đoạn (10.99 và 11.99) để hoàn thành lắp ráp và nạp đĩa
-    const targetTimeline =
-      clamped === 10 ? 10.99 : clamped === 11 ? 11.99 : clamped;
+    // Step 0 -> 10 tương ứng 1:1 với scrollTarget 0.0 -> 10.0
+    const targetTimeline = clamped;
 
     if (get().currentStep === 10 && clamped <= 9) {
       if (shutdownDisassemblyTimer) {
@@ -401,6 +398,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         // BƯỚC B: Trễ 0.5s sau khi CRT sập nguồn và đèn tắt an toàn mới mở nắp thùng máy lùi về Step 09
         shutdownDisassemblyTimer = setTimeout(() => {
           set({
+            currentStep: clamped,
             scrollTarget: targetTimeline,
             benchScrubbing: true,
           });
@@ -458,9 +456,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       }
     }
     set({
+      currentStep: clamped,
       scrollTarget: targetTimeline,
       benchScrubbing: true,
-      homeTransitionProgress: targetTimeline === 0 ? 0 : (get().currentStep === 0 ? get().homeTransitionProgress : 1),
+      homeTransitionProgress: clamped === 0 ? 0 : 1,
     });
   },
 
@@ -480,46 +479,31 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   syncScrollCurrent: (val: number) => {
-    const clamped = Math.max(0.0, Math.min(10.99, val));
+    const clamped = Math.max(0.0, Math.min(10.0, val));
     const prevStep = get().currentStep;
-    const prevScroll = get().scrollCurrent;
 
     let nextStepNum: number;
     let nextBenchP: number;
-    let nextHomeP: number;
+    const nextHomeP = Math.max(0, Math.min(1, clamped));
 
     if (clamped <= 0.05) {
       nextStepNum = 0;
       nextBenchP = 0.0;
-      nextHomeP = 0.0;
     } else if (clamped <= 1.0) {
-      // Phân đoạn chuyển tiếp từ HOME (0.0) vào bàn làm việc ABOUT STEP 01 (1.0)
-      // Linh kiện nằm sẵn trên bàn, CHƯA LẮP NGAY (benchProgress = 0.0), chờ thêm 1 lần scroll nữa!
-      nextStepNum = clamped < 0.75 ? 0 : 1;
-      nextBenchP = 0.0;
-      nextHomeP = clamped;
-    } else if (clamped >= 10.0) {
-      // GIỚI HẠN TRỤC CUỘN 3D ABOUT CHỈ TỚI STEP 10:
-      // Hoàn tất bộ máy, bật nguồn, đĩa CD và Thẻ nhớ nằm trên mặt bàn ở Step 10
-      nextStepNum = 10;
-      nextBenchP = Math.min(1.0, clamped - 10.0);
-      nextHomeP = 1.0;
+      nextStepNum = 1;
+      nextBenchP = clamped;
     } else {
-      // Khi người dùng cuộn tiếp (clamped > 1.0):
-      // - Khoảng [1.0, 2.0]: Lắp ráp Step 01 (CPU + Heatsink + RAM) với benchProgress = clamped - 1.0
-      // - Khoảng [s, s + 1]: Lắp ráp Step s với benchProgress = clamped - s
-      const s = Math.floor(clamped);
-      const frac = clamped - s;
-      nextStepNum = Math.min(10, s);
-      nextBenchP = frac;
-      nextHomeP = 1.0;
+      const s = Math.min(10, Math.ceil(clamped));
+      nextStepNum = s;
+      nextBenchP = clamped - Math.floor(clamped);
+      if (nextBenchP === 0 && clamped > 0) nextBenchP = 1.0;
     }
 
-    if (nextStepNum !== prevStep) {
+    if (nextStepNum !== prevStep && nextStepNum > 0) {
       retroSound.playStepTick(get().soundEnabled);
     }
 
-    // PHÂN ĐOẠN 1 — ABOUT (Step 01 -> Step 09): Máy chưa đóng nắp -> bắt buộc OFF, đĩa CD và Thẻ nhớ nằm trên bàn
+    // PHÂN ĐOẠN 1 — ABOUT (Step 01 -> Step 09): Máy chưa đóng nắp -> bắt buộc OFF
     if (nextStepNum < 10) {
       if (get().freeCam) {
         set({ freeCam: false });
@@ -568,8 +552,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         });
       }
     } else if (nextStepNum === 10) {
-      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn khi benchProgress >= 0.95
-      const isAssemblyComplete = clamped >= 10.95 || nextBenchP >= 0.95;
+      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn khi clamped >= 9.85
+      const isAssemblyComplete = clamped >= 9.85;
 
       if (!get().isPoweredOn && isAssemblyComplete) {
         retroSound.playPostBeep(get().soundEnabled);
@@ -590,7 +574,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
           crtExpandProgress: 0,
         });
       } else if (get().isPoweredOn && !isAssemblyComplete && prevStep <= 10) {
-        // Nếu cuộn ngược lại trước khi hoàn thành cắm dây (benchProgress < 0.95): tắt nguồn an toàn
+        // Nếu cuộn ngược lại trước khi hoàn thành: tắt nguồn an toàn
         set({
           isPoweredOn: false,
           isCrtPowered: false,

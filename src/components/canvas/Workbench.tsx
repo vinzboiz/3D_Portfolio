@@ -570,10 +570,11 @@ export function Workbench() {
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
     }
 
-    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG, STEP 10 HẠ CÁNH):
+    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG PHÓNG TO 1.25X, STEP 10 HẠ CÁNH 1.0X):
     const smoothScrollProgress = state.scrollCurrent;
     const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
     const floatWeight = 1.0 - landFactor;
+    const floatScale = THREE.MathUtils.lerp(1.25, 1.0, landFactor);
 
     const t = r3fState.clock.elapsedTime;
     const floatY = (1.25 + Math.sin(t * 1.4) * 0.08) * floatWeight;
@@ -584,6 +585,7 @@ export function Workbench() {
       assemblyFloatingGroupRef.current.position.y = floatY;
       assemblyFloatingGroupRef.current.rotation.x = floatRotX;
       assemblyFloatingGroupRef.current.rotation.z = floatRotZ;
+      assemblyFloatingGroupRef.current.scale.setScalar(floatScale);
     }
 
     // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -2.5 -> 0 đón thùng máy hạ cánh)
@@ -795,56 +797,29 @@ export function Workbench() {
     }
   });
 
-  // Tiến trình từng bước:
-  const casePrepProgress =
-    currentStep < 2 ? 0 : currentStep === 2 ? benchProgress : 1;
+  // Tiến trình từng bước: Đồng bộ 100% với smoothScrollProgress (0.0 -> 10.0)
+  // Mỗi bước lắp ráp hoàn tất khi smoothScrollProgress đi từ (k-1) lên k:
+  const smoothScrollVal = useBuildStore((s) => s.scrollCurrent);
+  const clamp01 = (v: number) => THREE.MathUtils.clamp(v, 0, 1);
 
-  const psuInstallProgress =
-    currentStep < 3 ? 0 : currentStep === 3 ? benchProgress : 1;
-
-  const moboScrewsProgress =
-    currentStep < 4
-      ? 0
-      : currentStep === 4
-        ? Math.max(0, Math.min(1, (benchProgress - 0.72) / 0.28))
-        : 1;
-
-  const driveInstallProgress =
-    currentStep < 5 ? 0 : currentStep === 5 ? benchProgress : 1;
-
-  const powerCableProgress =
-    currentStep < 6 ? 0 : currentStep === 6 ? benchProgress : 1;
-
-  const ribbonInstallProgress =
-    currentStep < 7 ? 0 : currentStep === 7 ? benchProgress : 1;
-
-  const frontPanelProgress =
-    currentStep < 8 ? 0 : currentStep === 8 ? benchProgress : 1;
-
-  const cardsInstallProgress =
-    currentStep < 9
-      ? 0
-      : currentStep === 9
-        ? Math.min(1, benchProgress / 0.82)
-        : 1;
+  const casePrepProgress = clamp01(smoothScrollVal - 1.0);
+  const psuInstallProgress = clamp01(smoothScrollVal - 2.0);
+  const moboScrewsProgress = clamp01((smoothScrollVal - 3.0 - 0.5) / 0.5);
+  const driveInstallProgress = clamp01(smoothScrollVal - 4.0);
+  const powerCableProgress = clamp01(smoothScrollVal - 5.0);
+  const ribbonInstallProgress = clamp01(smoothScrollVal - 6.0);
+  const frontPanelProgress = clamp01(smoothScrollVal - 7.0);
+  const cardsInstallProgress = clamp01((smoothScrollVal - 8.0) / 0.85);
 
   const uCoverCloseProgress =
-    currentStep < 10
-      ? 0
-      : currentStep === 10
-        ? (isPoweredOn ? 1 : remap(benchProgress, 0.05, 0.38))
-        : 1;
+    isPoweredOn ? 1 : clamp01((smoothScrollVal - 9.0 - 0.05) / 0.38);
   const peripheralsProgress =
-    currentStep < 10
-      ? 0
-      : currentStep === 10
-        ? (isPoweredOn ? 1 : remap(benchProgress, 0.50, 1.0))
-        : 1;
+    isPoweredOn ? 1 : clamp01((smoothScrollVal - 9.0 - 0.45) / 0.55);
 
-  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 khi benchProgress >= 0.38 hoặc đã bật nguồn, hoặc Step 11 & 12):
+  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 hoặc đã bật nguồn):
   // Ẩn toàn bộ linh kiện bên trong lòng thùng máy để chống PCB clipping 100% và tối ưu GPU
   const isCaseCoverClosed =
-    currentStep > 10 || (currentStep === 10 && (isPoweredOn || benchProgress >= 0.38));
+    currentStep > 10 || (currentStep === 10 && (isPoweredOn || uCoverCloseProgress >= 0.99));
 
   // Tính toán tọa độ kết cấu bàn vẽ kỹ thuật chuẩn theo S.TABLE (1 Three.js unit = 1 mét)
   const tableLegX = S.TABLE.W / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.905m

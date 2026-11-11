@@ -97,7 +97,7 @@ export function CameraRig() {
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 2.05 : 2.85) * S.DESK_ITEMS_SCALE;
+      const offset = (currentStep >= 10 ? 1.35 : 1.85) * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -198,11 +198,11 @@ export function CameraRig() {
       const step1Pos = new THREE.Vector3(...step1.cameraPos);
       const step1RawTarget = new THREE.Vector3(...step1.cameraTarget);
 
-      // Lùi xa camera thêm 10% để khoảng cách tổng thể thoáng đãng
+      // Tiến sát camera lại gần ~22% để linh kiện hiển thị to rõ bề thế
       const toCam1 = new THREE.Vector3().subVectors(step1Pos, step1RawTarget);
-      step1Pos.addScaledVector(toCam1, 0.10);
+      step1Pos.addScaledVector(toCam1, -0.22);
 
-      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 2.85 * S.DESK_ITEMS_SCALE);
+      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 1.85 * S.DESK_ITEMS_SCALE);
 
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
       desiredTarget.current.lerpVectors(homeTarget, step1FramedTarget, ease);
@@ -278,14 +278,14 @@ export function CameraRig() {
         interpPos.y += floatYWorld;
         interpRawTarget.y += floatYWorld;
 
-        // Lùi nhẹ 10% khoảng cách từ target tới camera để khung cảnh thoáng đãng
+        // Tiến sát camera lại gần ~22% để linh kiện 3D hiển thị lớn và rõ nét
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
-        interpPos.addScaledVector(toCam, 0.10);
+        interpPos.addScaledVector(toCam, -0.22);
 
-        // Đẩy mạnh mô hình sang nửa phải màn hình theo vector right (2.85 -> 2.05)
-        // tạo khoảng không gian đen thoáng đãng (Center Breathing Gap 14vw - 18vw) ngăn cách Chữ và Máy
+        // Đẩy mô hình sang nửa phải màn hình vừa phải (1.85 -> 1.35)
+        // để khi linh kiện phóng to 1.25x vẫn nằm gọn gàng cân đối trong khoảng 52% -> 94% màn hình
         const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
-        const offsetAmount = THREE.MathUtils.lerp(2.85, 2.05, progress1to10) * S.DESK_ITEMS_SCALE;
+        const offsetAmount = THREE.MathUtils.lerp(1.85, 1.35, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 
@@ -298,9 +298,9 @@ export function CameraRig() {
         const step10RawTarget = new THREE.Vector3(...step10.cameraTarget);
 
         const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
-        step10Pos.addScaledVector(toCam10, 0.10);
+        step10Pos.addScaledVector(toCam10, -0.12);
 
-        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 2.05 * S.DESK_ITEMS_SCALE);
+        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 1.35 * S.DESK_ITEMS_SCALE);
 
         desiredPos.current.copy(step10Pos);
         desiredTarget.current.copy(framedTarget);
