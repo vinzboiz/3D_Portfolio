@@ -163,12 +163,12 @@ export function CameraRig() {
       }
     }
 
-    // Điều tiết scrollCurrent khi IDLE: Lerp đằm và thư thái (hệ số -3.2 thay vì -8.5)
-    // giúp toàn bộ tiến trình lắp ráp linh kiện và chuyển động camera diễn ra chậm rãi (~1.2s), chi tiết và rõ nét
+    // Điều tiết scrollCurrent khi IDLE: Lerp mượt mà và dứt khoát (-6.5)
+    // giúp phản hồi 1 nhịp cuộn = chuyển ngay 1 step (~380ms), camera và text cập nhật nhịp nhàng đồng bộ
     if (state.stageTransition === 'IDLE') {
       const diff = state.scrollTarget - state.scrollCurrent;
       if (Math.abs(diff) > 0.0002) {
-        const alpha = 1 - Math.exp(-3.2 * safeDelta);
+        const alpha = 1 - Math.exp(-6.5 * safeDelta);
         const nextScroll = THREE.MathUtils.lerp(state.scrollCurrent, state.scrollTarget, alpha);
         state.syncScrollCurrent(nextScroll);
       } else if (state.scrollCurrent !== state.scrollTarget) {

@@ -132,8 +132,9 @@ export function RetroHUD() {
       if (Math.abs(e.deltaY) < 12) return; // Bỏ qua nhiễu cực nhỏ
 
       const now = performance.now();
-      // Cooldown 650ms chỉ để chống trôi quán tính của trackpad, nhưng phát lăn đầu tiên luôn ăn ngay 100%
-      if (now - lastScrollTime < 650) return;
+      // Cooldown 280ms: Phản hồi 100% tức thì — mỗi lần lăn chuột chuyển đúng 1 step!
+      // Vừa đủ triệt tiêu quán tính của trackpad/con lăn tự do, không làm rơi rớt sự kiện của người dùng.
+      if (now - lastScrollTime < 280) return;
       lastScrollTime = now;
 
       const direction = e.deltaY > 0 ? 1 : -1;
@@ -168,7 +169,7 @@ export function RetroHUD() {
       if (Math.abs(deltaY) < 25) return;
 
       const now = performance.now();
-      if (now - lastScrollTime < 650) return;
+      if (now - lastScrollTime < 280) return;
       lastScrollTime = now;
       touchStartYRef.current = currentY;
 

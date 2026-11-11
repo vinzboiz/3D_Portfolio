@@ -110,9 +110,9 @@ export function AboutEditorialScroller() {
       // CHỈ hiển thị khối text giới thiệu từ Step 01 -> Step 09.
       // Khi ở Step 00 (Home) hoặc hoàn thiện máy (Step 10): ẨN HOÀN TOÀN để không che màn hình CRT và bàn làm việc!
       const isAboutActive =
-        portalProgress >= 0.75 &&
-        smoothScrollProgress >= 0.85 &&
-        smoothScrollProgress <= 9.25 &&
+        portalProgress >= 0.40 &&
+        smoothScrollProgress >= 0.40 &&
+        smoothScrollProgress <= 9.35 &&
         state.currentStep >= 1 &&
         state.currentStep <= 9;
 
@@ -136,20 +136,17 @@ export function AboutEditorialScroller() {
 
         // stepDelta = stepIndex - smoothScrollProgress
         // - Step hiện tại có stepDelta ~ 0 => translateY ~ 0px
-        // - Khi cuộn sang step sau: Step cũ có stepDelta đi từ 0 -> -1 => translateY đi lên -380px
-        // - Step mới có stepDelta đi từ +1 -> 0 => translateY từ +380px trôi lên 0px
+        // - Khi cuộn sang step sau: Step cũ trôi lên trên (-440px), Step mới trôi từ dưới lên (+440px)
         const stepDelta = stepIndex - smoothScrollProgress;
         const dist = Math.abs(stepDelta);
-        const translateY = stepDelta * 380;
+        const translateY = stepDelta * 440;
 
-        // Công thức Opacity CHỐNG CHỒNG ĐÈ TUYỆT ĐỐI:
-        // - Trong phạm vi dist <= 0.22 quanh step: giữ độ sáng 100% rõ nét
-        // - Từ 0.22 -> 0.50: mờ dần về 0 khi trôi ra xa
-        // - Khi dist >= 0.50 (tức điểm giữa 2 bước): opacity = 0 hoàn toàn!
-        // Đảm bảo không bao giờ có 2 khối text cùng hiển thị đè lên nhau tại cùng vị trí.
-        const opacity = THREE.MathUtils.clamp(1.0 - (dist - 0.22) / 0.28, 0, 1);
+        // Băng chuyền cuộn dọc mượt mà:
+        // Đặt khoảng cách translateY = 440px đảm bảo khối chữ cũ và mới cách nhau an toàn không va chạm
+        // Opacity duy trì sáng rõ, mờ dần theo đường trượt và được cắt mềm tự nhiên bởi CSS Vertical Mask
+        const opacity = THREE.MathUtils.clamp(1.2 - dist * 1.3, 0, 1);
 
-        if (dist > 0.52 || opacity <= 0.01) {
+        if (dist > 0.88 || opacity <= 0.01) {
           el.style.display = 'none';
         } else {
           el.style.display = 'block';

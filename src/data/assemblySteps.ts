@@ -102,7 +102,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     category: 'STEP 02 // CHASSIS & MECHANICAL PREP',
     zoneId: 'ZONE-A01',
     cameraPos: dScale([-4.2, 5.2, 5.4]),
-    cameraTarget: dScale([0.8, 1.8, -0.35]),
+    cameraTarget: dScale([0.8, 1.35, -0.35]),
     hardwareSpecs: [
       { label: 'CHASSIS MODEL', value: 'INWIN A500 VERTICAL MID-TOWER' },
       { label: 'DRIVE BAYS', value: '4x 5.25" EXT + 2x 3.5" (60% LEFT BAY)' },
@@ -131,7 +131,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     zoneId: 'ZONE-C04',
     // Căn chỉnh cameraPos và cameraTarget chuẩn tầm mắt, cân đối khung thùng máy và khoang nguồn Seasonic
     cameraPos: dScale([-4.6, 5.0, 5.0]),
-    cameraTarget: dScale([0.8, 2.0, -0.4]),
+    cameraTarget: dScale([0.8, 1.45, -0.4]),
     hardwareSpecs: [
       { label: 'MAX OUTPUT', value: '200W (+5V 20A / +12V 8A / -5V / -12V)' },
       { label: 'EXHAUST FAN', value: '80MM BLACK FAN + GREEN HUB + WIRE GRILLE' },
@@ -159,7 +159,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     category: 'STEP 04 // SYSTEM INTEGRATION & ALIGNMENT',
     zoneId: 'ZONE-A01',
     cameraPos: dScale([-5.4, 4.2, 3.2]),
-    cameraTarget: dScale([0.75, 1.7, -0.35]),
+    cameraTarget: dScale([0.75, 1.30, -0.35]),
     hardwareSpecs: [
       { label: 'REAR I/O SHIELD', value: 'DUAL PS/2 + 2x USB + 2x COM + LPT1' },
       { label: 'MOUNTING POINTS', value: '6x BRASS STANDOFFS + 6x M3 SCREWS' },
@@ -187,7 +187,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     category: 'STEP 05 // DATA STORAGE & MEDIA BAYS',
     zoneId: 'ZONE-C05',
     cameraPos: dScale([-4.4, 4.6, 6.0]),
-    cameraTarget: dScale([0.8, 2.0, 0.6]),
+    cameraTarget: dScale([0.8, 1.45, 0.6]),
     hardwareSpecs: [
       { label: 'OPTICAL 5.25"', value: 'CREATIVE INFRA 24X MX CD-ROM' },
       { label: 'FLOPPY 3.5"', value: 'SONY MPF920 1.44MB + RESUME_CV DISK' },
@@ -216,7 +216,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     zoneId: 'ZONE-C04',
     // Góc nhìn ngang trực diện vào hông mở của thùng máy để thấy rõ cụm dây nguồn P8/P9 và Molex
     cameraPos: dScale([-5.8, 4.2, 0.2]),
-    cameraTarget: dScale([0.7, 2.0, -0.1]),
+    cameraTarget: dScale([0.7, 1.45, -0.1]),
     hardwareSpecs: [
       { label: 'MAIN POWER', value: 'DUAL 6-PIN P8 & P9 (BLACK-TO-BLACK)' },
       { label: 'DRIVE POWER', value: '2x MOLEX 8981 + 1x BERG 4-PIN FDD' },
@@ -245,7 +245,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     zoneId: 'ZONE-C05',
     // Góc nhìn ngang hông thùng máy chếch nhẹ về các khay ổ đĩa để quan sát toàn bộ đường đi cáp IDE bẹ
     cameraPos: dScale([-5.6, 4.0, 1.0]),
-    cameraTarget: dScale([0.7, 1.9, 0.3]),
+    cameraTarget: dScale([0.7, 1.40, 0.3]),
     hardwareSpecs: [
       { label: 'PRIMARY IDE', value: '40-PIN S-CURVE TO QUANTUM 3.2GB HDD' },
       { label: 'SECONDARY IDE', value: '40-PIN RIBBON TO CREATIVE 24X CD-ROM' },
