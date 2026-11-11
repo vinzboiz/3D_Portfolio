@@ -13,7 +13,7 @@ interface EditorialStepItem {
 
 const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
   {
-    code: '01 / 10 — CORE BENCH · ASUS TX97-E & INTEL PENTIUM MMX',
+    code: '01 / 09 — CORE BENCH · ASUS TX97-E & INTEL PENTIUM MMX',
     titleBold1: 'Nền tảng',
     titleItalic: 'Kỹ thuật',
     titleBold2: 'Vững chắc',
@@ -22,7 +22,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Full-Stack Architect', 'GPA 3.43 / 4.0', 'C# .NET Core', 'Java Spring Boot'],
   },
   {
-    code: '02 / 10 — CHASSIS PREP · INWIN A500 MID-TOWER',
+    code: '02 / 09 — CHASSIS PREP · INWIN A500 MID-TOWER',
     titleBold1: 'Khung gầm',
     titleItalic: 'Hệ thống',
     titleBold2: 'Chuẩn mực',
@@ -31,7 +31,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['System Architecture', 'Modular Monorepo', 'TypeScript Strict', 'CI/CD Pipelines'],
   },
   {
-    code: '03 / 10 — POWER SUPPLY · SEASONIC SSG-200G 200W AT',
+    code: '03 / 09 — POWER SUPPLY · SEASONIC SSG-200G 200W AT',
     titleBold1: 'Trái tim',
     titleItalic: 'Năng lượng',
     titleBold2: 'Backend Bền bỉ',
@@ -40,7 +40,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['High-Load Backend', 'RESTful API', 'Microservices', 'Node.js / Express'],
   },
   {
-    code: '04 / 10 — MOBO MOUNTING · ASUS TX97-E SLIDE-OUT TRAY',
+    code: '04 / 09 — MOBO MOUNTING · ASUS TX97-E SLIDE-OUT TRAY',
     titleBold1: 'Tích hợp',
     titleItalic: 'Đa tầng',
     titleBold2: 'Chuẩn xác',
@@ -49,7 +49,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Pungkook Saigon II', 'Enterprise PLM', 'MES / SCADA UI', 'Full-Stack Integration'],
   },
   {
-    code: '05 / 10 — STORAGE DRIVES · CREATIVE 24X, SONY FDD & QUANTUM HDD',
+    code: '05 / 09 — STORAGE DRIVES · CREATIVE 24X, SONY FDD & QUANTUM HDD',
     titleBold1: 'Lưu trữ',
     titleItalic: 'Dữ liệu',
     titleBold2: 'Đa tầng',
@@ -58,7 +58,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['PostgreSQL', 'SQL Server', 'Database Indexing', 'Computer Vision Data'],
   },
   {
-    code: '06 / 10 — POWER CABLING · AT P8/P9 & MOLEX 4-PIN',
+    code: '06 / 09 — POWER CABLING · AT P8/P9 & MOLEX 4-PIN',
     titleBold1: 'Hạ tầng',
     titleItalic: 'Phân phối',
     titleBold2: 'An toàn Tuyệt đối',
@@ -67,7 +67,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Docker & DevOps', 'Fail-Safe Pipelines', 'Security & RBAC', 'Cloud Infrastructure'],
   },
   {
-    code: '07 / 10 — RIBBON CABLES · 40-PIN IDE & 34-PIN FLOPPY BUS',
+    code: '07 / 09 — RIBBON CABLES · 40-PIN IDE & 34-PIN FLOPPY BUS',
     titleBold1: 'Kết nối',
     titleItalic: 'Băng thông',
     titleBold2: 'Truyền dẫn Cao tốc',
@@ -76,7 +76,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Real-Time Streaming', 'WebSockets', 'Zustand State', 'React 19 & Angular'],
   },
   {
-    code: '08 / 10 — FRONT PANEL I/O · TWISTED-PAIR LED & SWITCH WIRES',
+    code: '08 / 09 — FRONT PANEL I/O · TWISTED-PAIR LED & SWITCH WIRES',
     titleBold1: 'Giao diện',
     titleItalic: 'Quan sát',
     titleBold2: 'Đồng đội & Phản hồi',
@@ -85,22 +85,13 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['UI/UX Consistency', 'Figma to Code', 'High Discipline (4:45 AM)', 'Team Collaboration'],
   },
   {
-    code: '09 / 10 — EXPANSION CARDS · 3DFX VOODOO & SOUND BLASTER 16',
+    code: '09 / 09 — EXPANSION CARDS · 3DFX VOODOO & SOUND BLASTER 16',
     titleBold1: 'Không gian',
     titleItalic: '3D WebGL',
     titleBold2: 'Đồ họa Đỉnh cao',
     content:
       'Đưa nhà máy công nghiệp và sản phẩm sáng tạo lên trình duyệt với Three.js, React Three Fiber, Custom GLSL Shaders và Autodesk Platform Services (APS Forge). Kết hợp kỹ thuật tối ưu hóa Frustum/Occlusion Culling và âm thanh tương tác Howler.',
     tags: ['Three.js / R3F', 'GLSL Shaders', 'Autodesk APS Forge', '3D Digital Twin'],
-  },
-  {
-    code: '10 / 10 — WORKSTATION · SONY TRINITRON CRT & AWARD BIOS',
-    titleBold1: 'Hệ thống',
-    titleItalic: 'Sẵn sàng',
-    titleBold2: 'Khởi chạy Trải nghiệm',
-    content:
-      'Cỗ máy năm 1997 đã hoàn thành và đáp êm xuống bàn làm việc! Bạn có thể click trực tiếp các nút trên màn hình CRT để tương tác với BIOS/Desktop, tự tay nạp Đĩa CD / Thẻ nhớ trên bàn, hoặc khám phá mục Projects & My CV.',
-    tags: ['Ready for Senior Roles', 'Interactive Workstation', 'Explore Projects & CV'],
   },
 ];
 
@@ -113,65 +104,62 @@ export function AboutEditorialScroller() {
 
     const updateScroller = () => {
       const state = useBuildStore.getState();
-      const currentStep = state.currentStep; // 1 -> 10
+      const currentStep = state.currentStep; // 1 -> 12
       const benchProgress = state.benchProgress; // 0.0 -> 1.0 trong step hiện tại
+      const scrollCurrent = state.scrollCurrent; // 0.0 -> 12.0
       const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
-      const isAbout = currentStep >= 1 && portalProgress >= 0.75;
+
+      // CHỈ hiển thị khối text giới thiệu từ Step 01 -> Step 09.
+      // Khi đã hoàn thiện máy (Step 10 trở đi hoặc scrollCurrent >= 9.05): ẩn hoàn toàn 100%!
+      const isAboutActive =
+        currentStep >= 1 &&
+        currentStep <= 9 &&
+        scrollCurrent < 9.05 &&
+        portalProgress >= 0.75;
 
       if (containerRef.current) {
-        containerRef.current.style.opacity = isAbout ? '1' : '0';
+        containerRef.current.style.opacity = isAboutActive ? '1' : '0';
+        containerRef.current.style.display = isAboutActive ? 'flex' : 'none';
         containerRef.current.style.pointerEvents = 'none';
       }
 
-      // Mỗi step k (1..10) hiển thị 1 thẻ chữ tương ứng 1:1 với linh kiện đang lắp ráp
-      // Trong suốt quá trình lắp ráp step k (benchProgress 0.0 -> 0.78): Card k hiển thị rõ nét 100% (opacity = 1)
-      // Ở cuối step k (benchProgress 0.78 -> 1.0): Card k trượt êm lên trên và nhường chỗ cho Card k+1 trượt lên
+      // Mỗi step cuộn hiển thị ĐỘC LẬP & DUY NHẤT 1 card giới thiệu tương ứng 1:1.
+      // Tuyệt đối không để 2 card cùng hiển thị để chống triệt để lỗi đè text.
       for (let i = 0; i < ABOUT_EDITORIAL_STEPS.length; i++) {
-        const stepNum = i + 1; // 1..10
+        const stepNum = i + 1; // 1..9
         const el = itemRefs.current[i];
         if (!el) continue;
 
-        if (!isAbout) {
+        if (!isAboutActive || stepNum !== currentStep) {
           el.style.display = 'none';
+          el.style.opacity = '0';
+          el.style.transform = 'translate3d(0, 30px, 0)';
           continue;
         }
 
-        let opacity = 0;
+        // Card duy nhất của step hiện tại
+        let opacity = 1;
         let translateY = 0;
 
-        if (stepNum === currentStep) {
-          if (benchProgress > 0.78 && currentStep < 10) {
-            // Đang chuyển sang bước kế tiếp: trượt nhẹ lên trên và mờ dần
-            const p = (benchProgress - 0.78) / 0.22;
-            opacity = 1 - p;
-            translateY = -p * 80;
-          } else {
-            // Giữ cố định ở vị trí trung tâm hoàn hảo
-            opacity = 1;
-            translateY = 0;
-          }
-        } else if (stepNum === currentStep + 1 && benchProgress > 0.78 && currentStep < 10) {
-          // Thẻ của bước kế tiếp: trượt từ dưới lên
-          const p = (benchProgress - 0.78) / 0.22;
-          opacity = p;
-          translateY = (1 - p) * 80;
-        } else if (stepNum === currentStep - 1 && benchProgress < 0.22 && currentStep > 1) {
-          // Khi cuộn ngược về bước trước
-          const p = (0.22 - benchProgress) / 0.22;
-          opacity = p;
-          translateY = -p * 80;
-        } else {
-          opacity = 0;
-          translateY = 100;
+        if (benchProgress > 0.88 && currentStep < 9) {
+          // Khi tiến sát mép cuối step chuẩn bị sang step sau: fade out nhanh êm ái
+          const p = (benchProgress - 0.88) / 0.12;
+          opacity = Math.max(0, 1 - p);
+          translateY = -p * 30;
+        } else if (benchProgress < 0.10 && currentStep > 1) {
+          // Khi vừa bước vào step mới: fade in nhanh từ dưới lên
+          const p = benchProgress / 0.10;
+          opacity = Math.min(1, p);
+          translateY = (1 - p) * 20;
         }
 
-        if (opacity <= 0.01) {
+        if (opacity <= 0.02) {
           el.style.display = 'none';
         } else {
           el.style.display = 'block';
-          el.style.opacity = `${opacity}`;
-          el.style.transform = `translate3d(0, ${translateY}px, 0)`;
-          el.style.filter = 'none'; // Xóa bỏ hoàn toàn blur, chữ luôn sắc nét 100%
+          el.style.opacity = opacity.toFixed(3);
+          el.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0)`;
+          el.style.filter = 'none'; // Chữ luôn sắc nét 100%, không bị blur
         }
       }
 
