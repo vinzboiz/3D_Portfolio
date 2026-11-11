@@ -66,19 +66,42 @@ export function Experience() {
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />
 
-      {/* Ánh sáng môi trường cân bằng rõ nét */}
-      <ambientLight intensity={ambientIntensity} color="#cdd9e6" />
+      {/* Ánh sáng môi trường cân bằng rõ nét, loại bỏ hoàn toàn vùng tối kịt */}
+      <ambientLight intensity={1.35} color="#eef4ff" />
 
-      {/* Nguồn sáng Studio Key & Rim Light chiếu nổi khối linh kiện đang lơ lửng trong không gian tối (Step 00 -> 09) */}
+      {/* 1. Nguồn sáng Studio Key Light chính chiếu trực diện góc trước-trên */}
       <directionalLight
-        position={[2.0, 3.5, 3.0]}
-        intensity={1.25}
+        position={[2.5, 4.2, 4.5]}
+        intensity={2.6}
+        color="#ffffff"
+      />
+
+      {/* 2. Nguồn sáng Top-Down rọi thẳng từ trên xuống lòng case (chiếu sáng Motherboard, CPU fan, RAM, khay ổ đĩa) */}
+      <directionalLight
+        position={[0.2, 5.5, 0.5]}
+        intensity={2.2}
         color="#f8fafc"
       />
+
+      {/* 3. Nguồn sáng Left Fill Light chiếu thẳng vào mặt hông mở của Case và bo mạch xanh */}
       <directionalLight
-        position={[-3.0, 2.2, -2.0]}
-        intensity={0.85}
-        color="#60a5fa"
+        position={[-4.0, 3.2, 2.0]}
+        intensity={1.9}
+        color="#e2e8f0"
+      />
+
+      {/* 4. Nguồn sáng Rim / Back Light tạo viền phản xạ kim loại thép Seasonic sáng bóng */}
+      <directionalLight
+        position={[-2.5, 3.5, -3.2]}
+        intensity={1.5}
+        color="#93c5fd"
+      />
+
+      {/* 5. Nguồn sáng Bottom-Up Bounce dịu nhẹ khử bóng đen gầm đáy thùng máy */}
+      <directionalLight
+        position={[0, -2.0, 1.5]}
+        intensity={0.65}
+        color="#cbd5e1"
       />
 
       {/* ĐÍCH NGẮM ÁNH SÁNG CỦA ĐÈN BÀN (Chiếu thẳng vào trung tâm mặt bàn và bo mạch chủ) */}
