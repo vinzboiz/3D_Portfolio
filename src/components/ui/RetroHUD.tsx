@@ -189,8 +189,11 @@ export function RetroHUD() {
       }
 
       // TRƯỜNG HỢP 3: Trong các bước lắp ráp 3D (Step 2 -> 10)
+      // Cooldown 1100ms giữa 2 lần lăn chuột để người dùng thưởng thức trọn vẹn chuyển động lắp ráp và đọc text
+      if (now - lastScrollTime < 1100) return;
+      lastScrollTime = now;
+
       if (dir < 0) {
-        lastScrollTime = now;
         const targetStep = Math.max(0, state.currentStep - 1);
         if (targetStep === 0) {
           state.jumpToHome();
@@ -199,10 +202,6 @@ export function RetroHUD() {
         }
         return;
       }
-
-      // Cuộn xuôi trong 3D: Cooldown 650ms, dừng ở Step 10
-      if (now - lastScrollTime < 650) return;
-      lastScrollTime = now;
 
       if (state.currentStep >= 10) {
         // Dừng tại Step 10, không tự động nhét CD hay thẻ khi lăn chuột tiếp!

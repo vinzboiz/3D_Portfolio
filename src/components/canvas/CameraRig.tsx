@@ -112,13 +112,13 @@ export function CameraRig() {
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
-    // Helper giới hạn camera chặt chẽ trong không gian căn phòng
+    // Helper giới hạn camera chặt chẽ trong không gian căn phòng (không lọt ra sau tường CRT)
     const clampCameraInRoom = () => {
       const minX = -1.30;
       const maxX = 1.30;
       const minY = 0.08;
       const maxY = 1.95;
-      const minZ = -0.80;
+      const minZ = -0.55; // Kẹp ở z = -0.55m để camera luôn ở trước dàn màn hình CRT (z = -0.75m)
       const maxZ = 1.75;
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
@@ -151,12 +151,15 @@ export function CameraRig() {
       }
     }
 
-    // Điều tiết scrollCurrent khi IDLE
+    // Điều tiết scrollCurrent khi IDLE với tốc độ từ tốn chuẩn điện ảnh (mỗi bước kéo dài 4.0 - 4.5s)
     if (state.stageTransition === 'IDLE') {
       const diff = state.scrollTarget - state.scrollCurrent;
       if (Math.abs(diff) > 0.0002) {
-        const alpha = 1 - Math.exp(-8.5 * safeDelta);
-        const nextScroll = THREE.MathUtils.lerp(state.scrollCurrent, state.scrollTarget, alpha);
+        const safeDeltaLimited = Math.min(safeDelta, 0.033);
+        const maxDeltaStep = 0.22 * safeDeltaLimited;
+        const clampedStep = THREE.MathUtils.clamp(diff, -maxDeltaStep, maxDeltaStep);
+        const deltaScroll = clampedStep * 0.55 + diff * (1 - Math.exp(-1.1 * safeDeltaLimited)) * 0.18;
+        const nextScroll = state.scrollCurrent + deltaScroll;
         state.syncScrollCurrent(nextScroll);
       } else if (state.scrollCurrent !== state.scrollTarget) {
         state.syncScrollCurrent(state.scrollTarget);
@@ -283,12 +286,13 @@ export function CameraRig() {
 
     prevTransitionRef.current = transition;
 
-    // Chuyển góc máy: cực kỳ đằm, lướt êm ái, chậm rãi và chuẩn xác
+    // Chuyển góc máy: cực kỳ đằm, lướt êm ái, chậm rãi và chuẩn xác như thanh trượt Slider điện ảnh
     const isTransitioning = state.stageTransition !== 'IDLE';
-    const camAlpha = Math.min(1, safeDelta * (isTransitioning ? 3.2 : 2.5));
+    const camPosAlpha = Math.min(1, safeDelta * (isTransitioning ? 2.6 : 0.85));
+    const camTargetAlpha = Math.min(1, safeDelta * (isTransitioning ? 2.8 : 0.95));
 
-    camera.position.lerp(desiredPos.current, camAlpha);
-    smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
+    camera.position.lerp(desiredPos.current, camPosAlpha);
+    smoothedTarget.current.lerp(desiredTarget.current, camTargetAlpha);
     camera.lookAt(smoothedTarget.current);
     clampCameraInRoom();
   });
