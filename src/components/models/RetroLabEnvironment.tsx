@@ -918,7 +918,7 @@ export function RetroLabEnvironment() {
             />
           </mesh>
         ))}
-        {/* Nguồn sáng từ trần rọi từ trên xuống chiếu sáng toàn bộ căn phòng (loại bỏ hoàn toàn lỗi vệt bóng sáng hình chữ nhật trên sàn) */}
+        {/* Nguồn sáng từ trần rọi từ trên xuống chiếu sáng toàn bộ căn phòng (castShadow={false} để loại bỏ hoàn toàn vệt sáng hình chữ nhật trên sàn dưới gầm bàn) */}
         <pointLight
           position={[0, -0.15, 0]}
           intensity={3.2}

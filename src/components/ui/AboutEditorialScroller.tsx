@@ -123,13 +123,18 @@ export function AboutEditorialScroller() {
       }
 
       // Cập nhật trực tiếp 10 thẻ chữ qua Direct DOM transform trong 1 draw frame duy nhất
+      // Mỗi bước k (1..9) tương ứng khoảng cuộn [k.0 -> (k+1).0] với tâm điểm tại k + 0.5
+      // Step 10 tương ứng khoảng [10.0 -> 10.99] với tâm điểm tại 10.4
+      const currentProgress = THREE.MathUtils.clamp(smoothScrollProgress, 1.5, 10.4);
+
       for (let i = 0; i < ABOUT_EDITORIAL_STEPS.length; i++) {
         const stepIndex = i + 1; // 1 -> 10
-        const stepDelta = stepIndex - smoothScrollProgress;
+        const stepCenter = stepIndex === 10 ? 10.4 : stepIndex + 0.5;
+        const stepDelta = stepCenter - currentProgress;
 
-        // delta < 0 khi đã cuộn qua (chữ trôi lên trên), delta > 0 khi bước sắp tới (chữ ở phía dưới)
-        const translateY = stepDelta * 210; // Khoảng dịch chuyển dọc (px)
-        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.45, 0, 1);
+        // delta > 0 khi bước sắp tới (chữ trôi từ dưới lên), delta < 0 khi đã cuộn qua (chữ trôi lên trên)
+        const translateY = -stepDelta * 220; // Khoảng dịch chuyển dọc (px)
+        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.35, 0, 1);
         const scale = THREE.MathUtils.lerp(0.94, 1.0, opacity);
         const blur = Math.max(0, (1 - opacity) * 4);
 
@@ -158,15 +163,16 @@ export function AboutEditorialScroller() {
       ref={containerRef}
       style={{
         position: 'fixed',
-        left: '6vw',
+        left: '5.5vw',
         top: '80px',
-        width: '42vw',
+        width: '38vw',
+        maxWidth: '520px',
         height: 'calc(100vh - 80px)',
         pointerEvents: 'none',
         zIndex: 30,
         transition: 'opacity 0.4s ease-out',
       }}
-      className="hidden md:flex items-center justify-start select-none"
+      className="hidden md:flex items-center justify-start select-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
     >
       <div className="relative w-full h-full flex items-center">
         {ABOUT_EDITORIAL_STEPS.map((step, idx) => (
@@ -175,7 +181,7 @@ export function AboutEditorialScroller() {
             ref={(el) => {
               itemRefs.current[idx] = el;
             }}
-            className="absolute left-0 right-0 max-w-xl will-change-transform"
+            className="absolute left-0 right-0 max-w-lg will-change-transform"
             style={{
               display: 'none',
               transformOrigin: 'left center',
@@ -217,42 +223,6 @@ export function AboutEditorialScroller() {
                 </span>
               ))}
             </div>
-
-            {/* Nút điều hướng sang Projects & CV khi đã hoàn tất máy tính ở Step 10 */}
-            {idx === 9 && (
-              <div className="mt-7 flex items-center gap-3 pointer-events-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const state = useBuildStore.getState();
-                    state.setEditorialPageMode('EDITORIAL_2D');
-                    state.jumpToHome();
-                    setTimeout(() => {
-                      document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 800);
-                  }}
-                  className="px-4 py-2.5 rounded-lg bg-[#e05a47] hover:bg-[#ff6b57] text-white font-mono text-xs font-semibold tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer uppercase flex items-center gap-2"
-                >
-                  <span>Xem Projects</span>
-                  <span>↗</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const state = useBuildStore.getState();
-                    state.setEditorialPageMode('EDITORIAL_2D');
-                    state.jumpToHome();
-                    setTimeout(() => {
-                      document.getElementById('cv-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 800);
-                  }}
-                  className="px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 font-mono text-xs font-semibold tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer uppercase flex items-center gap-2"
-                >
-                  <span>Xem My CV</span>
-                  <span>↗</span>
-                </button>
-              </div>
-            )}
 
             {/* Đường chỉ vạch kỹ thuật retro nhỏ bên dưới */}
             <div className="mt-8 flex items-center gap-2 opacity-40">

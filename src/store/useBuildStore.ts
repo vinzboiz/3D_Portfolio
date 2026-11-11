@@ -42,8 +42,6 @@ export type StageTransition =
   | 'HOME_TO_PROJECT'
   | 'HOME_TO_MY_CV';
 
-export type EditorialPageMode = 'PORTAL_3D' | 'EDITORIAL_2D';
-
 export type CdLocation = 'DESK' | 'TRAY' | 'INSIDE';
 export type CardLocation = 'DESK' | 'INSERTED';
 
@@ -209,8 +207,6 @@ export interface BuildStoreState {
   setProjectScrollProgress: (val: number) => void;
   setCrtExpandProgress: (val: number) => void;
   setProjectAppTransition: (val: ProjectAppTransition) => void;
-  editorialPageMode: EditorialPageMode;
-  setEditorialPageMode: (mode: EditorialPageMode) => void;
 }
 
 export const useBuildStore = create<BuildStoreState>((set, get) => {
@@ -250,8 +246,6 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   const crtDisplaying = () => get().isCrtPowered && get().isPoweredOn;
 
   return {
-  editorialPageMode: 'PORTAL_3D',
-  setEditorialPageMode: (mode: EditorialPageMode) => set({ editorialPageMode: mode }),
   currentStep: 0,
   homeTransitionProgress: 0,
   isTurbo: true,
@@ -1344,8 +1338,6 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       set({ freeCam: false });
     }
 
-    set({ editorialPageMode: 'PORTAL_3D' });
-
     retroSound.playButtonClick(soundEnabled);
 
     if (currentStep === 1) {
@@ -1405,8 +1397,6 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     if (get().freeCam) {
       set({ freeCam: false });
     }
-
-    set({ editorialPageMode: 'PORTAL_3D' });
 
     retroSound.playButtonClick(soundEnabled);
 
