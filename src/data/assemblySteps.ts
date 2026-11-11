@@ -129,8 +129,9 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SEA SONIC ELECTRONICS CO.',
     category: 'STEP 03 // POWER DELIVERY & AC SWITCHING',
     zoneId: 'ZONE-C04',
-    cameraPos: dScale([-4.2, 6.0, 4.6]),
-    cameraTarget: dScale([0.8, 3.0, -0.6]),
+    // Căn chỉnh cameraPos và cameraTarget chuẩn tầm mắt, cân đối khung thùng máy và khoang nguồn Seasonic
+    cameraPos: dScale([-4.6, 5.0, 5.0]),
+    cameraTarget: dScale([0.8, 2.0, -0.4]),
     hardwareSpecs: [
       { label: 'MAX OUTPUT', value: '200W (+5V 20A / +12V 8A / -5V / -12V)' },
       { label: 'EXHAUST FAN', value: '80MM BLACK FAN + GREEN HUB + WIRE GRILLE' },

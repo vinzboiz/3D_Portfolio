@@ -97,7 +97,7 @@ export function CameraRig() {
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const offset = (currentStep >= 10 ? 1.25 : 1.75) * S.DESK_ITEMS_SCALE;
+      const offset = (currentStep >= 10 ? 1.55 : 3.55) * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
       desiredTarget.current.copy(rawTarget);
@@ -198,11 +198,11 @@ export function CameraRig() {
       const step1Pos = new THREE.Vector3(...step1.cameraPos);
       const step1RawTarget = new THREE.Vector3(...step1.cameraTarget);
 
-      // Lùi camera xa thêm 15% để khoảng cách tổng thể vừa vặn, nhìn thấy trọn vẹn bo mạch và linh kiện
+      // Lùi camera xa thêm 24% để khoảng cách tổng thể vừa vặn, nhìn thấy trọn vẹn bo mạch và linh kiện
       const toCam1 = new THREE.Vector3().subVectors(step1Pos, step1RawTarget);
-      step1Pos.addScaledVector(toCam1, 0.15);
+      step1Pos.addScaledVector(toCam1, 0.24);
 
-      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 1.75 * S.DESK_ITEMS_SCALE);
+      const step1FramedTarget = computeFramedTarget(step1Pos, step1RawTarget, 3.55 * S.DESK_ITEMS_SCALE);
 
       desiredPos.current.lerpVectors(homePos, step1Pos, ease);
       desiredTarget.current.lerpVectors(homeTarget, step1FramedTarget, ease);
@@ -278,13 +278,13 @@ export function CameraRig() {
         interpPos.y += floatYWorld;
         interpRawTarget.y += floatYWorld;
 
-        // Lùi camera xa thêm 18% để bao quát trọn vẹn toàn bộ chiều cao thùng máy từ đỉnh đến đáy
+        // Lùi camera xa thêm 28% để bao quát trọn vẹn toàn bộ chiều cao thùng máy từ đỉnh đến đáy, không bị quá to
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
-        interpPos.addScaledVector(toCam, 0.18);
+        interpPos.addScaledVector(toCam, 0.28);
 
-        // Đẩy mô hình sang nửa phải màn hình vừa vặn (1.75 -> 1.25)
+        // Đẩy mô hình sang nửa phải màn hình rõ rệt (3.55 -> 1.55) tạo khoảng thở thoáng đãng với khối text bên trái
         const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
-        const offsetAmount = THREE.MathUtils.lerp(1.75, 1.25, progress1to10) * S.DESK_ITEMS_SCALE;
+        const offsetAmount = THREE.MathUtils.lerp(3.55, 1.55, progress1to10) * S.DESK_ITEMS_SCALE;
 
         const framedTarget = computeFramedTarget(interpPos, interpRawTarget, offsetAmount);
 
@@ -296,10 +296,11 @@ export function CameraRig() {
         const step10Pos = new THREE.Vector3(...step10.cameraPos);
         const step10RawTarget = new THREE.Vector3(...step10.cameraTarget);
 
+        // Lùi xa thêm 18% ở Step 10 để nhìn trọn vẹn màn hình CRT, bàn phím, chuột và đèn bàn
         const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
-        step10Pos.addScaledVector(toCam10, 0.08);
+        step10Pos.addScaledVector(toCam10, 0.18);
 
-        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 1.25 * S.DESK_ITEMS_SCALE);
+        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 1.55 * S.DESK_ITEMS_SCALE);
 
         desiredPos.current.copy(step10Pos);
         desiredTarget.current.copy(framedTarget);
