@@ -73,7 +73,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ASUS // INTEL // COOLER MASTER',
     category: 'STEP 01 // CORE BENCHMARK ASSEMBLY',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-2.4, 3.6, 3.8]),
+    cameraPos: dScale([-3.2, 4.2, 5.2]),
     cameraTarget: dScale([-0.4, 0.35, -0.1]),
     hardwareSpecs: [
       { label: 'MOTHERBOARD', value: 'ASUS TX97-E REV 1.02 (220x280MM)' },
@@ -101,7 +101,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'IN WIN DEVELOPMENT INC.',
     category: 'STEP 02 // CHASSIS & MECHANICAL PREP',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-2.2, 3.4, 4.0]),
+    cameraPos: dScale([-3.0, 4.0, 5.4]),
     cameraTarget: dScale([0.1, 1.4, 0.1]),
     hardwareSpecs: [
       { label: 'CHASSIS MODEL', value: 'INWIN A500 VERTICAL MID-TOWER' },
@@ -129,7 +129,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SEA SONIC ELECTRONICS CO.',
     category: 'STEP 03 // POWER DELIVERY & AC SWITCHING',
     zoneId: 'ZONE-C04',
-    cameraPos: dScale([-2.2, 3.8, 3.6]),
+    cameraPos: dScale([-2.8, 4.5, 4.8]),
     cameraTarget: dScale([0.4, 2.3, 0.0]),
     hardwareSpecs: [
       { label: 'MAX OUTPUT', value: '200W (+5V 20A / +12V 8A / -5V / -12V)' },
@@ -157,7 +157,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ASUS // INWIN INTEGRATION',
     category: 'STEP 04 // SYSTEM INTEGRATION & ALIGNMENT',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-2.5, 3.5, 4.0]),
+    cameraPos: dScale([-3.2, 4.2, 5.2]),
     cameraTarget: dScale([0.2, 1.6, 0.15]),
     hardwareSpecs: [
       { label: 'REAR I/O SHIELD', value: 'DUAL PS/2 + 2x USB + 2x COM + LPT1' },
@@ -185,7 +185,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'CREATIVE // SONY // QUANTUM',
     category: 'STEP 05 // DATA STORAGE & MEDIA BAYS',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([-1.2, 3.2, 4.2]),
+    cameraPos: dScale([-1.8, 4.0, 5.6]),
     cameraTarget: dScale([0.1, 1.75, 0.3]),
     hardwareSpecs: [
       { label: 'OPTICAL 5.25"', value: 'CREATIVE INFRA 24X MX CD-ROM' },
@@ -213,7 +213,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SEASONIC // AMPHENOL',
     category: 'STEP 06 // POWER DISTRIBUTION HARNESS',
     zoneId: 'ZONE-C04',
-    cameraPos: dScale([-1.8, 3.6, 3.8]),
+    cameraPos: dScale([-2.4, 4.4, 5.0]),
     cameraTarget: dScale([0.2, 1.7, 0.1]),
     hardwareSpecs: [
       { label: 'MAIN POWER', value: 'DUAL 6-PIN P8 & P9 (BLACK-TO-BLACK)' },
@@ -241,7 +241,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'AMPHENOL // ASUS',
     category: 'STEP 07 // HIGH-SPEED DATA BUS ROUTING',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([-1.6, 3.5, 3.8]),
+    cameraPos: dScale([-2.2, 4.2, 5.0]),
     cameraTarget: dScale([0.2, 1.6, 0.15]),
     hardwareSpecs: [
       { label: 'PRIMARY IDE', value: '40-PIN S-CURVE TO QUANTUM 3.2GB HDD' },
@@ -269,7 +269,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'ENLIGHT // ASUS PINOUT',
     category: 'STEP 08 // TELEMETRY & CONTROL BUS',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([-1.5, 3.0, 3.6]),
+    cameraPos: dScale([-2.0, 3.8, 4.8]),
     cameraTarget: dScale([0.25, 1.25, 0.25]),
     hardwareSpecs: [
       { label: 'LED WIRES', value: 'RED-WHITE (HDD) + GREEN-WHITE (PWR)' },
@@ -297,7 +297,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'DIAMOND // 3DFX // CREATIVE LABS',
     category: 'STEP 09 // 3D GRAPHICS & WAVETABLE AUDIO',
     zoneId: 'ZONE-B03',
-    cameraPos: dScale([-1.9, 3.4, 3.8]),
+    cameraPos: dScale([-2.5, 4.2, 5.0]),
     cameraTarget: dScale([0.15, 1.4, 0.05]),
     hardwareSpecs: [
       { label: '3D ACCELERATOR', value: '3DFX VOODOO (FBI + TMU + 8x EDO ARC)' },
@@ -325,7 +325,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SONY // IBM // LOGITECH // AWARD',
     category: 'STEP 10 // ENCLOSURE, PERIPHERALS & SYSTEM POST',
     zoneId: 'ZONE-A01',
-    cameraPos: dScale([0.0, 2.8, 4.8]),
+    cameraPos: dScale([0.0, 3.6, 6.2]),
     cameraTarget: dScale([0.05, 1.5, 0.25]),
     hardwareSpecs: [
       { label: 'CRT MONITOR', value: 'SONY TRINITRON MULTISCAN 100ES (15")' },
@@ -353,7 +353,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'CREATIVE INFRA // VINZBOIZ 3D STUDIO',
     category: 'STEP 11 // OPTICAL MEDIA & INTERACTIVE PROJECTS',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([0.0, 2.8, 4.8]),
+    cameraPos: dScale([0.0, 3.6, 6.2]),
     cameraTarget: dScale([0.05, 1.5, 0.25]),
     hardwareSpecs: [
       { label: 'OPTICAL DISC', value: 'PORTFOLIO SOURCE CODE (650 MB MASTER)' },
@@ -381,7 +381,7 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     manufacturer: 'SONY CORP // MICROSOFT WORDPAD',
     category: 'STEP 12 // REMOVABLE MEDIA & CAREER DOSSIER',
     zoneId: 'ZONE-C05',
-    cameraPos: dScale([0.0, 2.8, 4.8]),
+    cameraPos: dScale([0.0, 3.6, 6.2]),
     cameraTarget: dScale([0.05, 1.5, 0.25]),
     hardwareSpecs: [
       { label: 'REMOVABLE MEDIA', value: 'SONY 2HD 3.5" DISKETTE (1.44 MB FORMATTED)' },

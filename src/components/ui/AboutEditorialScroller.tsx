@@ -107,8 +107,6 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
 export function AboutEditorialScroller() {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // Biến nội suy trễ riêng cho Text: đuổi theo smoothScrollProgress với tốc độ từ tốn tạo chiều sâu thị giác
-  const textProgress = useRef(1.0);
 
   useEffect(() => {
     let animId: number;
@@ -124,22 +122,16 @@ export function AboutEditorialScroller() {
         containerRef.current.style.pointerEvents = 'none';
       }
 
-      // Chữ trôi chậm và đằm hơn chuyển động 3D một nhịp nhỏ tạo chiều sâu thị giác (lerp 0.035 mỗi frame)
-      textProgress.current += (smoothScrollProgress - textProgress.current) * 0.035;
-
       // Cập nhật trực tiếp 10 thẻ chữ qua Direct DOM transform trong 1 draw frame duy nhất
       for (let i = 0; i < ABOUT_EDITORIAL_STEPS.length; i++) {
         const stepIndex = i + 1; // 1 -> 10
-        const stepDelta = stepIndex - textProgress.current;
+        const stepDelta = stepIndex - smoothScrollProgress;
 
-        // Giảm quãng đường trượt dọc từ 210px xuống 115px để chữ trôi lên/xuống chậm rãi, khoan thai
-        const translateY = stepDelta * 115;
-
-        // Dùng hàm smoothstep thay vì tuyến tính để chữ hiện lên rất từ tốn và giữ lâu ở giữa màn hình
-        const rawAlpha = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.15, 0, 1);
-        const opacity = rawAlpha * rawAlpha * (3 - 2 * rawAlpha); // Smoothstep easing
+        // delta < 0 khi đã cuộn qua (chữ trôi lên trên), delta > 0 khi bước sắp tới (chữ ở phía dưới)
+        const translateY = stepDelta * 160; // Khoảng dịch chuyển dọc êm ái, chậm rãi
+        const opacity = THREE.MathUtils.clamp(1 - Math.abs(stepDelta) * 1.25, 0, 1);
         const scale = THREE.MathUtils.lerp(0.96, 1.0, opacity);
-        const blur = Math.max(0, (1 - opacity) * 3.5);
+        const blur = Math.max(0, (1 - opacity) * 3);
 
         const el = itemRefs.current[i];
         if (el) {
@@ -183,19 +175,10 @@ export function AboutEditorialScroller() {
             ref={(el) => {
               itemRefs.current[idx] = el;
             }}
-            className="absolute left-0 right-0 max-w-xl will-change-transform pointer-events-auto"
+            className="absolute left-0 right-0 max-w-xl will-change-transform"
             style={{
               display: 'none',
               transformOrigin: 'left center',
-              background:
-                'linear-gradient(135deg, rgba(8, 9, 12, 0.90) 0%, rgba(14, 16, 22, 0.82) 100%)',
-              backdropFilter: 'blur(18px)',
-              WebkitBackdropFilter: 'blur(18px)',
-              border: '1px solid rgba(255, 255, 255, 0.14)',
-              borderLeft: '3px solid #ff5a36',
-              borderRadius: '16px',
-              padding: '28px 32px',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75)',
             }}
           >
             {/* Nhãn linh kiện tương ứng */}

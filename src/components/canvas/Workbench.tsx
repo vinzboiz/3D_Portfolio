@@ -23,6 +23,7 @@ import { ExpansionCards } from './hardware/ExpansionCards';
 import { PowerAndFrontCables } from './hardware/PowerAndFrontCables';
 import { RibbonCables } from './hardware/RibbonCables';
 import { PeripheralsCRT } from './hardware/PeripheralsCRT';
+import { DeskSpatialText } from '../models/DeskSpatialText';
 import { useBuildStore } from '../../store/useBuildStore';
 import { ASSEMBLY_STEPS } from '../../data/assemblySteps';
 import { retroSound } from '../../utils/retroSound';
@@ -567,17 +568,12 @@ export function Workbench() {
           : state.currentStep === 10
             ? remap(curP, 0.40, 0.70)
             : 0.0;
-      // Ở Step 01 -> 04: Dịch thùng máy sang phải (x = 2.65) để góc nhìn quạt CPU và RAM trên thảm cắt hoàn toàn thông thoáng
-      // Ở Step 05 -> 09: Đưa thùng máy về vị trí trung tâm TOWER_BUILD_X để lắp ráp nội thất
-      // Ở Step 10: Thùng máy dịch sang phải TOWER_STEP10_X nhường trung tâm cho Màn hình CRT Sony Trinitron!
-      const stepShiftX =
+      const step10ShiftX =
         state.currentStep >= 10
           ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, step10ShiftProgress)
-          : state.currentStep <= 4
-            ? 2.65
-            : TOWER_BUILD_X;
-      const targetX = state.currentStep >= 2 ? stepShiftX : 4.2;
-      const alpha = Math.min(1, delta * 6);
+          : TOWER_BUILD_X;
+      const targetX = state.currentStep >= 2 ? step10ShiftX : 4.2;
+      const alpha = Math.min(1, delta * 8);
 
       caseWrapperRef.current.position.x =
         state.currentStep >= 10
@@ -922,7 +918,10 @@ export function Workbench() {
         ref={componentsStageGroupRef}
         scale={[S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE, S.DESK_ITEMS_SCALE]}
       >
-      {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
+        {/* CHỮ NỔI 3D TRÊN MẶT BÀN BÊN TRÁI THẢM CẮT (DESK SPATIAL 3D TEXT) */}
+        <DeskSpatialText />
+
+        {/* 5. THÙNG MÁY PC ĐỨNG THẲNG DỌC (VERTICAL MID-TOWER: 1.6W x 3.8H x 3.6D)
              Xoay hướng thẳng mặt trước về phía Camera chính (+Z_world) */}
       <group
         ref={caseWrapperRef}
