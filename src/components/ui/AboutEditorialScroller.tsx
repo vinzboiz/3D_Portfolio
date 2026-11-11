@@ -13,7 +13,7 @@ interface EditorialStepItem {
 
 const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
   {
-    code: '01 / 10 — MOTHERBOARD · ASUS TX97-E',
+    code: '01 / 09 — MOTHERBOARD · ASUS TX97-E',
     titleBold1: 'NỀN TẢNG',
     titleItalic: 'kỹ thuật',
     titleBold2: 'VỮNG CHẮC',
@@ -22,7 +22,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Software Engineering', 'GPA 3.43 / 4.0', 'System Design'],
   },
   {
-    code: '02 / 10 — PROCESSOR · PENTIUM MMX 233MHz',
+    code: '02 / 09 — PROCESSOR · PENTIUM MMX 233MHz',
     titleBold1: 'TRÁI TIM',
     titleItalic: 'xử lý',
     titleBold2: 'FULL-STACK',
@@ -31,7 +31,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['C# .NET Core', 'Spring Boot', 'Node.js'],
   },
   {
-    code: '03 / 10 — COOLING · COOLER MASTER FAN',
+    code: '03 / 09 — COOLING · COOLER MASTER FAN',
     titleBold1: 'KỶ LUẬT &',
     titleItalic: 'bền bỉ',
     titleBold2: 'DƯỚI ÁP LỰC',
@@ -40,7 +40,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['High Endurance', 'Hackathon', 'Problem Solver'],
   },
   {
-    code: '04 / 10 — MEMORY · 32MB SDRAM DIMM',
+    code: '04 / 09 — MEMORY · 32MB SDRAM DIMM',
     titleBold1: 'TRUY XUẤT',
     titleItalic: 'phản hồi',
     titleBold2: 'TỨC THỜI',
@@ -49,7 +49,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Angular', 'React 19', 'TypeScript'],
   },
   {
-    code: '05 / 10 — CHASSIS & PSU · ENLIGHT AT TOWER',
+    code: '05 / 09 — CHASSIS & PSU · ENLIGHT AT TOWER',
     titleBold1: 'HỆ THỐNG',
     titleItalic: 'doanh nghiệp',
     titleBold2: 'THỰC CHIẾN',
@@ -58,7 +58,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Pungkook Saigon II', 'MES / SCADA', 'Enterprise PLM'],
   },
   {
-    code: '06 / 10 — STORAGE · CREATIVE CD, FDD & QUANTUM HDD',
+    code: '06 / 09 — STORAGE · CREATIVE CD, FDD & QUANTUM HDD',
     titleBold1: 'LƯU TRỮ',
     titleItalic: 'dữ liệu',
     titleBold2: 'ĐA TẦNG',
@@ -67,7 +67,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['PostgreSQL', 'SQL Server', 'Computer Vision'],
   },
   {
-    code: '07 / 10 — GRAPHICS · 3DFX VOODOO & SOUND BLASTER',
+    code: '07 / 09 — GRAPHICS · 3DFX VOODOO & SOUND BLASTER',
     titleBold1: 'KHÔNG GIAN',
     titleItalic: '3D WebGL',
     titleBold2: 'SỐNG ĐỘNG',
@@ -76,7 +76,7 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['Three.js / WebGL', 'APS Forge', '3D Digital Twin'],
   },
   {
-    code: '08 / 10 — INTERCONNECT · IDE RIBBON CABLES',
+    code: '08 / 09 — INTERCONNECT · IDE RIBBON CABLES',
     titleBold1: 'KẾT NỐI',
     titleItalic: 'đa chiều',
     titleBold2: 'MẠCH LẠC',
@@ -85,22 +85,13 @@ const ABOUT_EDITORIAL_STEPS: EditorialStepItem[] = [
     tags: ['UI/UX to Code', 'Figma', 'Teamwork'],
   },
   {
-    code: '09 / 10 — ENCLOSURE · STEEL U-COVER',
+    code: '09 / 09 — ENCLOSURE · STEEL U-COVER',
     titleBold1: 'CHỈN CHU',
     titleItalic: 'từng',
     titleBold2: 'ĐIỂM CHẠM',
     content:
       'Đề cao Clean Code, hiệu năng tải trang và trau chuốt từng micro-interaction từ giao diện điều khiển công nghiệp đến ứng dụng nội bộ.',
     tags: ['Clean Code', 'Tailwind / SCSS', 'Optimization'],
-  },
-  {
-    code: '10 / 10 — WORKSTATION · SONY TRINITRON CRT',
-    titleBold1: 'HỆ THỐNG',
-    titleItalic: 'sẵn sàng',
-    titleBold2: 'KHỞI CHẠY',
-    content:
-      'Bộ máy 1997 đã hạ cánh xuống bàn làm việc và bật nguồn! Hãy tương tác trực tiếp với màn hình CRT bên phải hoặc khám phá danh mục Projects & CV.',
-    tags: ['Interactive OS', 'Explore Projects', 'View CV'],
   },
 ];
 
@@ -113,15 +104,16 @@ export function AboutEditorialScroller() {
 
     const updateScroller = () => {
       const state = useBuildStore.getState();
-      const smoothScrollProgress = state.scrollCurrent; // 0.0 -> 12.0 liên tục
+      const smoothScrollProgress = state.scrollCurrent; // 0.0 -> 10.0 liên tục
       const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
 
-      // CHỈ hiển thị khối text giới thiệu trong phân đoạn ABOUT (Step 01 -> Step 10)
-      // Khi ở Step 00 (Home) hoặc mở hẳn Projects/CV: ẩn hoàn toàn
+      // CHỈ hiển thị khối text giới thiệu từ Step 01 -> Step 09.
+      // Khi ở Step 00 (Home) hoặc hoàn thiện máy (Step 10): ẨN HOÀN TOÀN để không che màn hình CRT và bàn làm việc!
       const isAboutActive =
         portalProgress >= 0.75 &&
         smoothScrollProgress >= 0.85 &&
-        smoothScrollProgress <= 10.6;
+        smoothScrollProgress <= 9.15 &&
+        state.currentStep < 10;
 
       if (containerRef.current) {
         containerRef.current.style.opacity = isAboutActive ? '1' : '0';

@@ -570,11 +570,11 @@ export function Workbench() {
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
     }
 
-    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG PHÓNG TO 1.25X, STEP 10 HẠ CÁNH 1.0X):
+    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG SCALE 1.0X, STEP 10 HẠ CÁNH):
     const smoothScrollProgress = state.scrollCurrent;
     const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.1, 9.85);
     const floatWeight = 1.0 - landFactor;
-    const floatScale = THREE.MathUtils.lerp(1.25, 1.0, landFactor);
+    const floatScale = 1.0;
 
     const t = r3fState.clock.elapsedTime;
     const floatY = (1.25 + Math.sin(t * 1.4) * 0.08) * floatWeight;
