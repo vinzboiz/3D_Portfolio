@@ -104,18 +104,12 @@ export function AboutEditorialScroller() {
 
     const updateScroller = () => {
       const state = useBuildStore.getState();
-      const currentStep = state.currentStep; // 1 -> 12
-      const benchProgress = state.benchProgress; // 0.0 -> 1.0 trong step hiện tại
-      const scrollCurrent = state.scrollCurrent; // 0.0 -> 12.0
+      const currentStep = state.currentStep; // 0 -> 12
       const portalProgress = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
 
       // CHỈ hiển thị khối text giới thiệu từ Step 01 -> Step 09.
-      // Khi đã hoàn thiện máy (Step 10 trở đi hoặc scrollCurrent >= 9.05): ẩn hoàn toàn 100%!
-      const isAboutActive =
-        currentStep >= 1 &&
-        currentStep <= 9 &&
-        scrollCurrent < 9.05 &&
-        portalProgress >= 0.75;
+      // Khi ở Step 00 (Home) hoặc hoàn thiện máy (Step 10 trở đi / Projects / CV): ẩn hoàn toàn!
+      const isAboutActive = currentStep >= 1 && currentStep <= 9 && portalProgress >= 0.75;
 
       if (containerRef.current) {
         containerRef.current.style.opacity = isAboutActive ? '1' : '0';
@@ -123,43 +117,25 @@ export function AboutEditorialScroller() {
         containerRef.current.style.pointerEvents = 'none';
       }
 
-      // Mỗi step cuộn hiển thị ĐỘC LẬP & DUY NHẤT 1 card giới thiệu tương ứng 1:1.
-      // Tuyệt đối không để 2 card cùng hiển thị để chống triệt để lỗi đè text.
+      // Mỗi step hiển thị DUY NHẤT 1 card giới thiệu tương ứng 1:1.
+      // TEXT LUÔN LUÔN HIỆN ĐẦY ĐỦ 100%, TUYỆT ĐỐI KHÔNG TỰ TẮT.
+      // Chỉ khi người dùng chuyển sang step khác thì text cũ biến mất và text mới xuất hiện!
       for (let i = 0; i < ABOUT_EDITORIAL_STEPS.length; i++) {
         const stepNum = i + 1; // 1..9
         const el = itemRefs.current[i];
         if (!el) continue;
 
-        if (!isAboutActive || stepNum !== currentStep) {
+        if (isAboutActive && stepNum === currentStep) {
+          // Thẻ của step hiện tại: LUÔN CỐ ĐỊNH RÕ NÉT 100%
+          el.style.display = 'block';
+          el.style.opacity = '1';
+          el.style.transform = 'translate3d(0, 0, 0)';
+          el.style.filter = 'none';
+        } else {
+          // Thẻ của các step khác: ẩn hoàn toàn chống đè chữ
           el.style.display = 'none';
           el.style.opacity = '0';
-          el.style.transform = 'translate3d(0, 30px, 0)';
-          continue;
-        }
-
-        // Card duy nhất của step hiện tại
-        let opacity = 1;
-        let translateY = 0;
-
-        if (benchProgress > 0.88 && currentStep < 9) {
-          // Khi tiến sát mép cuối step chuẩn bị sang step sau: fade out nhanh êm ái
-          const p = (benchProgress - 0.88) / 0.12;
-          opacity = Math.max(0, 1 - p);
-          translateY = -p * 30;
-        } else if (benchProgress < 0.10 && currentStep > 1) {
-          // Khi vừa bước vào step mới: fade in nhanh từ dưới lên
-          const p = benchProgress / 0.10;
-          opacity = Math.min(1, p);
-          translateY = (1 - p) * 20;
-        }
-
-        if (opacity <= 0.02) {
-          el.style.display = 'none';
-        } else {
-          el.style.display = 'block';
-          el.style.opacity = opacity.toFixed(3);
-          el.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0)`;
-          el.style.filter = 'none'; // Chữ luôn sắc nét 100%, không bị blur
+          el.style.transform = 'translate3d(0, 20px, 0)';
         }
       }
 
@@ -197,6 +173,7 @@ export function AboutEditorialScroller() {
             style={{
               display: 'none',
               transformOrigin: 'left center',
+              transition: 'opacity 0.25s ease-out, transform 0.25s ease-out',
             }}
           >
             {/* Nhãn linh kiện tương ứng */}
