@@ -1029,12 +1029,13 @@ export function PeripheralsCRT({ peripheralsProgress }: PeripheralsCRTProps) {
   const appearT = smooth(p, 0.56, 0.88);
   const cableT = smooth(p, 0.78, 0.98);
 
-  if (p <= 0.52) return null;
-
+  // Giữ component luôn mounted để GPU biên dịch trước toàn bộ shader và buffer
+  // Triệt tiêu 100% lag giật khung hình khi cuộn từ Step 09 sang Step 10
+  const isVisible = p > 0.05;
   const dropY = (1 - appearT) * 2.2;
 
   return (
-    <group>
+    <group visible={isVisible}>
       {/* =====================================================================
           A. MÀN HÌNH CRT SONY TRINITRON MULTISCAN 100ES (CPD-100ES)
              - +X_local = Mặt trước (+Z_world)

@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Leva } from 'leva';
 import { Experience } from './components/canvas/Experience';
 import { RetroHUD } from './components/ui/RetroHUD';
+import { AboutEditorialScroller } from './components/ui/AboutEditorialScroller';
 import { HomePortalOverlay } from './components/ui/HomePortalOverlay';
 import { ProjectTunnelShowcase } from './components/ui/ProjectTunnelShowcase';
 import { useBuildStore } from './store/useBuildStore';
@@ -10,11 +11,12 @@ import { useBuildStore } from './store/useBuildStore';
 export function App() {
   const projectAppTransition = useBuildStore((s) => s.projectAppTransition);
   const currentStep = useBuildStore((s) => s.currentStep);
-  const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
+  const freeCam = useBuildStore((s) => s.freeCam);
 
   // Khi đang ở hẳn trong app (INSIDE_APP), ẩn hoàn toàn Canvas 3D thùng máy để không tốn tài nguyên GPU
   const hideWorkbenchCanvas = projectAppTransition === 'INSIDE_APP';
-  const isInside3D = currentStep >= 1 && homeTransitionProgress >= 0.5;
+  // Chỉ khi vào chế độ xem chi tiết máy tính (Inspect / FreeCam) thì Canvas mới cần đón sự kiện chuột và nổi lên trên
+  const isInspectMode = freeCam && currentStep >= 10;
 
   return (
     <div className="relative min-h-screen w-full bg-[#0a0a0c] text-white">
@@ -23,6 +25,9 @@ export function App() {
 
       {/* Giao diện 2D Retro HUD (Navbar Minimalist + Nút FreeCam) */}
       <RetroHUD />
+
+      {/* Cột chữ giới thiệu bản thân About cuộn dọc bên trái (Z-Index 35 luôn nổi rõ bên cạnh linh kiện 3D) */}
+      <AboutEditorialScroller />
 
       {/* Giao diện Trang Đơn Editorial (Tầng 1: Home Split-Portal + Tầng 2: Projects + Tầng 3: My CV) */}
       <HomePortalOverlay />
@@ -35,8 +40,8 @@ export function App() {
         className="fixed inset-0 w-full h-full"
         style={{
           display: hideWorkbenchCanvas ? 'none' : 'block',
-          zIndex: isInside3D ? 5 : 0,
-          pointerEvents: isInside3D ? 'auto' : 'none',
+          zIndex: isInspectMode ? 30 : 0,
+          pointerEvents: isInspectMode ? 'auto' : 'none',
         }}
       >
         <Canvas

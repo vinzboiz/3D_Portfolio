@@ -469,6 +469,7 @@ export function Workbench() {
   const isTurbo = useBuildStore((s) => s.isTurbo);
   const isInsideProjectApp = useBuildStore((s) => s.isInsideProjectApp);
   const stageTransition = useBuildStore((s) => s.stageTransition);
+  const hasCompletedAssembly = useBuildStore((s) => s.hasCompletedAssembly);
 
   const targetRingRef = useRef<THREE.Group | null>(null);
   const caseWrapperRef = useRef<THREE.Group | null>(null);
@@ -549,17 +550,21 @@ export function Workbench() {
     // vuông góc với mặt bàn (y = 0) và xoay mặt trước hướng thẳng về phía Camera chính (+Z_world).
     // Ở Step 10, thùng máy dịch sang bên phải (X_world = +1.85) nhường trung tâm cho Màn hình CRT Sony Trinitron!
     if (caseWrapperRef.current) {
-      const step10ShiftProgress =
-        state.currentStep > 10 || (state.currentStep === 10 && state.isPoweredOn)
-          ? 1.0
-          : state.currentStep === 10
-            ? THREE.MathUtils.smoothstep(smoothScrollVal, 9.15, 9.85)
-            : 0.0;
+      const isAtCompletedHome = state.hasCompletedAssembly && state.currentStep === 0;
+      const isShifted =
+        isAtCompletedHome ||
+        state.currentStep > 10 ||
+        (state.currentStep === 10 && (state.isPoweredOn || smoothScrollVal >= 9.85));
+      const step10ShiftProgress = isShifted
+        ? 1.0
+        : state.currentStep === 10
+          ? THREE.MathUtils.smoothstep(smoothScrollVal, 9.65, 9.95)
+          : 0.0;
       const step10ShiftX =
-        state.currentStep >= 10
+        isAtCompletedHome || state.currentStep >= 10
           ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, step10ShiftProgress)
           : TOWER_BUILD_X;
-      const targetX = state.currentStep >= 2 ? step10ShiftX : 4.2;
+      const targetX = isAtCompletedHome || state.currentStep >= 2 ? step10ShiftX : 4.2;
       const alpha = Math.min(1, delta * 8);
 
       caseWrapperRef.current.position.x = THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
@@ -567,10 +572,18 @@ export function Workbench() {
       caseWrapperRef.current.position.z = TOWER_CENTER_Z;
     }
 
-    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN (STEP 00 -> 09 LƠ LỬNG SCALE 1.0X, STEP 10 HẠ CÁNH):
+    // KỊCH BẢN ZERO-GRAVITY LEVITATION & TOUCHDOWN:
+    // Step 00 -> 09: Lơ lửng scale 1.0x trên background đen tuyền, chưa có bàn hay dàn máy xung quanh
+    // Step 10: Hạ cánh êm ái xuống mặt bàn (y = 0.0)
     const smoothScrollProgress = state.scrollCurrent;
-    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
-    const floatWeight = 1.0 - landFactor;
+    const isAtCompletedHome =
+      state.hasCompletedAssembly &&
+      (state.currentStep === 0 ||
+        state.stageTransition === 'POST_ABOUT_TO_HOME' ||
+        state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
+    const isStep10OrAbove = state.currentStep >= 10 || smoothScrollProgress >= 9.65;
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.65, 10.0);
+    const floatWeight = isAtCompletedHome || isStep10OrAbove ? 0.0 : 1.0 - landFactor;
     const floatScale = 1.0;
 
     const t = r3fState.clock.elapsedTime;
@@ -585,67 +598,90 @@ export function Workbench() {
       assemblyFloatingGroupRef.current.scale.setScalar(floatScale);
     }
 
-    // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Trượt từ dưới lên y = -1.8 -> 0 đón thùng máy hạ cánh êm ái)
+    // Triệu hồi Chiếc bàn thiết kế & Đèn bàn (Chỉ hiện ở Home đã hoàn tất hoặc Step 10 trở lên)
     if (deskGroupRef.current) {
-      const isDeskVisible = smoothScrollProgress >= 8.5;
+      const isDeskVisible = isAtCompletedHome || isStep10OrAbove;
       deskGroupRef.current.visible = isDeskVisible;
       if (isDeskVisible) {
-        deskGroupRef.current.position.y = (1.0 - landFactor) * -1.8;
+        deskGroupRef.current.position.y = isAtCompletedHome ? 0.0 : (1.0 - landFactor) * -1.8;
       }
     }
 
-    // Triệu hồi Màn CRT, Bàn phím, Chuột (Đáp nhẹ từ trên xuống y = 1.2 -> 0)
+    // Triệu hồi Màn CRT, Bàn phím, Chuột (Chỉ hiện ở Home đã hoàn tất hoặc Step 10 trở lên)
     if (peripheralsGroupRef.current) {
-      const isPeriphVisible = smoothScrollProgress >= 8.5;
+      const isPeriphVisible = isAtCompletedHome || isStep10OrAbove;
       peripheralsGroupRef.current.visible = isPeriphVisible;
       if (isPeriphVisible) {
-        peripheralsGroupRef.current.position.y = (1.0 - landFactor) * 1.2;
+        peripheralsGroupRef.current.position.y = isAtCompletedHome ? 0.0 : (1.0 - landFactor) * 1.2;
       }
     }
 
-    // Diễn hoạt chuyển cảnh giữa các phân đoạn (ABOUT / PROJECT / MY CV) mượt mà tuyệt đối (YÊU CẦU #3 & #4):
-    // Pha 1 (EXIT: 0.75s với ABOUT, 0.70s với PROJECT/CV): Đẩy toàn bộ cụm máy sang phải (0 -> +18) với Power2.in (p1 * p1)
-    // Pha 2 (ENTER: 0.85s): Cụm máy mục tiêu từ bên trái (-18 -> 0) trượt vào với Power3.out (1 - (1 - p2)^3)
+    // Luôn giữ cụm máy tính ở vị trí tâm bàn x = 0 (loại bỏ hoàn toàn trượt x = 18m gây lỗi giật hình)
+    if (componentsStageGroupRef.current && componentsStageGroupRef.current.position.x !== 0) {
+      componentsStageGroupRef.current.position.x = 0;
+    }
+
+    // Diễn hoạt chuyển cảnh giữa các phân đoạn mượt mà tuyệt đối qua Portal & Camera:
     if (stageTransition !== 'IDLE') {
       const dt = Math.min(delta, 0.05);
       transitionTimeRef.current += dt;
       const t = transitionTimeRef.current;
 
-      // XỬ LÝ TO_HOME_STEP1 (Khi click Home từ Step 01):
-      // Tween mượt smoothScrollProgress từ 1.0 về 0.0 trong 1.5s với easePower3InOut
-      if (stageTransition === 'TO_HOME_STEP1') {
-        const duration = 1.5;
+      // 1. XỬ LÝ POST_ABOUT_TO_HOME (Khi hoàn tất Step 10 về Home, hoặc từ Inspect về Home):
+      // Thu nhỏ khung cửa sổ từ 1.0 về 0.0, lùi camera về góc nhìn hoàn thiện, giữ nguyên 100% dàn máy trên bàn
+      if (stageTransition === 'POST_ABOUT_TO_HOME') {
+        const duration = 1.25;
         const p = Math.min(1, t / duration);
-        // power3.inOut
-        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-        const curScroll = THREE.MathUtils.lerp(1.0, 0.0, ease);
-        useBuildStore.getState().syncScrollCurrent(curScroll);
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
+
+        const curHomeP = THREE.MathUtils.lerp(1.0, 0.0, ease);
+        useBuildStore.getState().setHomeTransitionProgress(curHomeP);
 
         if (p >= 1) {
+          useBuildStore.getState().setHomeTransitionProgress(0.0);
           useBuildStore.getState().syncScrollCurrent(0.0);
+          useBuildStore.getState().setStep(0);
           useBuildStore.getState().setStageTransition('IDLE');
           transitionTimeRef.current = 0;
-          retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
+          document.documentElement.style.overflow = 'auto';
+          document.body.style.overflow = 'auto';
         }
         return;
       }
 
-      // XỬ LÝ HOME_TO_ABOUT (Khi click About từ Step 00 - Home):
-      // Pha A (0.0s -> 1.35s): Zoom bung ô cửa sổ bo góc ra toàn màn hình và camera từ tốn lao vào bàn Step 01
-      if (stageTransition === 'HOME_TO_ABOUT') {
-        const duration = 1.35;
+      // 2. XỬ LÝ HOME_TO_POST_ABOUT_INSPECT (Khi click vào khung portal để vào xem chi tiết & xoay 3D):
+      if (stageTransition === 'HOME_TO_POST_ABOUT_INSPECT') {
+        const duration = 1.10;
         const p = Math.min(1, t / duration);
         const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
-        const curScroll = THREE.MathUtils.lerp(0.0, 1.0, ease);
-        useBuildStore.getState().syncScrollCurrent(curScroll);
 
-        if (componentsStageGroupRef.current) {
-          componentsStageGroupRef.current.position.x = 0;
-        }
+        const curHomeP = THREE.MathUtils.lerp(0.0, 1.0, ease);
+        useBuildStore.getState().setHomeTransitionProgress(curHomeP);
 
         if (p >= 1) {
-          useBuildStore.getState().syncScrollCurrent(1.0);
-          useBuildStore.getState().setStep(1);
+          useBuildStore.getState().setHomeTransitionProgress(1.0);
+          useBuildStore.getState().syncScrollCurrent(10.0);
+          useBuildStore.getState().setStep(10);
+          useBuildStore.getState().setStageTransition('IDLE');
+          useBuildStore.getState().setFreeCam(true);
+          transitionTimeRef.current = 0;
+        }
+        return;
+      }
+
+      // 3. XỬ LÝ TO_HOME & TO_HOME_STEP1 (Khi click Home từ các bước lắp dở Step 01..09):
+      if (stageTransition === 'TO_HOME' || stageTransition === 'TO_HOME_STEP1') {
+        const duration = 1.15;
+        const p = Math.min(1, t / duration);
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
+
+        const curHomeP = THREE.MathUtils.lerp(1.0, 0.0, ease);
+        useBuildStore.getState().setHomeTransitionProgress(curHomeP);
+
+        if (p >= 1) {
+          useBuildStore.getState().setHomeTransitionProgress(0.0);
+          useBuildStore.getState().syncScrollCurrent(0.0);
+          useBuildStore.getState().setStep(0);
           useBuildStore.getState().setStageTransition('IDLE');
           transitionTimeRef.current = 0;
           retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
@@ -653,144 +689,29 @@ export function Workbench() {
         return;
       }
 
-      // XỬ LÝ HOME_TO_PROJECT & HOME_TO_MY_CV (Khi click Projects hoặc My CV từ Step 00 - Home):
-      // Pha A (0.0s -> 1.35s): Bung ô cửa sổ ra toàn màn hình, đồng thời bộ máy hoàn chỉnh trượt từ x = -18 vào giữa bàn x = 0
-      if (stageTransition === 'HOME_TO_PROJECT' || stageTransition === 'HOME_TO_MY_CV') {
-        const duration = 1.35;
+      // 4. XỬ LÝ HOME_TO_ABOUT (Khi click About từ Home để vào quy trình lắp ráp):
+      if (stageTransition === 'HOME_TO_ABOUT') {
+        const duration = 1.25;
         const p = Math.min(1, t / duration);
         const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // power3.inOut
+        const targetStep = Math.max(1, Math.min(10, useBuildStore.getState().savedAssemblyStep || 1));
 
-        // 1. Bung ô cửa sổ bo góc mở rộng ra kín màn hình
         useBuildStore.getState().setHomeTransitionProgress(ease);
 
-        // 2. Bộ máy PC hoàn chỉnh trượt từ bên trái (-18 -> 0) vào giữa bàn
-        const offsetX = THREE.MathUtils.lerp(-18, 0, ease);
-        if (componentsStageGroupRef.current) {
-          componentsStageGroupRef.current.position.x = offsetX;
-        }
-
         if (p >= 1) {
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = 0;
-          }
-          const finishedTransition = stageTransition;
           useBuildStore.getState().setHomeTransitionProgress(1.0);
-          transitionTimeRef.current = 0;
+          useBuildStore.getState().syncScrollCurrent(targetStep);
+          useBuildStore.getState().setStep(targetStep);
           useBuildStore.getState().setStageTransition('IDLE');
+          transitionTimeRef.current = 0;
           retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
-
-          if (finishedTransition === 'HOME_TO_PROJECT') {
-            useBuildStore.getState().applyStep11State();
-            useBuildStore.getState().triggerInsertCdSequence();
-          } else {
-            useBuildStore.getState().applyStep12State();
-            useBuildStore.getState().handleCardClick();
-          }
         }
         return;
       }
 
-      // XỬ LÝ TO_HOME (Khi click Home từ Step >= 2):
-      // Pha 1 (0.0s -> 0.85s): Đẩy mượt cụm máy sang phải x = +18 với power2.in
-      // Pha 2 (0.85s -> 2.05s, duration 1.20s): Reset bàn x = 0, tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
-      if (stageTransition === 'TO_HOME') {
-        const exitDuration = 0.85;
-        const enterDuration = 1.20;
-
-        if (transitionPhaseRef.current === 'EXIT') {
-          const p1 = Math.min(1, t / exitDuration);
-          const easeIn = p1 * p1; // power2.in
-          const offsetX = THREE.MathUtils.lerp(0, 18, easeIn);
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = offsetX;
-          }
-
-          if (p1 >= 1) {
-            transitionPhaseRef.current = 'ENTER';
-            transitionTimeRef.current = 0;
-            // Bước B: Reset ngầm về Step 00, đưa bàn thiết kế về lại x = 0, đặt scrollCurrent = 1.0
-            useBuildStore.getState().applyHomeResetState();
-            if (componentsStageGroupRef.current) {
-              componentsStageGroupRef.current.position.x = 0;
-            }
-          }
-        } else {
-          // Pha ENTER (1.20s): Tween smoothScrollProgress từ 1.0 về 0.0 với power3.out
-          const p2 = Math.min(1, t / enterDuration);
-          const easeOut = 1 - Math.pow(1 - p2, 3); // power3.out
-          const curScroll = THREE.MathUtils.lerp(1.0, 0.0, easeOut);
-          useBuildStore.getState().syncScrollCurrent(curScroll);
-
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = 0;
-          }
-
-          if (p2 >= 1) {
-            useBuildStore.getState().syncScrollCurrent(0.0);
-            transitionPhaseRef.current = 'EXIT';
-            transitionTimeRef.current = 0;
-            useBuildStore.getState().setStageTransition('IDLE');
-            retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
-          }
-        }
-        return;
-      }
-
-      // XỬ LÝ CÁC CHUYỂN CẢNH KHÁC (TO_ABOUT, TO_PROJECT, TO_MY_CV):
-      const exitDuration = stageTransition === 'TO_ABOUT' ? 0.95 : 0.85;
-      const enterDuration = 1.15;
-
-      if (transitionPhaseRef.current === 'EXIT') {
-        const p1 = Math.min(1, t / exitDuration);
-        const easeIn = p1 * p1; // power2.in
-        const offsetX = THREE.MathUtils.lerp(0, 18, easeIn);
-        if (componentsStageGroupRef.current) {
-          componentsStageGroupRef.current.position.x = offsetX;
-        }
-
-        if (p1 >= 1) {
-          transitionPhaseRef.current = 'ENTER';
-          transitionTimeRef.current = 0;
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = -18;
-          }
-          if (stageTransition === 'TO_ABOUT') {
-            useBuildStore.getState().applyStep1State();
-          } else if (stageTransition === 'TO_MY_CV') {
-            useBuildStore.getState().applyStep12State();
-          } else {
-            useBuildStore.getState().applyStep11State();
-          }
-        }
-      } else {
-        const p2 = Math.min(1, t / enterDuration);
-        const easeOut = 1 - Math.pow(1 - p2, 3);
-        const offsetX = THREE.MathUtils.lerp(-18, 0, easeOut);
-        if (componentsStageGroupRef.current) {
-          componentsStageGroupRef.current.position.x = offsetX;
-        }
-
-        if (p2 >= 1) {
-          if (componentsStageGroupRef.current) {
-            componentsStageGroupRef.current.position.x = 0;
-          }
-          const finishedTransition = stageTransition;
-          transitionPhaseRef.current = 'EXIT';
-          transitionTimeRef.current = 0;
-          useBuildStore.getState().setStageTransition('IDLE');
-          retroSound.playPostBeep(useBuildStore.getState().soundEnabled);
-
-          if (finishedTransition === 'TO_PROJECT') {
-            useBuildStore.getState().triggerInsertCdSequence();
-          } else if (finishedTransition === 'TO_MY_CV') {
-            useBuildStore.getState().handleCardClick();
-          }
-        }
-      }
-    } else {
-      if (componentsStageGroupRef.current && componentsStageGroupRef.current.position.x !== 0) {
-        componentsStageGroupRef.current.position.x = 0;
-      }
+      // 5. CÁC CHUYỂN CẢNH KHÁC: Đưa về IDLE mượt mà
+      transitionTimeRef.current = 0;
+      useBuildStore.getState().setStageTransition('IDLE');
     }
   });
 
@@ -799,24 +720,41 @@ export function Workbench() {
   const smoothScrollVal = useBuildStore((s) => s.scrollCurrent);
   const clamp01 = (v: number) => THREE.MathUtils.clamp(v, 0, 1);
 
-  const casePrepProgress = clamp01(smoothScrollVal - 1.0);
-  const psuInstallProgress = clamp01(smoothScrollVal - 2.0);
-  const moboScrewsProgress = clamp01((smoothScrollVal - 3.0 - 0.5) / 0.5);
-  const driveInstallProgress = clamp01(smoothScrollVal - 4.0);
-  const powerCableProgress = clamp01(smoothScrollVal - 5.0);
-  const ribbonInstallProgress = clamp01(smoothScrollVal - 6.0);
-  const frontPanelProgress = clamp01(smoothScrollVal - 7.0);
-  const cardsInstallProgress = clamp01((smoothScrollVal - 8.0) / 0.85);
+  const isAtCompletedHome =
+    hasCompletedAssembly &&
+    (currentStep === 0 ||
+      stageTransition === 'POST_ABOUT_TO_HOME' ||
+      stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
+  const isStep10OrAbove = currentStep >= 10 || smoothScrollVal >= 9.65;
+
+  const casePrepProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 1.0);
+  const psuInstallProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 2.0);
+  const moboScrewsProgress = isAtCompletedHome ? 1 : clamp01((smoothScrollVal - 3.0 - 0.5) / 0.5);
+  const driveInstallProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 4.0);
+  const powerCableProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 5.0);
+  const ribbonInstallProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 6.0);
+  const frontPanelProgress = isAtCompletedHome ? 1 : clamp01(smoothScrollVal - 7.0);
+  const cardsInstallProgress = isAtCompletedHome ? 1 : clamp01((smoothScrollVal - 8.0) / 0.85);
 
   const uCoverCloseProgress =
-    isPoweredOn ? 1 : clamp01((smoothScrollVal - 9.0 - 0.05) / 0.38);
+    isAtCompletedHome || (isStep10OrAbove && isPoweredOn)
+      ? 1
+      : isStep10OrAbove
+        ? clamp01((smoothScrollVal - 9.65) / 0.25)
+        : 0;
   const peripheralsProgress =
-    isPoweredOn ? 1 : clamp01((smoothScrollVal - 9.0 - 0.45) / 0.55);
+    isAtCompletedHome || (isStep10OrAbove && isPoweredOn)
+      ? 1
+      : isStep10OrAbove
+        ? clamp01((smoothScrollVal - 9.75) / 0.25)
+        : 0;
 
-  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (Step 10 hoặc đã bật nguồn):
+  // Khi nắp vỏ chữ U đã đóng kín hoàn toàn (ở Home hoàn tất, Step > 10, hoặc Step 10 nắp đã khép):
   // Ẩn toàn bộ linh kiện bên trong lòng thùng máy để chống PCB clipping 100% và tối ưu GPU
   const isCaseCoverClosed =
-    currentStep > 10 || (currentStep === 10 && (isPoweredOn || uCoverCloseProgress >= 0.99));
+    isAtCompletedHome ||
+    currentStep > 10 ||
+    (currentStep === 10 && (isPoweredOn || uCoverCloseProgress >= 0.99));
 
   // Tính toán tọa độ kết cấu bàn vẽ kỹ thuật chuẩn theo S.TABLE (1 Three.js unit = 1 mét)
   const tableLegX = S.TABLE.W / 2 - S.TABLE.LEG_INSET - S.TABLE.LEG / 2; // 0.905m
@@ -941,7 +879,7 @@ export function Workbench() {
             position={[TOWER_BUILD_X, TOWER_BASE_Y, TOWER_CENTER_Z]}
             rotation={[Math.PI / 2, 0, Math.PI / 2]}
             scale={TOWER_SCALE}
-            visible={currentStep >= 2}
+            visible={hasCompletedAssembly || currentStep >= 2}
           >
             <PcCaseEnlight
               casePrepProgress={casePrepProgress}
@@ -949,18 +887,18 @@ export function Workbench() {
               uCoverCloseProgress={uCoverCloseProgress}
             />
 
-            {currentStep >= 3 && (
+            {(hasCompletedAssembly || currentStep >= 3) && (
               <PsuSeasonicAT psuInstallProgress={psuInstallProgress} />
             )}
 
-            {currentStep >= 5 && (
+            {(hasCompletedAssembly || currentStep >= 5) && (
               <StorageDrives
                 driveInstallProgress={driveInstallProgress}
                 isCaseCoverClosed={isCaseCoverClosed}
               />
             )}
 
-            {currentStep >= 6 && (
+            {(hasCompletedAssembly || currentStep >= 6) && (
               <group visible={!isCaseCoverClosed}>
                 <PowerAndFrontCables
                   powerCableProgress={powerCableProgress}
@@ -969,13 +907,13 @@ export function Workbench() {
               </group>
             )}
 
-            {currentStep >= 7 && (
+            {(hasCompletedAssembly || currentStep >= 7) && (
               <group visible={!isCaseCoverClosed}>
                 <RibbonCables ribbonInstallProgress={ribbonInstallProgress} />
               </group>
             )}
 
-            {currentStep >= 9 && (
+            {(hasCompletedAssembly || currentStep >= 9) && (
               <group visible={!isCaseCoverClosed}>
                 <ExpansionCards cardsInstallProgress={cardsInstallProgress} />
               </group>
@@ -988,8 +926,8 @@ export function Workbench() {
             <BenchAssemblyGroup />
           </group>
 
-          {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0 VÀ STEP 10) */}
-          <group ref={targetRingRef} position={[0, -0.05, 0]} visible={currentStep >= 1 && currentStep < 10}>
+          {/* 7. CON TRỎ NGẮM TỌA ĐỘ TRẠM LẮP RÁP HIỆN TẠI (ACTIVE STEP RETICLE - ẨN Ở STEP 0, STEP 10 VÀ KHI ĐÃ HOÀN TẤT) */}
+          <group ref={targetRingRef} position={[0, -0.05, 0]} visible={!hasCompletedAssembly && currentStep >= 1 && currentStep < 10}>
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[0.38, 0.41, 32]} />
               <meshBasicMaterial

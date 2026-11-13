@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { ASSEMBLY_STEPS } from '../data/assemblySteps';
 import { retroSound } from '../utils/retroSound';
 
 /** Thời gian màn hình POST BIOS hiển thị sau khi bật máy / nhấn RESET (ms) */
@@ -40,7 +39,9 @@ export type StageTransition =
   | 'TO_HOME_STEP1'
   | 'HOME_TO_ABOUT'
   | 'HOME_TO_PROJECT'
-  | 'HOME_TO_MY_CV';
+  | 'HOME_TO_MY_CV'
+  | 'POST_ABOUT_TO_HOME'
+  | 'HOME_TO_POST_ABOUT_INSPECT';
 
 export type CdLocation = 'DESK' | 'TRAY' | 'INSIDE';
 export type CardLocation = 'DESK' | 'INSERTED';
@@ -194,6 +195,17 @@ export interface BuildStoreState {
   quickJumpToProjects: () => void;
   homeTransitionProgress: number;
   setHomeTransitionProgress: (val: number) => void;
+  hasCompletedAssembly: boolean;
+  setHasCompletedAssembly: (val: boolean) => void;
+  savedAssemblyStep: number;
+  setSavedAssemblyStep: (step: number) => void;
+  postAssemblyHomeScrollCount: number;
+  setPostAssemblyHomeScrollCount: (val: number) => void;
+  setFreeCam: (val: boolean) => void;
+  transitionPostAboutToHome: () => void;
+  enterCompletedWorkstationInspect: () => void;
+  exitCompletedWorkstationInspect: () => void;
+  replayAbout: () => void;
   jumpToHome: () => void;
   jumpToAbout: () => void;
   jumpToProject: () => void;
@@ -248,6 +260,9 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   return {
   currentStep: 0,
   homeTransitionProgress: 0,
+  hasCompletedAssembly: false,
+  savedAssemblyStep: 1,
+  postAssemblyHomeScrollCount: 0,
   isTurbo: true,
   isPoweredOn: false,
   freeCam: false,
@@ -300,6 +315,88 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({ homeTransitionProgress: Math.max(0, Math.min(1, val)) });
   },
 
+  setHasCompletedAssembly: (val: boolean) => {
+    set({ hasCompletedAssembly: val });
+  },
+
+  setFreeCam: (val: boolean) => {
+    set({ freeCam: val });
+  },
+
+  setSavedAssemblyStep: (step: number) => {
+    set({ savedAssemblyStep: Math.max(1, Math.min(10, step)) });
+  },
+
+  setPostAssemblyHomeScrollCount: (val: number) => {
+    set({ postAssemblyHomeScrollCount: val });
+  },
+
+  transitionPostAboutToHome: () => {
+    const state = get();
+    if (state.stageTransition !== 'IDLE') return;
+
+    // Lưu step hiện tại nếu đang trong khoảng 1..10
+    const current = state.currentStep;
+    const nextSaved = current >= 1 && current <= 10 ? current : state.savedAssemblyStep;
+
+    set({
+      hasCompletedAssembly: true,
+      savedAssemblyStep: nextSaved,
+      freeCam: false,
+      stageTransition: 'POST_ABOUT_TO_HOME',
+      scrollTarget: 0.0,
+      postAssemblyHomeScrollCount: 0,
+    });
+  },
+
+  enterCompletedWorkstationInspect: () => {
+    const state = get();
+    if (state.stageTransition !== 'IDLE') return;
+
+    // Phóng to toàn màn hình vào xem máy tính và cho phép OrbitControls xoay/zoom tự do
+    retroSound.playButtonClick(state.soundEnabled);
+    set({
+      stageTransition: 'HOME_TO_POST_ABOUT_INSPECT',
+    });
+  },
+
+  exitCompletedWorkstationInspect: () => {
+    get().transitionPostAboutToHome();
+  },
+
+  replayAbout: () => {
+    const { soundEnabled } = get();
+    retroSound.playButtonClick(soundEnabled);
+    if (shutdownDisassemblyTimer) {
+      clearTimeout(shutdownDisassemblyTimer);
+      shutdownDisassemblyTimer = null;
+    }
+    if (cdSequenceTimer) {
+      clearTimeout(cdSequenceTimer);
+      cdSequenceTimer = null;
+    }
+    set({
+      isCdAnimating: false,
+      hasCompletedAssembly: false,
+      savedAssemblyStep: 1,
+      currentStep: 0,
+      scrollCurrent: 0.0,
+      scrollTarget: 1.0,
+      homeTransitionProgress: 0.0,
+      stageTransition: 'HOME_TO_ABOUT',
+      isPoweredOn: false,
+      isCrtPowered: false,
+      osState: 'OFF',
+      bootElapsedTime: 0,
+      postAssemblyHomeScrollCount: 0,
+      freeCam: false,
+    });
+    get().showHudWarning(
+      'XEM LẠI QUY TRÌNH LẮP RÁP: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/10)',
+      3000
+    );
+  },
+
   setStep: (step: number) => {
     const clamped = Math.max(0, Math.min(12, step));
     // CHẶN: Chỉ khi cuộn vượt quá Step 10 sang Step 11/12 mà máy chưa vào DESKTOP
@@ -330,8 +427,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         });
       }
       set({
+        currentStep: 0,
         scrollTarget: 0.0,
         benchScrubbing: true,
+        homeTransitionProgress: 0,
       });
       return;
     }
@@ -372,7 +471,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     // Step 0 -> 10 tương ứng 1:1 với scrollTarget 0.0 -> 10.0
     const targetTimeline = clamped;
 
-    if (get().currentStep === 10 && clamped <= 9) {
+    if (get().currentStep === 10 && clamped <= 9 && !get().hasCompletedAssembly) {
       if (shutdownDisassemblyTimer) {
         clearTimeout(shutdownDisassemblyTimer);
         shutdownDisassemblyTimer = null;
@@ -396,7 +495,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       }
     }
 
-    if (clamped < 10) {
+    if (clamped < 10 && !get().hasCompletedAssembly) {
       if (get().freeCam) {
         set({ freeCam: false });
       }
@@ -448,6 +547,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       scrollTarget: targetTimeline,
       benchScrubbing: true,
       homeTransitionProgress: clamped === 0 ? 0 : 1,
+      hasCompletedAssembly: clamped >= 10 ? true : get().hasCompletedAssembly,
+      savedAssemblyStep: clamped >= 1 && clamped <= 10 ? clamped : get().savedAssemblyStep,
     });
   },
 
@@ -457,6 +558,11 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   prevStep: () => {
+    if (get().hasCompletedAssembly) {
+      // Khi đã lắp ráp xong: scroll ngược chỉ trả lại từ about về home
+      get().transitionPostAboutToHome();
+      return;
+    }
     get().setStep(Math.max(0, get().currentStep - 1));
   },
 
@@ -491,8 +597,8 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       retroSound.playStepTick(get().soundEnabled);
     }
 
-    // PHÂN ĐOẠN 1 — ABOUT (Step 01 -> Step 09): Máy chưa đóng nắp -> bắt buộc OFF
-    if (nextStepNum < 10) {
+    // PHÂN ĐOẠN 1 — ABOUT (Step 01 -> Step 09): Máy chưa đóng nắp -> bắt buộc OFF (CHỈ KHI CHƯA HOÀN THIỆN MÁY)
+    if (nextStepNum < 10 && !get().hasCompletedAssembly) {
       if (get().freeCam) {
         set({ freeCam: false });
       }
@@ -540,12 +646,17 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
         });
       }
     } else if (nextStepNum === 10) {
-      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn khi clamped >= 9.85
-      const isAssemblyComplete = clamped >= 9.85;
+      // Step 10: Hoàn tất đóng vỏ thùng máy, cắm ngoại vi và tự động bật nguồn khi clamped >= 9.35
+      const isAssemblyComplete = clamped >= 9.35;
+
+      if (!get().hasCompletedAssembly) {
+        set({ hasCompletedAssembly: true });
+      }
 
       if (!get().isPoweredOn && isAssemblyComplete) {
         retroSound.playPostBeep(get().soundEnabled);
         set({
+          hasCompletedAssembly: true,
           isPoweredOn: true,
           isCrtPowered: true,
           bootSequenceAt: now(),
@@ -561,7 +672,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
           projectAppTransition: 'IDLE',
           crtExpandProgress: 0,
         });
-      } else if (get().isPoweredOn && !isAssemblyComplete && prevStep <= 10) {
+      } else if (get().isPoweredOn && !isAssemblyComplete && prevStep <= 10 && !get().hasCompletedAssembly) {
         // Nếu cuộn ngược lại trước khi hoàn thành: tắt nguồn an toàn
         set({
           isPoweredOn: false,
@@ -577,7 +688,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       currentStep: nextStepNum,
       benchProgress: nextBenchP,
       benchAutoTarget: nextBenchP,
-      homeTransitionProgress: nextHomeP,
+      homeTransitionProgress: get().stageTransition === 'IDLE' ? nextHomeP : get().homeTransitionProgress,
       benchScrubbing: true,
     });
   },
@@ -1310,6 +1421,17 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       set({ freeCam: false });
     }
 
+    // Nếu đã hoàn thành toàn bộ dàn máy hoặc đang ở Step 10: zoom out mượt mà về Home giữ nguyên bộ máy
+    if (get().hasCompletedAssembly || currentStep >= 10) {
+      get().transitionPostAboutToHome();
+      return;
+    }
+
+    // Lưu lại step lắp ráp trước khi zoom out nếu đang ở Step 1..10
+    if (currentStep >= 1 && currentStep <= 10) {
+      set({ savedAssemblyStep: currentStep });
+    }
+
     retroSound.playButtonClick(soundEnabled);
 
     if (currentStep === 1) {
@@ -1332,7 +1454,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   jumpToAbout: () => {
-    const { isInsideProjectApp, currentStep, scrollTarget, soundEnabled, stageTransition } = get();
+    const { isInsideProjectApp, currentStep, scrollTarget, savedAssemblyStep, hasCompletedAssembly, soundEnabled, stageTransition } = get();
     if (stageTransition !== 'IDLE') return;
 
     if (shutdownDisassemblyTimer) {
@@ -1372,24 +1494,38 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
 
     retroSound.playButtonClick(soundEnabled);
 
-    // Khi đang ở Step 00 (HOME): Vào Step 01 (ABOUT) bằng hiệu ứng bung khung cửa sổ trong 0.85s
+    // Nếu đã hoàn thành xong toàn bộ máy, nhấp About sẽ vào xem dàn máy hoàn chỉnh (Inspect)
+    if (hasCompletedAssembly) {
+      get().enterCompletedWorkstationInspect();
+      return;
+    }
+
+    const targetStep = Math.max(1, Math.min(10, savedAssemblyStep || 1));
+
+    // Khi đang ở Step 00 (HOME): Vào lại Step đã lưu (targetStep) bằng hiệu ứng bung khung cửa sổ
     if (currentStep === 0) {
-      set({ stageTransition: 'HOME_TO_ABOUT', scrollTarget: 1.0 });
+      set({
+        stageTransition: 'HOME_TO_ABOUT',
+        scrollTarget: targetStep,
+      });
       get().showHudWarning(
-        'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
+        `ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP ${String(targetStep).padStart(2, '0')}/10)`,
         3000
       );
       return;
     }
 
-    // Nếu đã ở Step 01 và scrollTarget = 1.0 thì không cần chuyển cảnh
-    if (currentStep === 1 && Math.abs(scrollTarget - 1.0) < 0.05) return;
+    // Nếu đã ở đúng targetStep và scrollTarget = targetStep thì không cần chuyển cảnh
+    if (currentStep === targetStep && Math.abs(scrollTarget - targetStep) < 0.05) return;
 
-    // Khi đang ở bất kỳ bước nào khác (Step 2..12, bao gồm Step 10, 11, 12):
-    // Đẩy cụm sân khấu cũ trượt sang phải, đưa linh kiện Step 01 từ trái vào giữa bàn
-    set({ stageTransition: 'TO_ABOUT' });
+    // Khi đang ở bất kỳ bước nào khác: chuyển mượt vào targetStep đã lưu
+    set({
+      currentStep: targetStep,
+      scrollTarget: targetStep,
+      stageTransition: 'TO_ABOUT',
+    });
     get().showHudWarning(
-      'ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP 01/12)',
+      `ABOUT: VINZBOIZ PORTFOLIO · HARDWARE ASSEMBLY (STEP ${String(targetStep).padStart(2, '0')}/10)`,
       3000
     );
   },
@@ -1542,6 +1678,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({
       // 1. Nhảy thẳng tới Step 10 hoàn thiện lắp ráp (scroll 10.99 -> benchProgress 1.0)
       currentStep: 10,
+      hasCompletedAssembly: true,
       scrollTarget: 10.99,
       scrollCurrent: 10.99,
       homeTransitionProgress: 1.0,
@@ -1582,6 +1719,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({
       // Nhảy thẳng tới Step 11 (PROJECT)
       currentStep: 11,
+      hasCompletedAssembly: true,
       scrollTarget: 10.99,
       scrollCurrent: 10.99,
       benchProgress: 0.99,
@@ -1620,6 +1758,7 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     set({
       // Nhảy thẳng tới Step 12 (MY CV)
       currentStep: 12,
+      hasCompletedAssembly: true,
       scrollTarget: 11.99,
       scrollCurrent: 11.99,
       benchProgress: 0.99,
@@ -1686,18 +1825,19 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
   },
 
   applyHomeResetState: () => {
+    const isCompleted = get().hasCompletedAssembly;
     set({
       currentStep: 0,
       scrollTarget: 0.0,
       scrollCurrent: 1.0,
       homeTransitionProgress: 1.0,
-      benchProgress: 0,
-      benchAutoTarget: 0,
+      benchProgress: isCompleted ? 1.0 : 0,
+      benchAutoTarget: isCompleted ? 1.0 : 0,
       benchScrubbing: false,
       freeCam: false,
-      isPoweredOn: false,
-      osState: 'OFF',
-      bootElapsedTime: 0,
+      isPoweredOn: isCompleted ? get().isPoweredOn : false,
+      osState: isCompleted ? get().osState : 'OFF',
+      bootElapsedTime: isCompleted ? get().bootElapsedTime : 0,
 
       cdLocation: 'DESK',
       isCdTrayOpen: false,

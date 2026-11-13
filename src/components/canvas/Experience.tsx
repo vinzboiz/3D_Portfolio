@@ -52,35 +52,41 @@ export function Experience() {
   useFrame(() => {
     const state = useBuildStore.getState();
     const smoothScrollProgress = state.scrollCurrent;
-    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
+    const isAtCompletedHome =
+      state.hasCompletedAssembly &&
+      (state.currentStep === 0 ||
+        state.stageTransition === 'POST_ABOUT_TO_HOME' ||
+        state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
+    const isStep10OrAbove = state.currentStep >= 10 || smoothScrollProgress >= 9.65;
+    const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.65, 10.0);
 
-    // Đèn bàn chỉ sáng dần khi chiếc bàn trượt lên ở Step 10
+    const effectiveLand = isAtCompletedHome ? 1.0 : isStep10OrAbove ? landFactor : 0.0;
+
+    // Đèn bàn chỉ sáng dần khi chiếc bàn trượt lên ở Step 10 (hoặc khi đã hoàn tất máy)
     if (spotLightRef.current) {
-      spotLightRef.current.intensity = isLampOn ? spotIntensity * landFactor : 0;
+      spotLightRef.current.intensity = isLampOn ? spotIntensity * effectiveLand : 0;
     }
     if (bulbLightRef.current) {
-      bulbLightRef.current.intensity = isLampOn ? bulbGlowIntensity * landFactor : 0;
+      bulbLightRef.current.intensity = isLampOn ? bulbGlowIntensity * effectiveLand : 0;
     }
-    // Đổ bóng tiếp xúc chỉ bật khi bàn và máy đã hạ cánh vững chắc (Step >= 9.6) để tối ưu 60 FPS
+    // Đổ bóng tiếp xúc chỉ bật khi bàn và máy đã hạ cánh vững chắc (Step >= 9.85) để tối ưu 60 FPS
     if (contactShadowsGroupRef.current) {
-      const isLanded = smoothScrollProgress >= 9.6;
+      const isLanded = isAtCompletedHome || (isStep10OrAbove && smoothScrollProgress >= 9.85);
       contactShadowsGroupRef.current.visible = isLanded;
     }
 
     // Điều chỉnh độ mở của Fog động:
-    // - Step 00 -> 09: Fog thu hẹp (near=3.5, far=7.5) giữ nền không gian đen tuyền #0a0a0c
-    // - Step 10: Fog mở rộng (near=12, far=28) căn phòng Retro Lab hiện ra mượt mà không bị giật lag
     if (scene.fog && 'near' in scene.fog) {
       const fogExp = scene.fog as THREE.Fog;
-      fogExp.near = THREE.MathUtils.lerp(3.5, 12, landFactor);
-      fogExp.far = THREE.MathUtils.lerp(7.5, 28, landFactor);
+      fogExp.near = THREE.MathUtils.lerp(6.0, 14.0, effectiveLand);
+      fogExp.far = THREE.MathUtils.lerp(18.0, 34.0, effectiveLand);
     }
   });
 
   return (
     <>
       <color attach="background" args={['#0a0a0c']} />
-      <fog attach="fog" args={['#0a0a0c', 12, 28]} />
+      <fog attach="fog" args={['#0a0a0c', 14, 34]} />
 
       {/* Hệ thống điều khiển góc máy nội suy Step 01 -> 10 & OrbitControls tự do */}
       <CameraRig />

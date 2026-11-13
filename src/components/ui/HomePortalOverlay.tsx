@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useBuildStore } from '../../store/useBuildStore';
-import { AboutEditorialScroller } from './AboutEditorialScroller';
 import { EditorialProjectsSection } from './EditorialProjectsSection';
 import { EditorialCvSection } from './EditorialCvSection';
 
@@ -9,7 +8,12 @@ export function HomePortalOverlay() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const stageTransition = useBuildStore((s) => s.stageTransition);
   const homeTransitionProgress = useBuildStore((s) => s.homeTransitionProgress);
+  const hasCompletedAssembly = useBuildStore((s) => s.hasCompletedAssembly);
+  const postAssemblyHomeScrollCount = useBuildStore((s) => s.postAssemblyHomeScrollCount);
   const jumpToAbout = useBuildStore((s) => s.jumpToAbout);
+  const replayAbout = useBuildStore((s) => s.replayAbout);
+  const enterCompletedWorkstationInspect = useBuildStore((s) => s.enterCompletedWorkstationInspect);
+  const transitionPostAboutToHome = useBuildStore((s) => s.transitionPostAboutToHome);
 
   // Timecode động định dạng HH:MM:SS:FF chuẩn màn hình Viewfinder máy quay
   const [timecode, setTimecode] = useState('00:00:00:00');
@@ -31,11 +35,18 @@ export function HomePortalOverlay() {
 
   // portalProgress liên tục trong [0.0, 1.0] điều khiển 100% độ mở và slogan
   const portalProgress = THREE.MathUtils.clamp(homeTransitionProgress, 0, 1);
-  const isInside3D = currentStep >= 1 && portalProgress >= 0.5;
+  const isTransitioningToHome =
+    stageTransition === 'POST_ABOUT_TO_HOME' ||
+    stageTransition === 'TO_HOME' ||
+    stageTransition === 'TO_HOME_STEP1';
+  const isInside3D =
+    currentStep >= 1 && portalProgress >= 0.5 && !isTransitioningToHome;
 
-  // Khóa cuộn trang dọc khi đang ở trong không gian 3D About
+  // Khóa cuộn trang dọc CHỈ KHI đang ở trong không gian 3D About hoặc khi đang chuyển cảnh
+  const isScrollLocked = isInside3D || stageTransition !== 'IDLE';
+
   useEffect(() => {
-    if (isInside3D) {
+    if (isScrollLocked) {
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
@@ -46,13 +57,19 @@ export function HomePortalOverlay() {
       document.documentElement.style.overflow = 'auto';
       document.body.style.overflow = 'auto';
     };
-  }, [isInside3D]);
+  }, [isScrollLocked]);
 
-  // Click vào ô cửa sổ trung tâm hoặc nút CTA để bung màn hình vào bàn lắp máy 3D
+  // Click vào ô cửa sổ trung tâm hoặc nút CTA:
+  // - Nếu chưa lắp máy: vào quy trình lắp máy About (Step 01)
+  // - Nếu đã lắp máy xong: vào xem chi tiết toàn bộ máy & bật OrbitControls xoay zoom tương tác tự do!
   const handleEnterWorkbench = () => {
     if (portalProgress < 0.1) {
       window.scrollTo({ top: 0, behavior: 'instant' });
-      jumpToAbout();
+      if (hasCompletedAssembly) {
+        enterCompletedWorkstationInspect();
+      } else {
+        jumpToAbout();
+      }
     }
   };
 
@@ -72,16 +89,16 @@ export function HomePortalOverlay() {
   const viewfinderOpacity = Math.max(0, 1 - portalProgress * 1.6);
   const viewfinderScale = 1 - portalProgress * 0.04;
 
-  const isTransitioningHome = stageTransition === 'TO_HOME' || stageTransition === 'TO_HOME_STEP1';
+  const isTransitioningHome =
+    stageTransition === 'TO_HOME' ||
+    stageTransition === 'TO_HOME_STEP1' ||
+    stageTransition === 'POST_ABOUT_TO_HOME';
 
   return (
-    <div className="relative w-full text-white selection:bg-[#e05a47] selection:text-white" style={{ zIndex: 10 }}>
-      {/* =======================================================================
-          CỘT CHỮ GIỚI THIỆU BẢN THÂN CUỘN DỌC BÊN TRÁI (ABOUT EDITORIAL SCROLLER)
-          Hiển thị cố định ở nửa bên trái màn hình khi đang ở trong ABOUT (Step 01 -> 10)
-         ======================================================================= */}
-      <AboutEditorialScroller />
-
+    <div
+      className="relative w-full text-white selection:bg-[#e05a47] selection:text-white"
+      style={{ zIndex: 10, pointerEvents: isInside3D ? 'none' : 'auto' }}
+    >
       {/* =======================================================================
           TẦNG 1: #home-section (100vh) - SPLIT-TEXT PORTAL MASK & RETRO LAB VIEW
           - Cửa sổ trung tâm nhìn xuyên xuống căn phòng 3D bên dưới
@@ -94,7 +111,7 @@ export function HomePortalOverlay() {
           portalProgress > 0.05 ? 'fixed top-0 left-0 right-0 z-20' : 'relative'
         }`}
         style={{
-          pointerEvents: portalProgress < 0.1 ? 'auto' : portalProgress >= 0.99 ? 'none' : 'auto',
+          pointerEvents: portalProgress <= 0.15 ? 'auto' : 'none',
         }}
       >
         {/* =======================================================================
@@ -103,7 +120,7 @@ export function HomePortalOverlay() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none pt-[80px]">
           <div
             onClick={handleEnterWorkbench}
-            className="relative pointer-events-auto cursor-pointer group"
+            className={`relative ${portalProgress <= 0.15 ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'} group`}
             style={{
               width: widthStr,
               maxWidth: maxWidthStr,
@@ -117,34 +134,54 @@ export function HomePortalOverlay() {
                   : `1px solid rgba(255, 255, 255, ${(1 - portalProgress) * 0.22})`,
               willChange: 'width, height, border-radius',
             }}
-            title="Nhấp để bước vào phòng Lab 3D (About)"
+            title={
+              hasCompletedAssembly
+                ? 'Nhấp để vào xem chi tiết toàn bộ dàn máy 3D (Orbit Inspect)'
+                : 'Nhấp để bước vào phòng Lab 3D (About)'
+            }
           >
-            {/* Nút tròn nhỏ `||` ở góc dưới bên phải khung cửa sổ */}
-            <div
-              className="absolute bottom-4 right-4 w-9 h-9 rounded-full border border-white/30 bg-black/60 backdrop-blur-md flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110"
-              style={{
-                opacity: Math.max(0, 1 - portalProgress * 2.5),
-                transform: `scale(${1 - portalProgress * 0.3})`,
-              }}
-            >
-              <div className="flex gap-[3.5px] items-center justify-center">
-                <span className="w-[2px] h-3.5 bg-white rounded-sm" />
-                <span className="w-[2px] h-3.5 bg-white rounded-sm" />
-              </div>
-            </div>
-
             {/* Badge hover tinh tế ở tâm khung cửa sổ */}
             <div
               className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               style={{ display: portalProgress > 0.1 ? 'none' : 'flex' }}
             >
-              <div className="px-4 py-2 rounded-full bg-black/75 border border-white/20 backdrop-blur-md shadow-2xl flex items-center gap-2">
+              <div className="px-4 py-2 rounded-full bg-black/85 border border-white/20 backdrop-blur-md shadow-2xl flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-ping" />
                 <span className="font-mono text-xs font-semibold tracking-wider text-white uppercase">
-                  ENTER 3D LAB ↗
+                  {hasCompletedAssembly ? 'XEM CHI TIẾT DÀN MÁY 3D ↗' : 'ENTER 3D LAB ↗'}
                 </span>
               </div>
             </div>
+
+            {/* Nút tròn xem Replay quy trình lắp ráp ở góc dưới bên phải trong khung portal */}
+            {hasCompletedAssembly && portalProgress < 0.15 && (
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    replayAbout();
+                  }}
+                  title="Nhấn để xem lại quy trình lắp ráp máy tính (Replay About)"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black/95 text-white/80 hover:text-white border border-white/20 hover:border-white/50 backdrop-blur-md flex items-center justify-center shadow-2xl cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 group/btn"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-transform duration-500 group-hover/btn:-rotate-180 text-white"
+                  >
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -262,34 +299,38 @@ export function HomePortalOverlay() {
             4. FOOTER CALL-TO-ACTION & CUỘN XUỐNG XEM DỰ ÁN
            ======================================================================= */}
         <div
-          className="absolute bottom-8 inset-x-0 flex flex-col items-center justify-center gap-2 pointer-events-auto"
+          className={`absolute bottom-8 inset-x-0 flex flex-col items-center justify-center gap-2 ${
+            portalProgress <= 0.15 ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
           style={{
             opacity: Math.max(0, 1 - portalProgress * 2.5),
             transform: `translateY(${portalProgress * 24}px)`,
             willChange: 'opacity, transform',
           }}
         >
-          {/* Nút bấm vào phòng lab */}
-          <button
-            type="button"
-            onClick={handleEnterWorkbench}
-            className="flex items-center gap-2 px-5 py-2 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 backdrop-blur-md shadow-2xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
-            <span className="font-mono text-xs font-bold tracking-widest text-[#d8d2c5] uppercase">
-              Bấm để bước vào phòng Lab 3D (About)
-            </span>
-            <span className="font-mono text-xs text-[#e05a47]">↗</span>
-          </button>
+          {/* Nút bấm vào phòng lab khi chưa lắp ráp */}
+          {!hasCompletedAssembly && (
+            <button
+              type="button"
+              onClick={handleEnterWorkbench}
+              className="flex items-center gap-2 px-5 py-2 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 backdrop-blur-md shadow-2xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
+              <span className="font-mono text-xs font-bold tracking-widest text-[#d8d2c5] uppercase">
+                Bấm để bước vào phòng Lab 3D (About)
+              </span>
+              <span className="font-mono text-xs text-[#e05a47]">↗</span>
+            </button>
+          )}
 
-          {/* Mũi tên gợi ý cuộn xuống */}
-          <div
-            onClick={() => document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="flex items-center gap-1.5 text-[11px] font-mono text-[#8e8e93] hover:text-white cursor-pointer transition-colors"
-          >
-            <span>Cuộn xuống xem Projects & My CV</span>
-            <span className="animate-bounce">↓</span>
-          </div>
+          {/* Khi đã lắp ráp xong: gợi ý cuộn xuống xem Projects & CV */}
+          {hasCompletedAssembly && (
+            <div className="flex flex-col items-center gap-2">
+              <span className="font-mono text-xs text-white/60 tracking-wider">
+                Cuộn xuống xem Projects & My CV ↓
+              </span>
+            </div>
+          )}
         </div>
       </section>
 

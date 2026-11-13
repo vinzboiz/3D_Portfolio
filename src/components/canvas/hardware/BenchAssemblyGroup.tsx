@@ -83,7 +83,25 @@ export function BenchAssemblyGroup() {
       }
     }
 
-    const p = (currentStep === 0 || currentStep === 1) ? (currentStep === 0 ? 0.0 : stepP) : 1.0;
+    const scrollCurrent = state.scrollCurrent;
+
+    // Tiến trình lắp linh kiện trên bàn (CPU, Cooler, RAM) ở Step 01:
+    // Đồng bộ trực tiếp 100% với cuộn chuột scrollCurrent (0.0 -> 1.0)
+    const p = (currentStep === 0)
+      ? 0.0
+      : (state.hasCompletedAssembly || currentStep > 1)
+        ? 1.0
+        : Math.max(clamp01(scrollCurrent), clamp01(stepP));
+
+    // Tiến trình nâng bo mạch chủ vào lòng case ở Step 04:
+    // Đồng bộ trực tiếp với cuộn chuột scrollCurrent (3.0 -> 4.0)
+    const step4ScrollP = (state.hasCompletedAssembly || currentStep > 4)
+      ? 1.0
+      : currentStep === 4
+        ? clamp01(scrollCurrent - 3.0)
+        : 0.0;
+    const effectiveStep4P = Math.max(step4ScrollP, clamp01(stepP));
+
     const prevP = prevProgressRef.current;
 
     if (currentStep === 1) {
@@ -94,11 +112,11 @@ export function BenchAssemblyGroup() {
         retroSound.playRamSnap(state.soundEnabled);
       }
     } else if (currentStep === 4) {
-      if (prevP < 0.72 && stepP >= 0.72) {
+      if (prevP < 0.72 && effectiveStep4P >= 0.72) {
         retroSound.playSocketLever(state.soundEnabled);
       }
     }
-    prevProgressRef.current = currentStep === 1 ? p : stepP;
+    prevProgressRef.current = currentStep === 1 ? p : effectiveStep4P;
 
     // =========================================================================
     // ĐIỀU KHIỂN VỊ TRÍ & GÓC DỰNG ĐỨNG CỦA BENCH ASSEMBLY GROUP THEO STEP (01 -> 10)
@@ -107,48 +125,15 @@ export function BenchAssemblyGroup() {
       const seatedMoboX = TOWER_BUILD_X - 0.07 * TOWER_SCALE[1]; // 0.723
       const step10MoboX = TOWER_STEP10_X - 0.07 * TOWER_SCALE[1]; // 2.573
 
-      if (currentStep === 0 || currentStep === 1) {
-        // Step 00 & Step 01: Đặt phẳng ở chính giữa bàn bản vẽ kỹ thuật (không dựng đứng trong thùng máy)
-        const alpha = Math.min(1, delta * 8);
-        rootGroupRef.current.position.lerp(new THREE.Vector3(0, 0, 0), alpha);
-        rootGroupRef.current.rotation.set(0, 0, 0);
-        rootGroupRef.current.scale.set(1, 1, 1);
-      } else if (currentStep === 2 || currentStep === 3) {
-        // Step 02 & 03: Tạm đặt chờ sát hông trái thùng máy [-0.25, 1.25, 0.15],
-        // cụm linh kiện bắt đầu từ mép ~60% chiều rộng màn hình, hoàn toàn không bị đè lên text
-        const alpha = Math.min(1, delta * 8);
-        rootGroupRef.current.position.lerp(new THREE.Vector3(-0.25, 1.25, 0.15), alpha);
-        rootGroupRef.current.rotation.set(-0.10, 0.08, 0);
-        rootGroupRef.current.scale.set(1, 1, 1);
-      } else if (currentStep === 4) {
-        // Step 04: Nâng cụm BenchAssemblyGroup từ vị trí chờ sát hông [-0.25, 1.25, 0.15],
-        // xoay dựng đứng [Math.PI/2, 0, Math.PI/2] song song với vách Motherboard Tray,
-        // đưa vào lòng Thùng máy đứng qua cửa hông trái và khóa lên 6 chân ốc đồng!
-        const liftAndRotate = remap(stepP, 0.0, 0.52);
-        const seatOnStandoffs = remap(stepP, 0.52, 0.74);
-
-        const hoverX = THREE.MathUtils.lerp(-0.25, -0.35, liftAndRotate);
-        const targetX = THREE.MathUtils.lerp(hoverX, seatedMoboX, seatOnStandoffs);
-        const targetY = THREE.MathUtils.lerp(1.25, TOWER_BASE_Y, liftAndRotate);
-        const hoverZ = THREE.MathUtils.lerp(0.15, TOWER_CENTER_Z + 0.08, liftAndRotate);
-        const targetZ = THREE.MathUtils.lerp(hoverZ, TOWER_CENTER_Z, seatOnStandoffs);
-
-        rootGroupRef.current.position.set(targetX, targetY, targetZ);
-        rootGroupRef.current.rotation.set(
-          THREE.MathUtils.lerp(-0.10, Math.PI / 2, liftAndRotate),
-          THREE.MathUtils.lerp(0.08, 0, liftAndRotate),
-          THREE.MathUtils.lerp(0, Math.PI / 2, liftAndRotate)
-        );
-        rootGroupRef.current.scale.set(
-          THREE.MathUtils.lerp(1, TOWER_SCALE[0], liftAndRotate),
-          THREE.MathUtils.lerp(1, TOWER_SCALE[1], liftAndRotate),
-          THREE.MathUtils.lerp(1, TOWER_SCALE[2], liftAndRotate)
-        );
-      } else if (currentStep >= 10) {
-        // Step 10+: Dịch chuyển đồng bộ cùng Thùng máy đứng sang bên phải màn hình CRT (X_world = +1.85) sau khi đậy nắp chữ U
-        const state = useBuildStore.getState();
+      const isAtCompletedHome =
+        state.hasCompletedAssembly &&
+        (currentStep === 0 ||
+          state.stageTransition === 'POST_ABOUT_TO_HOME' ||
+          state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
+      if (isAtCompletedHome || currentStep >= 10) {
+        // Step 10+ hoặc ở Home đã hoàn tất: Dịch chuyển đồng bộ cùng Thùng máy đứng sang bên phải màn hình CRT (X_world = +1.85) sau khi đậy nắp chữ U
         const isPowered = state.isPoweredOn;
-        const shiftT = currentStep > 10 || isPowered ? 1 : THREE.MathUtils.smoothstep(state.scrollCurrent, 9.15, 9.85);
+        const shiftT = isAtCompletedHome || currentStep > 10 || isPowered ? 1 : THREE.MathUtils.smoothstep(state.scrollCurrent, 9.65, 9.95);
         const curX = THREE.MathUtils.lerp(seatedMoboX, step10MoboX, shiftT);
         const alpha = Math.min(1, delta * 8);
         rootGroupRef.current.position.x = THREE.MathUtils.lerp(rootGroupRef.current.position.x, curX, alpha);
@@ -156,6 +141,43 @@ export function BenchAssemblyGroup() {
         rootGroupRef.current.position.z = TOWER_CENTER_Z;
         rootGroupRef.current.rotation.set(Math.PI / 2, 0, Math.PI / 2);
         rootGroupRef.current.scale.set(...TOWER_SCALE);
+      } else if (currentStep === 0 || currentStep === 1) {
+        // Step 00 & Step 01: Đặt phẳng ở chính giữa bàn bản vẽ kỹ thuật (không dựng đứng trong thùng máy)
+        const alpha = Math.min(1, delta * 8);
+        rootGroupRef.current.position.lerp(new THREE.Vector3(0, 0, 0), alpha);
+        rootGroupRef.current.rotation.set(0, 0, 0);
+        rootGroupRef.current.scale.set(1, 1, 1);
+      } else if (currentStep === 2 || currentStep === 3) {
+        // Step 02 & 03: Đã hoàn tất lắp CPU/Fan/RAM ở Step 01, bo mạch chủ nằm phẳng phiu trên mặt bàn
+        // bên trái thùng máy [-0.95, 0.0, 0.2], KHÔNG bay lơ lửng che thùng máy và KHÔNG đè lên text!
+        const alpha = Math.min(1, delta * 8);
+        rootGroupRef.current.position.lerp(new THREE.Vector3(-0.95, 0.0, 0.2), alpha);
+        rootGroupRef.current.rotation.set(0, 0, 0);
+        rootGroupRef.current.scale.set(1, 1, 1);
+      } else if (currentStep === 4) {
+        // Step 04: Nâng cụm BenchAssemblyGroup từ vị trí mặt bàn [-0.95, 0.0, 0.2],
+        // xoay dựng đứng [Math.PI/2, 0, Math.PI/2] song song với vách Motherboard Tray,
+        // đưa vào lòng Thùng máy đứng qua cửa hông trái và khóa lên 6 chân ốc đồng!
+        const liftAndRotate = remap(effectiveStep4P, 0.0, 0.52);
+        const seatOnStandoffs = remap(effectiveStep4P, 0.52, 0.74);
+
+        const hoverX = THREE.MathUtils.lerp(-0.95, -0.15, liftAndRotate);
+        const targetX = THREE.MathUtils.lerp(hoverX, seatedMoboX, seatOnStandoffs);
+        const targetY = THREE.MathUtils.lerp(0.0, TOWER_BASE_Y, liftAndRotate);
+        const hoverZ = THREE.MathUtils.lerp(0.2, TOWER_CENTER_Z + 0.08, liftAndRotate);
+        const targetZ = THREE.MathUtils.lerp(hoverZ, TOWER_CENTER_Z, seatOnStandoffs);
+
+        rootGroupRef.current.position.set(targetX, targetY, targetZ);
+        rootGroupRef.current.rotation.set(
+          THREE.MathUtils.lerp(0, Math.PI / 2, liftAndRotate),
+          THREE.MathUtils.lerp(0, 0, liftAndRotate),
+          THREE.MathUtils.lerp(0, Math.PI / 2, liftAndRotate)
+        );
+        rootGroupRef.current.scale.set(
+          THREE.MathUtils.lerp(1, TOWER_SCALE[0], liftAndRotate),
+          THREE.MathUtils.lerp(1, TOWER_SCALE[1], liftAndRotate),
+          THREE.MathUtils.lerp(1, TOWER_SCALE[2], liftAndRotate)
+        );
       } else {
         // Step 05 -> Step 09: Cố định vững chắc trên 6 chân ốc đồng trong lòng Thùng máy đứng
         rootGroupRef.current.position.set(seatedMoboX, TOWER_BASE_Y, TOWER_CENTER_Z);

@@ -790,15 +790,19 @@ export function RetroLabEnvironment() {
   useFrame(() => {
     const state = useBuildStore.getState();
     const smoothScrollProgress = state.scrollCurrent;
-    const isVisible = smoothScrollProgress >= 8.5;
+    const isAtCompletedHome =
+      state.hasCompletedAssembly &&
+      (state.currentStep === 0 ||
+        state.stageTransition === 'POST_ABOUT_TO_HOME' ||
+        state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
+    // Ở Step 01 -> Step 09: Phòng lab hoàn toàn ẩn (chỉ có background đen).
+    // Chỉ xuất hiện khi ở Home đã hoàn tất hoặc khi cuộn chuyển sang Step 10
+    const isVisible = isAtCompletedHome || state.currentStep >= 10 || smoothScrollProgress >= 9.65;
 
     if (roomGroupRef.current) {
       roomGroupRef.current.visible = isVisible;
       if (isVisible) {
-        const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.0, 10.0);
-        // Tường và phòng lướt nhẹ nhàng đón chào khi hoàn thiện máy (trượt êm từ z = -1.6 về 0.0)
-        const roomZ = (1.0 - landFactor) * -1.6;
-        roomGroupRef.current.position.z = roomZ;
+        roomGroupRef.current.position.z = 0.0;
       }
     }
   });
@@ -856,12 +860,6 @@ export function RetroLabEnvironment() {
           - Kèm hộp bao bảo vệ (Enclosing Shell) BackSide chống hở góc
          ======================================================================= */}
 
-      {/* 0. HỘP BAO BẢO VỆ TOÀN PHÒNG (INVERTED ENCLOSING SHELL - CHỐNG LỘ VOID TỪ MỌI GÓC) */}
-      <mesh position={[0, wallCenterY, roomCenterZ]}>
-        <boxGeometry args={[S.ROOM.SIZE + 0.04, S.ROOM.HEIGHT + 0.04, S.ROOM.SIZE + 0.04]} />
-        <meshBasicMaterial color="#040608" side={THREE.BackSide} />
-      </mesh>
-
       {/* 1. Sàn xưởng hình vuông (Y = S.FLOOR_Y = -0.75m) */}
       <mesh
         position={[0, S.FLOOR_Y, roomCenterZ]}
@@ -877,17 +875,7 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 4. Tường trước (Z = S.ROOM.FRONT_Z = 1.90m, khép kín hoàn toàn phòng phía trước) */}
-      <mesh
-        position={[0, wallCenterY, S.ROOM.FRONT_Z]}
-        rotation={[0, Math.PI, 0]}
-        receiveShadow
-        material={wallMat}
-      >
-        <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
-      </mesh>
-
-      {/* 5. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 3. Tường trái (X = -1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
         position={[-halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, Math.PI / 2, 0]}
@@ -897,7 +885,7 @@ export function RetroLabEnvironment() {
         <planeGeometry args={[S.ROOM.SIZE, S.ROOM.HEIGHT]} />
       </mesh>
 
-      {/* 6. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
+      {/* 4. Tường phải (X = +1.425m, vừa sát mép ngoài dãy màn hình) */}
       <mesh
         position={[halfWall, wallCenterY, roomCenterZ]}
         rotation={[0, -Math.PI / 2, 0]}

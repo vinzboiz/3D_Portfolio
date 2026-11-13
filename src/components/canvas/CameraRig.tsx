@@ -27,6 +27,19 @@ const HOME_BASE_TARGET = new THREE.Vector3(
   -0.6 * S.DESK_ITEMS_SCALE
 );
 
+// Góc nhìn HOME khi đã hoàn tất lắp ráp máy tính (Full Workstation Overview):
+// Canh chuẩn chính diện trung tâm bao trọn Đèn bàn bên trái, Màn CRT ở giữa, Thùng máy InWin A500 bên phải, Bàn phím & Chuột
+const HOME_COMPLETED_CAM_POS = new THREE.Vector3(
+  0.25 * S.DESK_ITEMS_SCALE,
+  4.6 * S.DESK_ITEMS_SCALE,
+  13.2 * S.DESK_ITEMS_SCALE
+);
+const HOME_COMPLETED_TARGET = new THREE.Vector3(
+  0.20 * S.DESK_ITEMS_SCALE,
+  1.65 * S.DESK_ITEMS_SCALE,
+  0.15 * S.DESK_ITEMS_SCALE
+);
+
 /**
  * Dịch chuyển điểm nhìn (lookAt) sang bên trái màn hình camera một khoảng vừa phải
  * (bằng cách trừ vector right của camera) để mô hình 3D luôn tự động định vị ở nửa phải màn hình
@@ -46,7 +59,7 @@ function computeFramedTarget(
 export function CameraRig() {
   const currentStep = useBuildStore((s) => s.currentStep);
   const freeCam = useBuildStore((s) => s.freeCam);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
 
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const desiredPos = useRef(HOME_CAM_POS.clone());
@@ -62,12 +75,10 @@ export function CameraRig() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const state = useBuildStore.getState();
-      if (
-        state.currentStep !== 0 ||
-        state.scrollCurrent > 0.02 ||
-        state.stageTransition !== 'IDLE' ||
-        state.freeCam
-      ) {
+      const isAtHome = state.currentStep === 0 && state.scrollCurrent <= 0.05;
+      const isAtStep10 = state.currentStep >= 10;
+
+      if ((!isAtHome && !isAtStep10) || state.stageTransition !== 'IDLE') {
         if (mouseRef.current.x !== 0 || mouseRef.current.y !== 0) {
           mouseRef.current.x = 0;
           mouseRef.current.y = 0;
@@ -94,10 +105,16 @@ export function CameraRig() {
     pos.y += floatYWorld;
     rawTarget.y += floatYWorld;
 
+    if (currentStep >= 10) {
+      // Lùi camera xa thêm 46% ở Step 10 để nhìn trọn vẹn toàn bộ máy tính, đèn bàn, CRT, phím chuột
+      const toCam10Init = new THREE.Vector3().subVectors(pos, rawTarget);
+      pos.addScaledVector(toCam10Init, 0.46);
+    }
+
     desiredPos.current.copy(pos);
 
     if (currentStep >= 1) {
-      const stepOffset = currentStep >= 10 ? 0.65 : currentStep === 9 ? 1.85 : 2.85;
+      const stepOffset = currentStep >= 10 ? 0.08 : currentStep === 9 ? 1.85 : 2.85;
       const offset = stepOffset * S.DESK_ITEMS_SCALE;
       desiredTarget.current.copy(computeFramedTarget(pos, rawTarget, offset));
     } else {
@@ -119,16 +136,16 @@ export function CameraRig() {
     const safeDelta = Math.min(delta, 0.05);
     const dt = safeDelta;
 
-    // Helper giới hạn camera CHẶT CHẼ trong khuôn khổ căn phòng
-    // Ngăn chặn tuyệt đối việc camera lọt vào dàn màn hình CRT phía sau (Z < -0.40m)
+    // Helper giới hạn camera CHẶT CHẼ trong khuôn khổ căn phòng Retro Lab
+    // Ngăn chặn tuyệt đối việc camera lọt vào dàn màn hình CRT phía sau (Z < -0.45m)
     // hoặc đâm xuyên qua sàn / bàn (Y < 0.10m) hoặc vượt qua tường trước / hông
     const clampCameraInRoom = () => {
       const minX = -1.25;  // Cách tường trái 17.5cm (tường = -1.425m)
       const maxX = 1.25;   // Cách tường phải 17.5cm (tường = +1.425m)
       const minY = 0.10;   // Luôn trên mặt bàn làm việc (mặt bàn = 0.00m, sàn = -0.75m)
       const maxY = 1.85;   // Dưới trần 20cm (trần = 2.05m)
-      const minZ = -0.40;  // Phía trước dàn màn hình CRT (màn CRT nhô ra z = -0.56m)
-      const maxZ = 1.68;   // Cách tường trước 22cm (tường = +1.90m)
+      const minZ = -0.45;  // Phía trước dàn màn hình CRT (màn CRT nhô ra z = -0.56m)
+      const maxZ = 1.70;   // Cách rìa trước phòng 20cm (tường = +1.90m)
 
       camera.position.x = THREE.MathUtils.clamp(camera.position.x, minX, maxX);
       camera.position.y = THREE.MathUtils.clamp(camera.position.y, minY, maxY);
@@ -152,7 +169,17 @@ export function CameraRig() {
       }
       wasInspectRef.current = true;
       controlsRef.current?.update();
+
+      // Giữ tâm ngắm (target) luôn quanh cụm máy tính trên bàn, không bị pan trôi ra xa
+      if (controlsRef.current) {
+        controlsRef.current.target.x = THREE.MathUtils.clamp(controlsRef.current.target.x, -0.60, 0.60);
+        controlsRef.current.target.y = THREE.MathUtils.clamp(controlsRef.current.target.y, 0.08, 0.45);
+        controlsRef.current.target.z = THREE.MathUtils.clamp(controlsRef.current.target.z, -0.25, 0.35);
+      }
+
+      // KHÓA CHẶT CAMERA TRONG KHÔNG GIAN CĂN PHÒNG RETRO LAB (YÊU CẦU NGƯỜI DÙNG)
       clampCameraInRoom();
+
       return;
     }
 
@@ -175,17 +202,140 @@ export function CameraRig() {
       } else if (state.scrollCurrent !== state.scrollTarget) {
         state.syncScrollCurrent(state.scrollTarget);
       }
+    } else {
+      // Điều tiết chuyển cảnh mượt mà qua cổng Portal khi stageTransition !== 'IDLE'
+      const trans = state.stageTransition;
+      if (trans === 'POST_ABOUT_TO_HOME' || trans === 'TO_HOME' || trans === 'TO_HOME_STEP1') {
+        const currentP = state.homeTransitionProgress;
+        const speed = safeDelta * 2.0; // ~500ms zoom out mượt về Home
+        const nextP = Math.max(0, currentP - speed);
+        state.setHomeTransitionProgress(nextP);
+        state.syncScrollCurrent(nextP);
+
+        if (nextP <= 0.005) {
+          state.setHomeTransitionProgress(0);
+          state.syncScrollCurrent(0);
+          state.setStep(0);
+          state.setStageTransition('IDLE');
+        }
+      } else if (trans === 'HOME_TO_ABOUT' || trans === 'HOME_TO_POST_ABOUT_INSPECT') {
+        const currentP = state.homeTransitionProgress;
+        const speed = safeDelta * 2.0;
+        const targetStep = trans === 'HOME_TO_POST_ABOUT_INSPECT' ? 10 : (state.savedAssemblyStep || 1);
+        const nextP = Math.min(1.0, currentP + speed);
+        state.setHomeTransitionProgress(nextP);
+        state.syncScrollCurrent(nextP * targetStep);
+
+        if (nextP >= 0.995) {
+          state.setHomeTransitionProgress(1.0);
+          state.syncScrollCurrent(targetStep);
+          state.setStep(targetStep);
+          if (trans === 'HOME_TO_POST_ABOUT_INSPECT') {
+            state.setFreeCam(true);
+          }
+          state.setStageTransition('IDLE');
+        }
+      } else if (trans === 'HOME_TO_PROJECT' || trans === 'TO_PROJECT') {
+        state.setHomeTransitionProgress(0);
+        state.syncScrollCurrent(0);
+        state.setStep(0);
+        state.setStageTransition('IDLE');
+        const el = document.getElementById('projects-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (trans === 'HOME_TO_MY_CV' || trans === 'TO_MY_CV') {
+        state.setHomeTransitionProgress(0);
+        state.syncScrollCurrent(0);
+        state.setStep(0);
+        state.setStageTransition('IDLE');
+        const el = document.getElementById('cv-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     const scrollVal = state.scrollCurrent;
     const aspect = r3fState.size.width / Math.max(1, r3fState.size.height);
-    const homeX = HOME_CAM_POS.x * (aspect < 1.0 ? 0.85 : 1.0);
-    const homeY = HOME_CAM_POS.y * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
-    const homeZ = HOME_CAM_POS.z * (aspect < 1.0 ? 1.08 : 1.0);
+    const baseHomePos = state.hasCompletedAssembly ? HOME_COMPLETED_CAM_POS : HOME_CAM_POS;
+    const baseHomeTarget = state.hasCompletedAssembly ? HOME_COMPLETED_TARGET : HOME_BASE_TARGET;
+
+    const homeX = baseHomePos.x * (aspect < 1.0 ? 0.85 : 1.0);
+    const homeY = baseHomePos.y * Math.min(1.2, aspect < 1.0 ? 1.15 : 1.0);
+    const homeZ = baseHomePos.z * (aspect < 1.0 ? 1.08 : 1.0);
     const homePos = new THREE.Vector3(homeX, homeY, homeZ);
-    const homeTarget = HOME_BASE_TARGET.clone();
+    const homeTarget = baseHomeTarget.clone();
 
     const persCam = camera as THREE.PerspectiveCamera;
+
+    // =========================================================================
+    // XỬ LÝ CHUYỂN CẢNH ĐẶC BIỆT QUA CỔNG PORTAL (stageTransition !== 'IDLE')
+    // Camera nội suy trực tiếp theo homeTransitionProgress (0.0 <-> 1.0)
+    // Triệt tiêu 100% việc xoay ngược góc nhìn hoặc giật lag qua các bước trung gian!
+    // =========================================================================
+    const stageTransition = state.stageTransition;
+    const homeP = THREE.MathUtils.clamp(state.homeTransitionProgress, 0, 1);
+
+    if (stageTransition === 'POST_ABOUT_TO_HOME' || stageTransition === 'HOME_TO_POST_ABOUT_INSPECT') {
+      const step10 = ASSEMBLY_STEPS[10];
+      const step10Pos = new THREE.Vector3(...step10.cameraPos);
+      const step10RawTarget = new THREE.Vector3(...step10.cameraTarget);
+      const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
+      step10Pos.addScaledVector(toCam10, 0.46);
+      const step10FramedTarget = computeFramedTarget(step10Pos, step10RawTarget, 0.08 * S.DESK_ITEMS_SCALE);
+
+      desiredPos.current.lerpVectors(homePos, step10Pos, homeP);
+      desiredTarget.current.lerpVectors(homeTarget, step10FramedTarget, homeP);
+
+      const targetFov = THREE.MathUtils.lerp(HOME_FOV, WORKBENCH_FOV, homeP);
+      if (Math.abs(persCam.fov - targetFov) > 0.05) {
+        persCam.fov = targetFov;
+        persCam.updateProjectionMatrix();
+      }
+
+      camera.position.copy(desiredPos.current);
+      smoothedTarget.current.copy(desiredTarget.current);
+      camera.lookAt(smoothedTarget.current);
+      clampCameraInRoom();
+      return;
+    }
+
+    if (
+      stageTransition === 'TO_HOME' ||
+      stageTransition === 'TO_HOME_STEP1' ||
+      stageTransition === 'HOME_TO_ABOUT'
+    ) {
+      const stepIdx = Math.max(1, Math.min(10, state.savedAssemblyStep || state.currentStep || 1));
+      const stepData = ASSEMBLY_STEPS[stepIdx];
+      const stepPos = new THREE.Vector3(...stepData.cameraPos);
+      const stepRawTarget = new THREE.Vector3(...stepData.cameraTarget);
+
+      const landFactor = THREE.MathUtils.smoothstep(stepIdx, 9.65, 9.98);
+      const floatWeight = 1.0 - landFactor;
+      const floatYWorld = (1.25 * floatWeight) * S.DESK_ITEMS_SCALE;
+      stepPos.y += floatYWorld;
+      stepRawTarget.y += floatYWorld;
+
+      const progress1to10 = THREE.MathUtils.clamp((stepIdx - 1) / 9, 0, 1);
+      const camPullBack = THREE.MathUtils.lerp(0.28, 0.46, progress1to10);
+      const toCam = new THREE.Vector3().subVectors(stepPos, stepRawTarget);
+      stepPos.addScaledVector(toCam, camPullBack);
+
+      const baseOffset = stepIdx >= 10 ? 0.08 : stepIdx === 9 ? 1.85 : 2.85;
+      const stepFramedTarget = computeFramedTarget(stepPos, stepRawTarget, baseOffset * S.DESK_ITEMS_SCALE);
+
+      desiredPos.current.lerpVectors(homePos, stepPos, homeP);
+      desiredTarget.current.lerpVectors(homeTarget, stepFramedTarget, homeP);
+
+      const targetFov = THREE.MathUtils.lerp(HOME_FOV, WORKBENCH_FOV, homeP);
+      if (Math.abs(persCam.fov - targetFov) > 0.05) {
+        persCam.fov = targetFov;
+        persCam.updateProjectionMatrix();
+      }
+
+      camera.position.copy(desiredPos.current);
+      smoothedTarget.current.copy(desiredTarget.current);
+      camera.lookAt(smoothedTarget.current);
+      clampCameraInRoom();
+      return;
+    }
 
     // =========================================================================
     // TÍNH TOÁN VỊ TRÍ & GÓC NHÌN THEO TIẾN TRÌNH CUỘN SCROLLVAL (0.0 -> 12.0)
@@ -217,7 +367,7 @@ export function CameraRig() {
       // Parallax chuột ở Home thuần túy
       const isPureHome =
         state.currentStep === 0 &&
-        scrollVal <= 0.02 &&
+        scrollVal <= 0.05 &&
         state.stageTransition === 'IDLE' &&
         !state.freeCam;
 
@@ -225,7 +375,7 @@ export function CameraRig() {
         smoothedMouse.current.x = 0;
         smoothedMouse.current.y = 0;
       } else {
-        const mouseLerpSpeed = safeDelta * 2.2;
+        const mouseLerpSpeed = safeDelta * 2.8;
         smoothedMouse.current.x = THREE.MathUtils.lerp(
           smoothedMouse.current.x,
           mouseRef.current.x,
@@ -237,13 +387,28 @@ export function CameraRig() {
           mouseLerpSpeed
         );
 
-        const yawOffset = smoothedMouse.current.x * (1.15 * S.DESK_ITEMS_SCALE);
-        const pitchOffset = smoothedMouse.current.y * (0.65 * S.DESK_ITEMS_SCALE);
-        const depthOffset = -smoothedMouse.current.x * (0.45 * S.DESK_ITEMS_SCALE);
+        if (state.hasCompletedAssembly) {
+          // CHẾ ĐỘ DI CHUỘT XEM CÁC VỊ TRÍ KHI ĐÃ LẮP XONG MÁY:
+          // Xoay nhẹ góc nhìn parallax đa chiều (yaw/pitch) để thấy rõ chiều sâu của cả 3 vật thể:
+          // Đèn bàn Anglepoise bên trái, Màn CRT Sony & phím chuột ở giữa, Thùng máy InWin A500 bên phải
+          const panX = smoothedMouse.current.x * 0.38;
+          const panY = smoothedMouse.current.y * 0.22;
 
-        desiredTarget.current.x += yawOffset;
-        desiredTarget.current.y += pitchOffset;
-        desiredTarget.current.z += depthOffset;
+          desiredPos.current.x += panX * 1.35;
+          desiredPos.current.y += panY * 1.15;
+          desiredPos.current.z += smoothedMouse.current.y * 0.18;
+
+          desiredTarget.current.x -= panX * 0.45;
+          desiredTarget.current.y += panY * 0.55;
+        } else {
+          const yawOffset = smoothedMouse.current.x * 0.25;
+          const pitchOffset = smoothedMouse.current.y * 0.16;
+
+          desiredPos.current.x += yawOffset * 1.1;
+          desiredPos.current.y += pitchOffset * 0.9;
+          desiredTarget.current.x -= yawOffset * 0.35;
+          desiredTarget.current.y += pitchOffset * 0.45;
+        }
       }
     } else {
       // 2. Các bước lắp ráp Step 01 -> Step 10:
@@ -271,8 +436,8 @@ export function CameraRig() {
         const interpPos = new THREE.Vector3().lerpVectors(posA, posB, ease);
         const interpRawTarget = new THREE.Vector3().lerpVectors(targetA, targetB, ease);
 
-        // Theo dõi độ nâng lơ lửng của cụm linh kiện ở Step 00 -> 09
-        const landFactor = THREE.MathUtils.smoothstep(scrollVal, 9.1, 9.85);
+        // Theo dõi độ nâng lơ lửng của cụm linh kiện ở Step 00 -> 09 (hạ cánh ở Step 10)
+        const landFactor = THREE.MathUtils.smoothstep(scrollVal, 9.65, 9.98);
         const floatWeight = 1.0 - landFactor;
         const floatYWorld = (1.25 * floatWeight) * S.DESK_ITEMS_SCALE;
 
@@ -282,8 +447,9 @@ export function CameraRig() {
         // Tiến trình tổng thể từ Step 01 -> Step 10 (0.0 -> 1.0)
         const progress1to10 = THREE.MathUtils.clamp((scrollVal - 1) / 9, 0, 1);
 
-        // Lùi camera xa (0.28 -> 0.18) nội suy mượt mà, triệt tiêu hoàn toàn cú giật góc nhìn khi chạm ngưỡng Step 10
-        const camPullBack = THREE.MathUtils.lerp(0.28, 0.18, progress1to10);
+        // Lùi camera xa (0.28 -> 0.46) nội suy mượt mà, triệt tiêu hoàn toàn cú giật góc nhìn khi chạm ngưỡng Step 10
+        // Thu nhỏ linh kiện lại vừa vặn tầm mắt theo đúng yêu cầu người dùng
+        const camPullBack = THREE.MathUtils.lerp(0.28, 0.46, progress1to10);
         const toCam = new THREE.Vector3().subVectors(interpPos, interpRawTarget);
         interpPos.addScaledVector(toCam, camPullBack);
 
@@ -294,7 +460,7 @@ export function CameraRig() {
           baseOffset = THREE.MathUtils.lerp(2.85, 1.85, t);
         } else if (scrollVal > 9.0) {
           const t = THREE.MathUtils.clamp(scrollVal - 9.0, 0, 1);
-          baseOffset = THREE.MathUtils.lerp(1.85, 0.65, t);
+          baseOffset = THREE.MathUtils.lerp(1.85, 0.08, t);
         }
         const offsetAmount = baseOffset * S.DESK_ITEMS_SCALE;
 
@@ -308,11 +474,31 @@ export function CameraRig() {
         const step10Pos = new THREE.Vector3(...step10.cameraPos);
         const step10RawTarget = new THREE.Vector3(...step10.cameraTarget);
 
-        // Lùi xa thêm 18% ở Step 10 để nhìn trọn vẹn màn hình CRT, bàn phím, chuột và đèn bàn
+        // Lùi xa thêm 46% ở Step 10 để nhìn trọn vẹn màn hình CRT, bàn phím, chuột và đèn bàn
         const toCam10 = new THREE.Vector3().subVectors(step10Pos, step10RawTarget);
-        step10Pos.addScaledVector(toCam10, 0.18);
+        step10Pos.addScaledVector(toCam10, 0.46);
 
-        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 0.65 * S.DESK_ITEMS_SCALE);
+        const framedTarget = computeFramedTarget(step10Pos, step10RawTarget, 0.08 * S.DESK_ITEMS_SCALE);
+
+        // Ở Step 10: Tự động kích hoạt chế độ di chuột xem các vị trí trên bàn làm việc
+        const mouseLerpSpeed = safeDelta * 2.8;
+        smoothedMouse.current.x = THREE.MathUtils.lerp(
+          smoothedMouse.current.x,
+          mouseRef.current.x,
+          mouseLerpSpeed
+        );
+        smoothedMouse.current.y = THREE.MathUtils.lerp(
+          smoothedMouse.current.y,
+          mouseRef.current.y,
+          mouseLerpSpeed
+        );
+
+        const mousePanX = smoothedMouse.current.x * (1.65 * S.DESK_ITEMS_SCALE);
+        const mousePanY = smoothedMouse.current.y * (1.15 * S.DESK_ITEMS_SCALE);
+        framedTarget.x += mousePanX;
+        framedTarget.y += mousePanY;
+        step10Pos.x += smoothedMouse.current.x * (0.85 * S.DESK_ITEMS_SCALE);
+        step10Pos.y += smoothedMouse.current.y * (0.55 * S.DESK_ITEMS_SCALE);
 
         desiredPos.current.copy(step10Pos);
         desiredTarget.current.copy(framedTarget);
@@ -376,23 +562,26 @@ export function CameraRig() {
     camera.position.lerp(desiredPos.current, camAlpha);
     smoothedTarget.current.lerp(desiredTarget.current, camAlpha);
     camera.lookAt(smoothedTarget.current);
-    if (scrollVal >= 0.95) {
-      clampCameraInRoom();
-    }
   });
 
   return (
     <OrbitControls
       ref={controlsRef}
+      domElement={gl.domElement}
+      makeDefault
       enabled={freeCam && currentStep >= 10}
+      enableRotate
+      enableZoom
+      enablePan
       enableDamping
       dampingFactor={0.08}
+      rotateSpeed={0.9}
+      zoomSpeed={1.0}
+      panSpeed={0.8}
       maxPolarAngle={Math.PI / 2 - 0.04}
-      minPolarAngle={Math.PI * 0.08}
-      minAzimuthAngle={-Math.PI * 0.65}
-      maxAzimuthAngle={Math.PI * 0.65}
-      minDistance={0.15}
-      maxDistance={1.62}
+      minPolarAngle={Math.PI * 0.04}
+      minDistance={0.28}
+      maxDistance={1.72}
     />
   );
 }
