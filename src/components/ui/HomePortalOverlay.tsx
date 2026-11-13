@@ -134,24 +134,7 @@ export function HomePortalOverlay() {
                   : `1px solid rgba(255, 255, 255, ${(1 - portalProgress) * 0.22})`,
               willChange: 'width, height, border-radius',
             }}
-            title={
-              hasCompletedAssembly
-                ? 'Nhấp để vào xem chi tiết toàn bộ dàn máy 3D (Orbit Inspect)'
-                : 'Nhấp để bước vào phòng Lab 3D (About)'
-            }
           >
-            {/* Badge hover tinh tế ở tâm khung cửa sổ */}
-            <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ display: portalProgress > 0.1 ? 'none' : 'flex' }}
-            >
-              <div className="px-4 py-2 rounded-full bg-black/85 border border-white/20 backdrop-blur-md shadow-2xl flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-ping" />
-                <span className="font-mono text-xs font-semibold tracking-wider text-white uppercase">
-                  {hasCompletedAssembly ? 'XEM CHI TIẾT DÀN MÁY 3D ↗' : 'ENTER 3D LAB ↗'}
-                </span>
-              </div>
-            </div>
 
             {/* Nút tròn xem Replay quy trình lắp ráp ở góc dưới bên phải trong khung portal */}
             {hasCompletedAssembly && portalProgress < 0.15 && (
@@ -162,7 +145,7 @@ export function HomePortalOverlay() {
                     e.stopPropagation();
                     replayAbout();
                   }}
-                  title="Nhấn để xem lại quy trình lắp ráp máy tính (Replay About)"
+                  title="Replay PC assembly process (About)"
                   className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black/95 text-white/80 hover:text-white border border-white/20 hover:border-white/50 backdrop-blur-md flex items-center justify-center shadow-2xl cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 group/btn"
                 >
                   <svg
@@ -202,15 +185,15 @@ export function HomePortalOverlay() {
             <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#e05a47]" />
             <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#e05a47]" />
 
-            <div className="absolute -top-6 left-0 text-[10px] font-mono tracking-widest text-[#e05a47]/80 uppercase">
-              PORTFOLIO 2026 — HARDWARE / WEBGL / FULL-STACK ARCHITECT
+            <div className="absolute -top-6 left-0 text-[11px] font-mono tracking-widest text-[#e05a47]/80 uppercase">
+            ENTERPRISE ERP /  FULL-STACK ENGINEER
             </div>
 
-            <div className="absolute -top-6 right-0 text-[10px] font-mono tracking-wider text-[#e05a47]/80 uppercase">
+            <div className="absolute -top-6 right-0 text-[11px] font-mono tracking-wider text-[#e05a47]/80 uppercase">
               CAM 01 · 60 FPS · ISO 400
             </div>
 
-            <div className="absolute -bottom-6 left-0 flex items-center gap-2 text-[10px] font-mono tracking-wider text-[#e05a47]/90">
+            <div className="absolute -bottom-6 left-0 flex items-center gap-2 text-[11px] font-mono tracking-wider text-[#e05a47]/90">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff3333] opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff2a2a]" />
@@ -218,8 +201,8 @@ export function HomePortalOverlay() {
               <span>{timecode}</span>
             </div>
 
-            <div className="absolute -bottom-6 right-0 text-[10px] font-mono tracking-wider text-[#e05a47]/80 uppercase">
-              PROGRESS {String(progressPercent).padStart(3, '0')}%
+            <div className="absolute -bottom-6 right-0 text-[11px] font-mono tracking-wider text-[#e05a47]/80 uppercase">
+              VINH NGUYEN © 2026
             </div>
           </div>
         </div>
@@ -228,23 +211,32 @@ export function HomePortalOverlay() {
             3. TYPOGRAPHY SLOGAN CHIA ĐÔI (SPLIT-TEXT SLOGAN)
            ======================================================================= */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center pt-[80px]">
-          <div className="relative w-full max-w-6xl h-full flex items-center justify-between px-4 sm:px-12 md:px-20">
-            {/* Cụm trái: "Kiến tạo không gian" */}
+          <div className="relative w-full max-w-[1480px] h-full flex items-center justify-between px-6 sm:px-12 md:px-16 lg:px-20">
+            {/* Cụm trái: Role & Discipline */}
             <div
-              className="flex-1 flex flex-col items-end pr-6 sm:pr-10 md:pr-16 text-right"
+              className="flex-1 flex flex-col items-end pr-4 sm:pr-8 md:pr-12 text-right"
               style={{
                 transform: `translateX(-${sloganTranslateX}px)`,
                 opacity: sloganOpacity,
-                marginTop: '-8vh',
+                marginTop: '-1.5vh',
                 willChange: 'transform, opacity',
               }}
             >
-              <h1 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(2.6rem,5.6vw,6.4rem)] leading-[0.92] uppercase drop-shadow-md">
-                Kiến tạo
+              <div className="flex items-center gap-2 mb-2 justify-end opacity-90">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e05a47] shadow-[0_0_8px_#e05a47]" />
+                <span className="font-mono text-[10px] sm:text-xs tracking-[0.24em] text-[#e05a47] uppercase font-semibold">
+                  IDENTITY · 01
+                </span>
+              </div>
+              <h1 className="font-sans font-black text-[#f5f5f7] tracking-[-0.035em] text-[clamp(2.2rem,4.4vw,5.0rem)] leading-[0.88] uppercase drop-shadow-md select-none">
+                SOFTWARE
               </h1>
-              <h1 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(2.6rem,5.6vw,6.4rem)] leading-[0.92] uppercase drop-shadow-md">
-                không gian
+              <h1 className="font-sans font-black text-[#f5f5f7] tracking-[-0.035em] text-[clamp(2.2rem,4.4vw,5.0rem)] leading-[0.88] uppercase drop-shadow-md select-none">
+                ENGINEER
               </h1>
+              <p className="font-mono text-[10px] sm:text-[11px] text-[#8a8a8e] tracking-[0.2em] uppercase mt-2.5 select-none">
+                CORE SYSTEMS &amp; ARCHITECTURE
+              </p>
             </div>
 
             {/* Khoảng trống dành cho khung cửa sổ trung tâm */}
@@ -258,39 +250,56 @@ export function HomePortalOverlay() {
               }}
             />
 
-            {/* Cụm phải: "từ những vi mạch sống" */}
+            {/* Cụm phải: Specialty & Evolution */}
             <div
-              className="flex-1 flex flex-col items-start pl-6 sm:pr-0 sm:pl-10 md:pl-16 text-left"
+              className="flex-1 flex flex-col items-start pl-4 sm:pr-0 sm:pl-8 md:pl-12 text-left"
               style={{
                 transform: `translateX(${sloganTranslateX}px)`,
                 opacity: sloganOpacity,
-                marginTop: '10vh',
+                marginTop: '1.5vh',
                 willChange: 'transform, opacity',
               }}
             >
-              <div className="flex items-baseline gap-2 sm:gap-3">
-                <span className="font-sans font-extrabold text-xs sm:text-sm text-white/70 tracking-widest uppercase pb-1">
-                  từ
+              <div className="flex items-center gap-2 mb-2 justify-start opacity-90">
+                <span className="font-mono text-[10px] sm:text-xs tracking-[0.24em] text-[#e05a47] uppercase font-semibold">
+                  EVOLUTION · 02
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e05a47] shadow-[0_0_8px_#e05a47]" />
+              </div>
+
+              <div className="flex items-baseline gap-2 sm:gap-2.5">
+                <span className="font-sans font-bold text-xs sm:text-sm text-white/50 tracking-widest uppercase">
+                  FROM
                 </span>
                 <span
-                  className="italic font-normal text-[#e05a47] text-[clamp(2.4rem,5.0vw,5.8rem)] leading-[0.92] drop-shadow-md"
+                  className="italic font-normal text-[#e05a47] text-[clamp(2.0rem,3.8vw,4.4rem)] leading-[0.9] drop-shadow-md select-none"
                   style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
                 >
-                  những
+                  Enterprise
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-2.5 sm:gap-3.5">
+              <div className="flex items-baseline gap-2 sm:gap-2.5">
+                <span className="font-sans font-bold text-xs sm:text-sm text-white/50 tracking-widest uppercase">
+                  TO
+                </span>
                 <span
-                  className="italic font-normal text-[#e05a47] text-[clamp(2.4rem,5.0vw,5.8rem)] leading-[0.92] drop-shadow-md"
+                  className="italic font-normal text-[#e05a47] text-[clamp(2.0rem,3.8vw,4.4rem)] leading-[0.9] drop-shadow-md select-none"
                   style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
                 >
-                  vi mạch
-                </span>
-                <span className="font-sans font-black text-[#f5f5f7] text-[clamp(2.6rem,5.6vw,6.4rem)] leading-[0.92] uppercase tracking-tight drop-shadow-md">
-                  sống
+                  Interactive
                 </span>
               </div>
+
+              <div className="flex items-baseline gap-2">
+                <span className="font-sans font-black text-[#f5f5f7] text-[clamp(2.2rem,4.4vw,5.0rem)] leading-[0.88] uppercase tracking-[-0.035em] drop-shadow-md select-none">
+                  3D SYSTEMS
+                </span>
+              </div>
+
+              <p className="font-mono text-[10px] sm:text-[11px] text-[#8a8a8e] tracking-[0.2em] uppercase mt-2.5 select-none">
+                WEBGL &amp; IMMERSIVE FRONTEND
+              </p>
             </div>
           </div>
         </div>
@@ -308,26 +317,12 @@ export function HomePortalOverlay() {
             willChange: 'opacity, transform',
           }}
         >
-          {/* Nút bấm vào phòng lab khi chưa lắp ráp */}
-          {!hasCompletedAssembly && (
-            <button
-              type="button"
-              onClick={handleEnterWorkbench}
-              className="flex items-center gap-2 px-5 py-2 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 backdrop-blur-md shadow-2xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
-            >
-              <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
-              <span className="font-mono text-xs font-bold tracking-widest text-[#d8d2c5] uppercase">
-                Bấm để bước vào phòng Lab 3D (About)
-              </span>
-              <span className="font-mono text-xs text-[#e05a47]">↗</span>
-            </button>
-          )}
-
+      
           {/* Khi đã lắp ráp xong: gợi ý cuộn xuống xem Projects & CV */}
           {hasCompletedAssembly && (
             <div className="flex flex-col items-center gap-2">
               <span className="font-mono text-xs text-white/60 tracking-wider">
-                Cuộn xuống xem Projects & My CV ↓
+                SCROLL DOWN FOR PROJECTS &amp; CV ↓
               </span>
             </div>
           )}

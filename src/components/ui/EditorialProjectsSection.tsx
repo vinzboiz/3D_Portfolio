@@ -78,7 +78,7 @@ export function EditorialProjectsSection() {
           <div className="flex items-center gap-3 mb-4">
             <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
             <span className="font-mono text-xs sm:text-[0.8rem] uppercase tracking-[0.18em] text-[#6e6e73]">
-              02 / DANH MỤC DỰ ÁN
+              02 / LIST PROJECTS
             </span>
           </div>
 
@@ -106,7 +106,7 @@ export function EditorialProjectsSection() {
             {/* Dòng chú thích căn phải ngang hàng với đáy chữ tiêu đề */}
             <div className="lg:text-right pb-2">
               <p className="font-sans text-[0.92rem] sm:text-[1rem] text-[#8e8e93] max-w-md">
-                Bấm vào từng dự án để xem toàn bộ góc nhìn.
+                Click on each project to view the full range of perspectives.
               </p>
               <div className="mt-2 font-mono text-[0.72rem] tracking-[0.14em] text-[#55555c] uppercase">
                 5 SELECTED PRODUCTION RELEASES // 60 FPS
@@ -122,10 +122,10 @@ export function EditorialProjectsSection() {
           {/* Hàng Tiêu đề cột (Table Header) */}
           <div className="grid grid-cols-12 pb-4 text-xs font-mono uppercase tracking-[0.14em] text-[#6e6e73] border-b border-white/10 select-none">
             <div className="col-span-1">#</div>
-            <div className="col-span-6 md:col-span-6">DỰ ÁN</div>
-            <div className="hidden sm:block col-span-3 md:col-span-3">HẠNG MỤC</div>
-            <div className="hidden md:block col-span-1">GÓC NHÌN</div>
-            <div className="col-span-5 sm:col-span-2 md:col-span-1 text-right">XEM</div>
+            <div className="col-span-6 md:col-span-6">PROJECTS</div>
+            <div className="hidden sm:block col-span-3 md:col-span-3">CATEGORY</div>
+            <div className="hidden md:block col-span-1">PERSPECTIVE</div>
+            <div className="col-span-5 sm:col-span-2 md:col-span-1 text-right">VIEW</div>
           </div>
 
           {/* 5 Hàng Dự Án (Project Rows) */}
@@ -226,7 +226,7 @@ export function EditorialProjectsSection() {
 
         {/* Footer ghi chú của Section */}
         <div className="mt-14 pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs font-mono text-[#6e6e73]">
-          <div>TẤT CẢ DỰ ÁN ĐỀU ÁP DỤNG KIẾN TRÚC MÃ NGUỒN TIÊU CHUẨN CAO // 100% CLEAN CODE</div>
+          <div></div>
           <div className="flex items-center gap-4 text-[#8e8e93]">
             <span>STABLE 60 FPS</span>
             <span>·</span>

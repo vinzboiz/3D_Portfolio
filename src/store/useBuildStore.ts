@@ -343,8 +343,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
       hasCompletedAssembly: true,
       savedAssemblyStep: nextSaved,
       freeCam: false,
-      stageTransition: 'POST_ABOUT_TO_HOME',
+      currentStep: 0,
+      scrollCurrent: 0.0,
       scrollTarget: 0.0,
+      stageTransition: 'POST_ABOUT_TO_HOME',
       postAssemblyHomeScrollCount: 0,
     });
   },
@@ -356,6 +358,10 @@ export const useBuildStore = create<BuildStoreState>((set, get) => {
     // Phóng to toàn màn hình vào xem máy tính và cho phép OrbitControls xoay/zoom tự do
     retroSound.playButtonClick(state.soundEnabled);
     set({
+      currentStep: 10,
+      scrollCurrent: 10.0,
+      scrollTarget: 10.0,
+      hasCompletedAssembly: true,
       stageTransition: 'HOME_TO_POST_ABOUT_INSPECT',
     });
   },

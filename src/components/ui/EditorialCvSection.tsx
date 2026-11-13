@@ -1,57 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CanonBjcPrinter } from '../canvas/retro/CanonBjcPrinter';
 
-const EXPERIENCES = [
-  {
-    period: '2024 — NAY',
-    role: 'Full-Stack & Frontend Developer',
-    company: 'Pungkook Saigon II',
-    highlights: [
-      'Trực tiếp tham gia phát triển và vận hành các hệ thống Enterprise cốt lõi: PLMV2, PK PLM, MES Home, SCADA UI, QA Dashboard & Efficiency Summary.',
-      'Thiết kế giao diện thời gian thực giám sát dây chuyền sản xuất công nghiệp, tối ưu hóa hiển thị dữ liệu lớn với độ trễ thấp.',
-      'Phối hợp đa phòng ban giữa đội ngũ Backend, QA và khối sản xuất để đảm bảo độ tin cậy và chuẩn hóa quy trình phần mềm.',
-    ],
-    tech: ['Angular', 'React 19', 'TypeScript', 'C# .NET Core', 'RESTful API', 'SQL Server', 'SCADA / MES'],
-  },
-  {
-    period: '2023 — 2024',
-    role: 'AI Data & Computer Vision Specialist',
-    company: 'Alchera',
-    highlights: [
-      'Khai thác và xử lý dữ liệu Computer Vision độ chính xác cao phục vụ huấn luyện các mô hình AI thị giác máy tính.',
-      'Xây dựng các phân hệ xử lý 360 Media annotation, tối ưu hóa luồng xuất file ZIP hàng loạt và kiểm soát lỗi dữ liệu lớn tự động.',
-      'Thiết lập pipeline kiểm định chất lượng dữ liệu đầu vào và đầu ra, gia tăng 35% hiệu suất gán nhãn dữ liệu hình ảnh.',
-    ],
-    tech: ['Python', 'Computer Vision', '360 Media Pipeline', 'Data Annotation', 'Automation Tools'],
-  },
-  {
-    period: '2022 — 2024',
-    role: 'Creative WebGL & 3D Systems Engineer',
-    company: 'Freelance & Research Projects',
-    highlights: [
-      'Nghiên cứu và triển khai các hệ thống 3D Digital Twin, PBR Shaders và kiến trúc Procedural Three.js 60 FPS trên trình duyệt.',
-      'Đạt giải thưởng tại cuộc thi HDBank Hackathon với giải pháp công nghệ sáng tạo và kiến trúc backend phân tán.',
-      'Xây dựng Portfolio 3D năm 1997 không sử dụng file 3D bên ngoài, tối ưu hóa 100% bằng InstancedMesh và CanvasTexture.',
-    ],
-    tech: ['Three.js', 'React Three Fiber', 'GLSL Shaders', 'Web Audio API', 'GSAP', 'Next.js', 'Zustand'],
-  },
-];
-
-const SKILL_GROUPS = [
-  {
-    title: 'NGÔN NGỮ & CÔNG NGHỆ CỐT LÕI',
-    skills: ['C# .NET Core', 'ASP.NET MVC', 'Java Spring Boot', 'Node.js / Express', 'TypeScript (Strict)', 'Python', 'SQL'],
-  },
-  {
-    title: 'FRONTEND & 3D WEBGL GRAPHICS',
-    skills: ['Three.js / WebGL', 'React 19 / 18', 'Angular', 'Next.js 14 / 15', 'GLSL Shaders', 'Tailwind CSS / SCSS', 'GSAP', 'Zustand'],
-  },
-  {
-    title: 'CƠ SỞ DỮ LIỆU & NỀN TẢNG CLOUD',
-    skills: ['PostgreSQL', 'SQL Server', 'MySQL', 'Supabase', 'Docker', 'Redis', 'APS Forge (Autodesk)', 'RESTful API / gRPC'],
-  },
-];
-
 export function EditorialCvSection() {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [isCvModalOpen, setIsCvModalOpen] = useState(false);
@@ -93,16 +42,7 @@ export function EditorialCvSection() {
     document.body.removeChild(link);
   };
 
-  const handleDownloadDocx = () => {
-    const link = document.createElement('a');
-    link.href = '/NguyenXuanVinh_CV.docx';
-    link.download = 'NguyenXuanVinh_CV.docx';
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+
 
   return (
     <section
@@ -181,155 +121,59 @@ export function EditorialCvSection() {
         </div>
 
         {/* =======================================================================
-            2. NỘI DUNG 2 CỘT: KINH NGHIỆM THỰC CHIẾN & NĂNG LỰC KỸ THUẬT
+            2. PHẦN LIÊN HỆ KẾT NỐI (CONTACT & CONNECT SECTION)
            ======================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-          {/* Cột Trái (7 Cột): Lịch sử Kinh nghiệm & Tóm tắt */}
-          <div className="lg:col-span-7 space-y-12">
-            {/* Tóm tắt năng lực */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs uppercase tracking-widest text-[#e05a47]">
-                  PROFILE SUMMARY
-                </span>
-                <span className="h-[1px] flex-1 bg-white/10" />
-              </div>
-              <p className="font-sans text-base sm:text-lg text-[#d1d1d6] leading-relaxed">
-                Kỹ sư Phần mềm tốt nghiệp Đại học Công nghệ TP.HCM (HUTECH) với GPA 3.43/4.0 và danh hiệu Sinh viên Xuất sắc (2024–2025). Sở hữu kinh nghiệm thực chiến phát triển các hệ thống Enterprise cốt lõi (MES, SCADA, PLM) tại Pungkook Saigon II và xử lý dữ liệu Computer Vision tại Alchera. Đam mê kiến trúc Clean Code, đồ họa 3D WebGL và tối ưu hóa hiệu năng hệ thống chịu tải cao.
-              </p>
-            </div>
-
-            {/* Timeline Kinh nghiệm làm việc */}
-            <div>
-              <div className="flex items-center gap-3 mb-8">
-                <span className="font-mono text-xs uppercase tracking-widest text-[#6e6e73]">
-                  LỊCH SỬ KINH NGHIỆM THỰC CHIẾN
-                </span>
-                <span className="h-[1px] flex-1 bg-white/10" />
-              </div>
-
-              <div className="space-y-10 divide-y divide-white/[0.08]">
-                {EXPERIENCES.map((exp, idx) => (
-                  <div key={idx} className={idx > 0 ? 'pt-10' : ''}>
-                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-2">
-                      <h3 className="font-sans font-bold text-xl sm:text-2xl text-white tracking-tight">
-                        {exp.role}
-                      </h3>
-                      <span className="font-mono text-xs text-[#e05a47] shrink-0 font-semibold tracking-wider">
-                        {exp.period}
-                      </span>
-                    </div>
-
-                    <div className="font-mono text-xs uppercase tracking-wide text-[#8e8e93] mb-4">
-                      {exp.company}
-                    </div>
-
-                    <ul className="space-y-2.5 mb-5">
-                      {exp.highlights.map((h, hIdx) => (
-                        <li key={hIdx} className="flex items-start gap-3 text-sm sm:text-[0.95rem] text-[#b0b0b8] leading-relaxed">
-                          <span className="text-[#e05a47] font-mono mt-1">▸</span>
-                          <span>{h}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Tech tags */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {exp.tech.map((t) => (
-                        <span
-                          key={t}
-                          className="px-2.5 py-1 rounded text-[11px] font-mono bg-white/[0.04] text-[#a1a1aa] border border-white/5"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div id="contact-section" className="pt-16 sm:pt-24 border-t border-white/10">
+          {/* Nhãn chỉ mục */}
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#e05a47] animate-pulse" />
+            <span className="font-mono text-xs sm:text-[0.8rem] uppercase tracking-[0.18em] text-[#6e6e73]">
+              04 / REACH OUT · COLLABORATION
+            </span>
           </div>
 
-          {/* Cột Phải (5 Cột): Kỹ năng, Học vấn & Thông tin liên hệ */}
-          <div className="lg:col-span-5 space-y-10">
-            {/* Học vấn & Bằng cấp nổi bật */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs uppercase tracking-widest text-[#4ade80]">
-                  HỌC VẤN & GIẢI THƯỞNG
-                </span>
-                <span className="h-[1px] flex-1 bg-white/10" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+            {/* Tiêu đề khổng lồ 2 dòng kiểu Image 2 (Bold Sans trắng + Italic Serif & đỏ cam) */}
+            <div className="lg:col-span-7 space-y-6">
+              <div>
+                <div className="flex items-baseline flex-wrap">
+                  <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.5rem,7.5vw,7rem)] leading-[0.92] uppercase">
+                    Contact
+                  </h2>
+                  <span
+                    className="italic font-normal text-[#e05a47] text-[clamp(3.3rem,7.2vw,6.6rem)] leading-[0.92] ml-3 sm:ml-5 select-none"
+                    style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
+                  >
+                    &
+                  </span>
+                </div>
+                <h2 className="font-sans font-black text-[#f5f5f7] tracking-tight text-[clamp(3.5rem,7.5vw,7rem)] leading-[0.92] uppercase mt-1">
+                  Connect
+                </h2>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-sans font-bold text-lg text-white">
-                    Đại Học Công Nghệ TP.HCM (HUTECH)
-                  </h4>
-                  <div className="font-mono text-xs text-[#8e8e93] uppercase mt-0.5">
-                    KỸ SƯ CÔNG NGHỆ THÔNG TIN · 2021 — 2025
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2.5 py-1 rounded bg-[#4ade80]/15 text-[#4ade80] font-mono text-xs font-semibold border border-[#4ade80]/30">
-                      GPA: 3.43 / 4.0
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-white/10 text-white font-mono text-xs">
-                      Sinh Viên Xuất Sắc (2024–2025)
-                    </span>
-                  </div>
-                </div>
 
-                <div className="pt-3 border-t border-white/10">
-                  <div className="font-mono text-xs text-[#e05a47] font-semibold">
-                    ★ HDBank Hackathon 2024
-                  </div>
-                  <p className="font-sans text-xs text-[#a1a1aa] mt-1">
-                    Đạt thành tích xuất sắc tại cuộc thi phát triển ứng dụng ngân hàng số & giải pháp công nghệ cao.
-                  </p>
-                </div>
+              <p className="font-sans text-base sm:text-lg text-[#a1a1aa] leading-relaxed max-w-xl">
+  I’m always open to connecting and discussing enterprise software solutions, PLM/MES manufacturing systems, 3D WebGL architectures, or innovative tech projects.
+</p>
+
+              {/* Tag trạng thái sẵn sàng hợp tác */}
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.04] border border-white/10 text-xs font-mono text-[#d1d1d6]">
+                <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-ping" />
+                <span>OPEN TO WORK &amp; COLLABORATION · 2026</span>
               </div>
             </div>
 
-            {/* Ma trận Kỹ năng cốt lõi */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-white/[0.03] border border-white/10 space-y-6">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs uppercase tracking-widest text-[#38bdf8]">
-                  KỸ NĂNG & NĂNG LỰC
-                </span>
-                <span className="h-[1px] flex-1 bg-white/10" />
-              </div>
-
-              <div className="space-y-6">
-                {SKILL_GROUPS.map((group, gIdx) => (
-                  <div key={gIdx} className="space-y-2.5">
-                    <h4 className="font-mono text-[11px] tracking-wider text-[#8e8e93] uppercase">
-                      {group.title}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {group.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-3 py-1 rounded-md text-xs font-mono font-medium bg-white/[0.06] text-white border border-white/10 hover:border-[#38bdf8]/50 transition-colors"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Hộp Thông tin liên hệ nhanh */}
-            <div className="p-7 sm:p-9 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/15 space-y-5">
+            {/* Khung liên hệ kết nối (Contact Box) */}
+            <div className="lg:col-span-5 p-7 sm:p-9 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/15 space-y-5 shadow-2xl">
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs uppercase tracking-widest text-[#f4a261]">
-                  LIÊN HỆ & KẾT NỐI
+                  CONTACT &amp; CONNECT
                 </span>
                 <span className="h-[1px] flex-1 bg-white/10" />
               </div>
 
               <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/10">
+                <div className="flex items-center justify-between p-3.5 rounded-lg bg-black/40 border border-white/10">
                   <span className="text-[#8e8e93]">EMAIL</span>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-sans font-medium text-sm">
@@ -345,7 +189,7 @@ export function EditorialCvSection() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/10">
+                <div className="flex items-center justify-between p-3.5 rounded-lg bg-black/40 border border-white/10">
                   <span className="text-[#8e8e93]">GITHUB</span>
                   <a
                     href="https://github.com/vinzboiz"
@@ -358,7 +202,7 @@ export function EditorialCvSection() {
                   </a>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/10">
+                <div className="flex items-center justify-between p-3.5 rounded-lg bg-black/40 border border-white/10">
                   <span className="text-[#8e8e93]">LOCATION</span>
                   <span className="text-white font-sans font-medium text-sm">
                     Ho Chi Minh City, Vietnam (UTC+7)
@@ -368,9 +212,9 @@ export function EditorialCvSection() {
 
               <a
                 href="mailto:hello@vinzboiz.dev?subject=Hợp tác dự án với Nguyễn Xuân Vinh"
-                className="w-full py-3.5 rounded-xl bg-[#e05a47] hover:bg-[#d04936] text-white font-sans font-bold text-sm flex items-center justify-center gap-2 transition-transform active:scale-98 shadow-lg shadow-[#e05a47]/20"
+                className="w-full py-3.5 rounded-xl bg-[#e05a47] hover:bg-[#d04936] text-white font-sans font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-98 shadow-lg shadow-[#e05a47]/20"
               >
-                <span>Gửi Tin Nhắn Hợp Tác Trực Tiếp</span>
+                <span>Send a Direct Collaboration Message</span>
                 <span>→</span>
               </a>
             </div>
@@ -382,15 +226,15 @@ export function EditorialCvSection() {
            ======================================================================= */}
         <div className="mt-28 pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-6 text-xs font-mono text-[#6e6e73]">
           <div>
-            © 2026 NGUYỄN XUÂN VINH · DESIGNED IN 1997 RETRO HARDWARE STYLE
+            © 2026 NGUYEN XUAN VINH · DESIGNED IN 1997 RETRO HARDWARE STYLE
           </div>
           <div className="flex items-center gap-6">
             <a href="#home-section" className="hover:text-white transition-colors">
-              ↑ VỀ ĐẦU TRANG
+              ↑ BACK TO TOP
             </a>
             <span>·</span>
             <a href="https://github.com/vinzboiz/3D_Portfolio" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-              MÃ NGUỒN PORTFOLIO (GITHUB) ↗
+              GIT CODE PORTFOLIO (GITHUB) ↗
             </a>
           </div>
         </div>
@@ -403,96 +247,14 @@ export function EditorialCvSection() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-[#0a0a0c]/92 backdrop-blur-2xl flex flex-col items-center justify-start p-3 sm:p-6 md:p-8 overflow-y-auto animate-fadeIn"
-          onClick={(e) => {
-            // Đóng khi click ngoài tờ giấy CV
-            if (e.target === e.currentTarget) {
-              setIsCvModalOpen(false);
-            }
-          }}
+          className="fixed inset-0 z-50 bg-[#0a0a0c]/92 backdrop-blur-2xl flex flex-col items-center justify-start p-3 sm:p-8 md:p-12 overflow-y-auto animate-fadeIn cursor-pointer"
+          onClick={() => setIsCvModalOpen(false)}
         >
-          {/* Thanh tác vụ trên cùng (Top Navigation & Action Bar) */}
-          <div className="sticky top-0 z-20 w-full max-w-4xl py-3 px-4 sm:px-6 mb-6 rounded-2xl bg-[#16161a]/90 border border-white/15 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 shadow-2xl">
-            {/* Nhãn máy in Canon BJC-250 */}
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-ping" />
-              <div>
-                <div className="font-mono text-xs sm:text-[0.78rem] uppercase tracking-widest text-[#f5f5f7] font-bold">
-                  CANON BJC-250 · HIGH-RES PRINTED DOSSIER
-                </div>
-                <div className="font-mono text-[10px] text-[#8e8e93] tracking-wide">
-                  720 x 360 DPI INKJET EMULATION · TOÀN BỘ HỒ SƠ ỨNG VIÊN
-                </div>
-              </div>
-            </div>
-
-            {/* Các nút tải xuống & nút đóng ở góc trên bên phải */}
-            <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
-              {/* Nút tải PDF */}
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                className="group flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full bg-[#f2f0ea] hover:bg-white text-black font-sans font-bold text-xs sm:text-sm transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#111111"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform duration-300 group-hover:translate-y-0.5"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                <span>[ Tải PDF ↗ ]</span>
-              </button>
-
-              {/* Nút tải Word */}
-              <button
-                type="button"
-                onClick={handleDownloadDocx}
-                className="group flex items-center gap-2 px-4 sm:px-4.5 py-2.5 rounded-full bg-white/[0.08] hover:bg-white/[0.18] text-white border border-white/20 font-sans font-semibold text-xs sm:text-sm transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#38bdf8"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform duration-300 group-hover:translate-y-0.5"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                <span>[ Tải DOCX ]</span>
-              </button>
-
-              {/* Nút đóng Lightbox */}
-              <button
-                type="button"
-                onClick={() => setIsCvModalOpen(false)}
-                className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-sans font-bold text-xs sm:text-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                title="Đóng cửa sổ xem CV (Phím ESC)"
-              >
-                <span>✕ Đóng</span>
-                <span className="hidden sm:inline font-mono text-[10px] text-red-200 opacity-75">(ESC)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Tờ Giấy CV Khổ Lớn Phóng Ra Toàn Màn Hình (High-Resolution Paper Document) */}
-          <div className="relative w-full max-w-4xl bg-[#faf8f5] text-[#1c1917] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] p-8 sm:p-14 md:p-16 rounded-sm border border-neutral-300 font-sans mb-12 selection:bg-[#e05a47] selection:text-white">
+          {/* Tờ Giấy CV Khổ Lớn (Chỉ giữ lại duy nhất phần CV, click ra ngoài nền sẽ đóng modal) */}
+          <div
+            className="relative w-full max-w-4xl bg-[#faf8f5] text-[#1c1917] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] p-8 sm:p-14 md:p-16 rounded-sm border border-neutral-300 font-sans my-4 sm:my-8 selection:bg-[#e05a47] selection:text-white cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header CV chuẩn format quốc tế */}
             <div className="border-b-2 border-[#1c1917] pb-6 mb-8">
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">

@@ -550,9 +550,14 @@ export function Workbench() {
     // vuông góc với mặt bàn (y = 0) và xoay mặt trước hướng thẳng về phía Camera chính (+Z_world).
     // Ở Step 10, thùng máy dịch sang bên phải (X_world = +1.85) nhường trung tâm cho Màn hình CRT Sony Trinitron!
     if (caseWrapperRef.current) {
-      const isAtCompletedHome = state.hasCompletedAssembly && state.currentStep === 0;
+      const isCompletedWorkstation =
+        state.hasCompletedAssembly &&
+        (state.currentStep === 0 ||
+          state.currentStep >= 10 ||
+          state.stageTransition === 'POST_ABOUT_TO_HOME' ||
+          state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
       const isShifted =
-        isAtCompletedHome ||
+        isCompletedWorkstation ||
         state.currentStep > 10 ||
         (state.currentStep === 10 && (state.isPoweredOn || smoothScrollVal >= 9.85));
       const step10ShiftProgress = isShifted
@@ -561,10 +566,10 @@ export function Workbench() {
           ? THREE.MathUtils.smoothstep(smoothScrollVal, 9.65, 9.95)
           : 0.0;
       const step10ShiftX =
-        isAtCompletedHome || state.currentStep >= 10
+        isCompletedWorkstation || state.currentStep >= 10
           ? THREE.MathUtils.lerp(TOWER_BUILD_X, TOWER_STEP10_X, step10ShiftProgress)
           : TOWER_BUILD_X;
-      const targetX = isAtCompletedHome || state.currentStep >= 2 ? step10ShiftX : 4.2;
+      const targetX = isCompletedWorkstation || state.currentStep >= 2 ? step10ShiftX : 4.2;
       const alpha = Math.min(1, delta * 8);
 
       caseWrapperRef.current.position.x = THREE.MathUtils.lerp(caseWrapperRef.current.position.x, targetX, alpha);
@@ -579,11 +584,12 @@ export function Workbench() {
     const isAtCompletedHome =
       state.hasCompletedAssembly &&
       (state.currentStep === 0 ||
+        state.currentStep >= 10 ||
         state.stageTransition === 'POST_ABOUT_TO_HOME' ||
         state.stageTransition === 'HOME_TO_POST_ABOUT_INSPECT');
     const isStep10OrAbove = state.currentStep >= 10 || smoothScrollProgress >= 9.65;
     const landFactor = THREE.MathUtils.smoothstep(smoothScrollProgress, 9.65, 10.0);
-    const floatWeight = isAtCompletedHome || isStep10OrAbove ? 0.0 : 1.0 - landFactor;
+    const floatWeight = isAtCompletedHome || isStep10OrAbove || state.hasCompletedAssembly ? 0.0 : 1.0 - landFactor;
     const floatScale = 1.0;
 
     const t = r3fState.clock.elapsedTime;

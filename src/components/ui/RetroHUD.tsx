@@ -131,6 +131,29 @@ export function RetroHUD() {
     }
   };
 
+  const handleNavContact = () => {
+    const state = useBuildStore.getState();
+    if (state.stageTransition !== 'IDLE') return;
+    const inside = state.currentStep > 0 || state.homeTransitionProgress > 0.1 || state.freeCam;
+
+    const targetEl = document.getElementById('contact-section') || document.getElementById('cv-section');
+    if (!inside) {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      targetEl?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      if (state.freeCam) {
+        state.setFreeCam(false);
+      }
+      state.jumpToHome();
+      setTimeout(() => {
+        document.documentElement.style.overflow = 'auto';
+        document.body.style.overflow = 'auto';
+        targetEl?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+  };
+
   // Điều phối sự kiện lăn chuột, vuốt chạm và phím tắt
   useEffect(() => {
     let lastScrollTime = 0;
@@ -154,9 +177,9 @@ export function RetroHUD() {
       if (Math.abs(e.deltaY) < 12) return; // Bỏ qua nhiễu cực nhỏ
 
       const now = performance.now();
-      // Cooldown 280ms: Phản hồi 100% tức thì — mỗi lần lăn chuột chuyển đúng 1 step!
-      // Vừa đủ triệt tiêu quán tính của trackpad/con lăn tự do, không làm rơi rớt sự kiện của người dùng.
-      if (now - lastScrollTime < 280) return;
+      // Cooldown 420ms: Đồng bộ với tốc độ animation lắp ráp đằm thắm (~750ms),
+      // mỗi lần lăn chuột chuyển đúng 1 step mượt mà và triệt tiêu quán tính tự do của con lăn.
+      if (now - lastScrollTime < 420) return;
       lastScrollTime = now;
 
       const direction = e.deltaY > 0 ? 1 : -1;
@@ -219,7 +242,7 @@ export function RetroHUD() {
       if (Math.abs(deltaY) < 25) return;
 
       const now = performance.now();
-      if (now - lastScrollTime < 280) return;
+      if (now - lastScrollTime < 420) return;
       lastScrollTime = now;
       touchStartYRef.current = currentY;
 
@@ -412,68 +435,13 @@ export function RetroHUD() {
           {/* Nút Pill Button [ Contact ] */}
           <button
             type="button"
-            onClick={handleNavCv}
+            onClick={handleNavContact}
             className="nav-pill bg-[#f2f0ea] text-[#111111] hover:bg-white text-xs sm:text-sm font-medium px-4 sm:px-[22px] py-1.5 sm:py-[9px] shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 select-none whitespace-nowrap"
           >
             CONTACT
           </button>
         </div>
       </header>
-
-      {/* THANH ĐIỀU KHIỂN SAU KHI LẮP MÁY XONG (STEP 10) */}
-      {currentStep >= 10 && !isInsideProjectApp && projectAppTransition === 'IDLE' && (
-        <div className="fixed bottom-6 inset-x-0 z-40 flex items-center justify-center pointer-events-none px-4">
-          {freeCam ? (
-            <button
-              type="button"
-              onClick={() => useBuildStore.getState().exitCompletedWorkstationInspect()}
-              className="pointer-events-auto flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-black/85 hover:bg-black text-white border border-white/25 hover:border-white/60 shadow-2xl backdrop-blur-md cursor-pointer transition-all hover:scale-105 active:scale-95 group"
-            >
-              <span className="font-mono text-xs font-bold tracking-widest text-[#e05a47] group-hover:rotate-90 transition-transform">
-                ✕
-              </span>
-              <span className="font-mono text-xs tracking-wider font-semibold">
-                EXIT 360° VIEW
-              </span>
-              <span className="font-mono text-[10px] text-white/50 tracking-wider">
-                [ ESC ]
-              </span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-center">
-              {/* Nút Replay Lắp lại */}
-              <button
-                type="button"
-                onClick={() => useBuildStore.getState().replayAbout()}
-                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-black/80 hover:bg-black text-[#d8d2c5] hover:text-white border border-white/20 hover:border-white/50 backdrop-blur-md text-xs font-mono tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
-              >
-                <span className="text-[#e05a47]">↺</span>
-                <span>REPLAY ASSEMBLY</span>
-              </button>
-
-              {/* Nút Bật xoay 360 độ */}
-              <button
-                type="button"
-                onClick={() => useBuildStore.getState().setFreeCam(true)}
-                className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-[#18181b]/90 hover:bg-black text-white border border-[#38bdf8]/50 hover:border-[#38bdf8] backdrop-blur-md text-xs font-mono tracking-wider transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
-              >
-                <span className="text-[#38bdf8]">✦</span>
-                <span>360° ORBIT VIEW</span>
-              </button>
-
-              {/* Nút Về Home / Khám phá */}
-              <button
-                type="button"
-                onClick={() => useBuildStore.getState().transitionPostAboutToHome()}
-                className="pointer-events-auto flex items-center gap-2 px-5 py-2 rounded-full bg-[#e05a47] hover:bg-[#d04a37] text-white font-mono text-xs tracking-wider font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
-              >
-                <span>CONTINUE TO HOME</span>
-                <span>↓</span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
     </>
   );
 }

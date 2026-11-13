@@ -11,10 +11,6 @@ interface EditorialStepItem {
   tags: string[];
 }
 
-/**
- * Tạo danh sách nội dung 10 bước About, tự động nhận diện thời gian trong ngày
- * (Sáng: Good Morning, Chiều: Good Afternoon, Tối/Đêm: Good Evening) cho Step 01 và Step 09.
- */
 function getAboutEditorialSteps(): EditorialStepItem[] {
   const hour = new Date().getHours();
 
@@ -41,84 +37,85 @@ function getAboutEditorialSteps(): EditorialStepItem[] {
 
   return [
     {
-      code: `01 / 10 — ${greetingCode} · VINZBOIZ RETRO WORKBENCH`,
-      titleBold1: greetingTitle,
-      titleItalic: "I'm",
-      titleBold2: 'XUAN VINH',
-      content: `${introGreeting} — Software Engineer specializing in scalable distributed architecture and real-time 3D WebGL experiences. Welcome to my 1997 vintage PC workshop. Scroll to explore my engineering journey through each hardware component.`,
-      tags: ['Full-Stack Engineer', 'WebGL / Three.js', greetingEnglish, 'Clean Architecture'],
-    },
+  code: ` '01 / 09 — ${greetingCode} · VINH NGUYEN INTRO`,
+  titleBold1: greetingTitle,
+  titleItalic: "I'm",
+  titleBold2: 'VINH',
+  content: `I'm Nguyen Xuan Vinh (Vinzboiz), an Enterprise ERP & Creative Frontend Engineer with 10 years of experience building scalable ERP systems. Welcome to my portfolio—let's get to know a little bit about me!`,
+  tags: ['Enterprise Software', 'Creative Frontend Engineer'],
+},
     {
-      code: '02 / 10 — CHASSIS PREP · INWIN A500 MID-TOWER',
-      titleBold1: 'KHUNG GẦM',
-      titleItalic: 'hệ thống',
-      titleBold2: 'CHUẨN MỰC',
-      content:
-        'Thiết lập khung gầm vững chắc cho các dự án phức tạp: Kiến trúc modular monorepo, định vị chính xác các điểm neo kỹ thuật và quy trình CI/CD tự động hóa giúp hệ thống sẵn sàng mở rộng bền bỉ.',
-      tags: ['System Architecture', 'Modular Monorepo', 'CI/CD Pipelines'],
-    },
+    code: '02 / 09 — OBJECTIVES · VISION & BUSINESS VALUE',
+    titleBold1: 'DRIVING',
+    titleItalic: 'practical',
+    titleBold2: 'INNOVATION',
+    content:
+      'My core objective is to deliver the most practical and impactful solutions for businesses—bridging complex operational needs with continuous innovation to modernize workflows, boost efficiency, and drive sustainable growth.',
+    tags: ['Practical Solutions', 'Business Value', 'Continuous Innovation'],
+  },
     {
-      code: '03 / 10 — POWER SUPPLY · SEASONIC SSG-200G AT',
-      titleBold1: 'NĂNG LƯỢNG',
-      titleItalic: 'vận hành',
-      titleBold2: 'BỀN BỈ',
-      content:
-        'Tương tự bộ nguồn Seasonic 200W cung cấp dòng điện ổn định với quạt hút 80mm lồng thép đồng tâm, tôi xây dựng tầng Backend chịu tải cao (.NET Core, Spring Boot, Node.js) và cơ chế ngắt mạch an toàn.',
-      tags: ['High Availability', 'Backend Services', 'Fault Tolerance'],
-    },
+    code: '03 / 09 — ROADMAP · EDUCATION & CAREER JOURNEY',
+    titleBold1: 'FROM',
+    titleItalic: 'academic roots',
+    titleBold2: 'TO ENTERPRISE',
+    content:
+      'My journey began with a Software Engineering degree at HUTECH (2022–2026), building a solid technical foundation before stepping into the corporate world as an ERP Developer at Pungkook Corporation—where I build and scale enterprise-grade systems.',
+    tags: ['HUTECH (2022–2026)', 'Pungkook Corporation', 'ERP Developer'],
+  },
     {
-      code: '04 / 10 — MOBO MOUNTING · ASUS TX97-E INTO CHASSIS',
-      titleBold1: 'TÍCH HỢP',
-      titleItalic: 'hệ thống',
-      titleBold2: 'CHUẨN XÁC',
-      content:
-        'Kết hợp hoàn hảo giữa tầng Core Engine và khung vỏ với độ chính xác tuyệt đối: bo mạch chủ được nâng vào lòng case, khớp chuẩn từng milimet với tấm chắn I/O Shield và 6 chân ốc đồng.',
-      tags: ['System Integration', 'Precision Engineering', 'Type Safety'],
-    },
+    code: '04 / 09 — CORE TECH · LANGUAGES & FRAMEWORKS',
+    titleBold1: 'MASTERING',
+    titleItalic: 'modern',
+    titleBold2: 'TECH STACKS',
+    content:
+      'From pixel-perfect frontends in React, Angular, JavaScript, and TypeScript to high-performance backends powered by C#, Java, Python, and Node.js, I leverage the right technologies to engineer scalable, maintainable enterprise applications.',
+    tags: ['Frontend Frameworks', 'Backend Engineering', 'Full-Stack Development'],
+  },
     {
-      code: '05 / 10 — STORAGE DRIVES · CREATIVE 24X CD, FDD & HDD',
-      titleBold1: 'LƯU TRỮ',
-      titleItalic: 'dữ liệu',
-      titleBold2: 'ĐA TẦNG',
-      content:
-        'Thiết kế kiến trúc lưu trữ đa tầng: từ bộ nhớ đệm tốc độ cao, cơ sở dữ liệu phân tán (PostgreSQL, SQL Server) cho tới phân phối tài nguyên tĩnh và xuất hồ sơ CV trực tiếp qua đĩa mềm 3.5".',
-      tags: ['PostgreSQL / SQL Server', 'Data Pipeline', 'Storage Architecture'],
-    },
+    code: '05 / 09 — CREATIVE TECH · 3D WEB & INTERACTIVE UI',
+    titleBold1: 'CRAFTING',
+    titleItalic: 'immersive',
+    titleBold2: 'EXPERIENCES',
+    content:
+      'Going beyond traditional 2D screens, I bring interfaces to life using Three.js, WebGL, and Blender—transforming complex industrial data into real-time 3D Digital Twins and crafting interactive, tactile web experiences.',
+    tags: ['Three.js & WebGL', 'Blender', 'Interactive UI/UX'],
+  },
     {
-      code: '06 / 10 — POWER HARNESS · AT P8/P9 & MOLEX CABLING',
-      titleBold1: 'HẠ TẦNG',
-      titleItalic: 'phân phối',
-      titleBold2: 'CHẶT CHẼ',
-      content:
-        'Giống quy tắc sống còn "4 sợi dây Đen của P8 & P9 phải nằm sát nhau ở giữa" khi cấp nguồn cho bo mạch AT, tôi xây dựng hệ thống Infrastructure-as-Code có kiểm thử tĩnh và giám sát hạ tầng đám mây an toàn.',
-      tags: ['DevOps / Infrastructure', 'Strict Standards', 'Automated QA'],
-    },
+    code: '06 / 09 — WORKFLOW · DATA & SYSTEM ARCHITECTURE',
+    titleBold1: 'STRUCTURING',
+    titleItalic: 'reliable',
+    titleBold2: 'WORKFLOWS',
+    content:
+      'Great software relies on disciplined execution. I design optimized relational databases (PostgreSQL, MySQL, Oracle, SQL Server) alongside clean, modular architectures, streamlined Git workflows, and automated processes that keep complex teams moving fast.',
+    tags: ['SQL & Database Design', 'Clean Architecture', 'Agile & Git Workflows'],
+  },
     {
-      code: '07 / 10 — RIBBON BUS · PRIMARY & SECONDARY IDE CABLES',
-      titleBold1: 'BĂNG THÔNG',
-      titleItalic: 'truyền tải',
-      titleBold2: 'TỐC ĐỘ CAO',
-      content:
-        'Thiết kế luồng truyền tải dữ liệu băng thông rộng giữa tầng xử lý và thiết bị ngoại vi qua cáp bẹ IDE viền đỏ Pin 1. Tối ưu hóa API, State Management thời gian thực và WebSockets không độ trễ.',
-      tags: ['High-Throughput Bus', 'Real-time State', 'WebSockets / REST'],
-    },
+    code: '07 / 09 — PROJECTS · ENTERPRISE & PERSONAL WORKS',
+    titleBold1: 'PROVEN',
+    titleItalic: 'in',
+    titleBold2: 'ACTION',
+    content:
+      'My portfolio spans across large-scale corporate platforms and creative personal products—combining hands-on experience developing enterprise ERP systems with self-initiated web, mobile, and interactive 3D applications built from the ground up.',
+    tags: ['Enterprise ERP Systems', 'Personal Projects', 'Real-World Impact'],
+  },
     {
-      code: '08 / 10 — FRONT PANEL · SWITCHES, LEDS & AUDIO HEADER',
-      titleBold1: 'GIÁM SÁT',
-      titleItalic: 'thời gian thực',
-      titleBold2: 'NHẠY BÉN',
-      content:
-        'Kết nối hệ thống dây xoắn đôi của đèn báo trạng thái (Power LED, HDD LED), nút bấm điều khiển (Turbo/Reset) và loa báo lỗi POST. Telemetry và Observability giúp phát hiện và ứng cứu sự cố tức thời.',
-      tags: ['Telemetry & Observability', 'Real-time Metrics', 'Rapid Response'],
-    },
+    code: '08 / 09 — CONTACT · LET’S CONNECT',
+    titleBold1: 'READY',
+    titleItalic: 'to',
+    titleBold2: 'COLLABORATE',
+    content:
+      'Always open to discussing enterprise software solutions, creative frontend projects, or new career opportunities. Feel free to reach out via email or social channels—let’s connect and build something impactful together!',
+    tags: ['Get In Touch', 'Open for Opportunities', 'Let’s Talk'],
+  },
     {
-      code: `09 / 10 — LỜI CẢM ƠN · SINCERE THANKS & ${greetingEnglish.toUpperCase()}`,
-      titleBold1: 'CHÂN THÀNH',
-      titleItalic: 'cảm ơn',
-      titleBold2: 'BẠN',
-      content: `Cảm ơn bạn đã đồng hành theo dõi từng bước lắp ráp cỗ máy năm 1997. Sự tỉ mỉ, kiên định và tinh thần kỹ sư nghiêm túc là những giá trị tôi luôn mang vào mọi dự án thực tế. ${closingWish} Hãy cuộn chuột để cỗ máy hạ cánh, sẵn sàng khởi động và khám phá các dự án tiếp theo.`,
-      tags: ['Thank You', 'Available for Hire', greetingEnglish, 'Contact & Connect'],
-    },
+    code: '09 / 09 — OUTRO · THANK YOU & KEEP EXPLORING',
+    titleBold1: 'THANK YOU',
+    titleItalic: 'keep',
+    titleBold2: 'SCROLLING',
+    content:
+      'Thank you for taking the time to walk through my introduction! Keep scrolling down to dive deeper into my featured projects and view my full resume below.',
+    tags: ['Thank You', 'Keep Scrolling', 'Projects & Resume Below'],
+  },
   ];
 }
 
@@ -233,15 +230,15 @@ export function AboutEditorialScroller() {
             </div>
 
             {/* Tiêu đề 2 dòng: Bold Sans trắng + Italic Serif đỏ cam */}
-            <h2 className="font-sans font-black text-white text-[clamp(2.15rem,3.1vw,3.05rem)] tracking-tight leading-[1.08] uppercase mb-[18px]">
-              <span>{step.titleBold1} </span>
+            <h2 className="font-sans font-black text-white text-[clamp(2.15rem,3.1vw,3.05rem)] tracking-tight leading-[1.08] mb-[18px]">
+              <span className="uppercase">{step.titleBold1} </span>
               <span
-                className="italic font-normal text-[#e05a47] lowercase"
+                className="italic font-normal text-[#e05a47] normal-case"
                 style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
               >
                 {step.titleItalic}{' '}
               </span>
-              <span>{step.titleBold2}</span>
+              <span className="uppercase">{step.titleBold2}</span>
             </h2>
 
             {/* Đoạn văn giới thiệu bản thân */}

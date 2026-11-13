@@ -23,8 +23,8 @@ export const ASSEMBLY_STEPS: AssemblyStepData[] = [
     step: 0,
     code: '00',
     shortName: 'PORTAL HOME',
-    cameraPos: dScale([-6.2, 7.2, 9.2]),
-    cameraTarget: dScale([0, 1.4, -0.6]),
+    cameraPos: dScale([-4.5, 5.8, 6.8]),
+    cameraTarget: dScale([0.0, 1.85, 0]),
   },
   {
     step: 1,
